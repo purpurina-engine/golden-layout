@@ -25,7 +25,8 @@ import {
     indexOf,
     isFunction,
     stripTags,
-    getQueryStringParam
+    getQueryStringParam,
+    mergeAreas
 } from './utils/utils'
 
 /**
@@ -49,7 +50,7 @@ export default class LayoutManager extends EventEmitter {
             errorMsg += 'your paths when using RequireJS/AMD';
             throw new Error(errorMsg);
         }
-        
+
         super();
 
         this.isInitialised = false;
@@ -59,6 +60,34 @@ export default class LayoutManager extends EventEmitter {
             'lm-react-component': ReactComponentHandler
         };
         this._itemAreas = [];
+        this._dragSourceArea = {
+            area: null,
+            header: null,
+            fullArea: {
+                surface: -1,
+                x1: -1,
+                x2: -1,
+                y1: -1,
+                y2: -1,
+                contentItem: null
+            },
+            hasArea: false,
+            clear: function () {
+                this.area = null;
+                this.header = null;
+                this.hasArea = false;
+                this.fullArea.contentItem = null;
+            },
+
+            set: function (area, header, item) {
+                this.area = area;
+                this.header = header;
+                mergeAreas(area, header, this.fullArea);
+                this.fullArea.contentItem = item.parent;
+                this.hasArea = true;
+                console.log(this);
+            }
+        };
         this._resizeFunction = fnBind(this._onResize, this);
         this._unloadFunction = fnBind(this._onUnload, this);
         this._maximisedItem = null;
@@ -183,7 +212,7 @@ export default class LayoutManager extends EventEmitter {
          * Content
          */
         config.content = [];
-        next = function(configNode, item) {
+        next = function (configNode, item) {
             var key, i;
 
             for (key in item.config) {
@@ -353,7 +382,7 @@ export default class LayoutManager extends EventEmitter {
         this.transitionIndicator.destroy();
         this.eventHub.destroy();
 
-        this._dragSources.forEach(function(dragSource) {
+        this._dragSources.forEach(function (dragSource) {
             dragSource._dragListener.destroy();
             dragSource._element = null;
             dragSource._itemConfig = null;
@@ -502,11 +531,11 @@ export default class LayoutManager extends EventEmitter {
 
         browserPopout = new BrowserPopout(config, dimensions, parentId, indexInParent, this);
 
-        browserPopout.on('initialised', function() {
+        browserPopout.on('initialised', function () {
             self.emit('windowOpened', browserPopout);
         });
 
-        browserPopout.on('closed', function() {
+        browserPopout.on('closed', function () {
             self._$reconcilePopoutWindows();
         });
 
@@ -612,43 +641,56 @@ export default class LayoutManager extends EventEmitter {
      * @returns {void}
      */
     _$closeWindow() {
-        window.setTimeout(function() {
+        window.setTimeout(function () {
             window.close();
         }, 1);
     }
 
+    _$intersectsArea(x, y, smallestSurface, area) {
+        if (
+            x > area.x1 &&
+            x < area.x2 &&
+            y > area.y1 &&
+            y < area.y2 &&
+            smallestSurface > area.surface) {
+                return true;
+            }
+
+        return false;
+    }
+
     _$getArea(x, y) {
-        var i, area, smallestSurface = Infinity,
-            mathingArea = null;
+        let smallestSurface = Infinity,
+            matchingArea = null;
 
-        for (i = 0; i < this._itemAreas.length; i++) {
-            area = this._itemAreas[i];
-
-            if (
-                x > area.x1 &&
-                x < area.x2 &&
-                y > area.y1 &&
-                y < area.y2 &&
-                smallestSurface > area.surface
-            ) {
-                smallestSurface = area.surface;
-                mathingArea = area;
+        if (this._dragSourceArea.hasArea) {
+            if (this._$intersectsArea(x, y, smallestSurface, this._dragSourceArea.fullArea)) {
+                smallestSurface = this._dragSourceArea.fullArea.surface;
+                return this._dragSourceArea.fullArea;
             }
         }
 
-        return mathingArea;
+        for (let i = 0; i < this._itemAreas.length; i++) {
+            const area = this._itemAreas[i];
+
+            if (this._$intersectsArea(x,y, smallestSurface, area)) {
+                smallestSurface = area.surface;
+                matchingArea = area;
+            }
+        }
+        return matchingArea;
     }
 
-    _$createRootItemAreas() {
-        var areaSize = 50;
-        var sides = {
+    _$createRootItemAreas(rootArea) {
+        let areaSize = 50;
+        let sides = {
             y2: 0,
             x2: 0,
             y1: 'y2',
             x1: 'x2'
         };
-        for (var side in sides) {
-            var area = this.root._$getArea();
+        for (let side in sides) {
+            let area = rootArea
             area.side = side;
             if (sides[side])
                 area[side] = area[sides[side]] - areaSize;
@@ -659,9 +701,19 @@ export default class LayoutManager extends EventEmitter {
         }
     }
 
-    _$calculateItemAreas() {
-        var i, area, allContentItems = this._getAllContentItems();
-        this._itemAreas = [];
+    _$computeHeaderArea(area) {
+        let header = {};
+        copy(header, area);
+        copy(header, area.contentItem._contentAreaDimensions.header.highlightArea);
+        header.surface = (header.x2 - header.x1) * (header.y2 - header.y1);
+        return header;
+    }
+
+    _$calculateItemAreas(ignoreContentItem) {
+        let area, allContentItems = this._getAllContentItems();
+
+        let areas = [];
+        //this._itemAreas = [];
 
         /**
          * If the last item is dragged out, highlight the entire container size to
@@ -670,33 +722,58 @@ export default class LayoutManager extends EventEmitter {
          * Don't include root into the possible drop areas though otherwise since it
          * will used for every gap in the layout, e.g. splitters
          */
+        const rootArea = this.root._$getArea();
         if (allContentItems.length === 1) {
-            this._itemAreas.push(this.root._$getArea());
+            areas.push(rootArea);
+            this._itemAreas = areas;
             return;
         }
-        this._$createRootItemAreas();
 
-        for (i = 0; i < allContentItems.length; i++) {
+        this._$createRootItemAreas(rootArea);
+        const length = allContentItems.length;
+        let countAreas = 0;
+        let myArea = null,
+            myHeader = null;
 
-            if (!(allContentItems[i].isStack)) {
+        for (let i = 0; i < length; i++) {
+
+            const current = allContentItems[i];
+            if (!(current.isStack)) {
                 continue;
             }
 
-            area = allContentItems[i]._$getArea();
+            area = current._$getArea();
 
             if (area === null) {
                 continue;
-            } else if (area instanceof Array) {
-                this._itemAreas = this._itemAreas.concat(area);
+            }
+
+            countAreas++;
+
+            if (ignoreContentItem === current) {
+                myArea = area;
+                myHeader = this._$computeHeaderArea(area);
             } else {
-                this._itemAreas.push(area);
-                var header = {};
-                copy(header, area);
-                copy(header, area.contentItem._contentAreaDimensions.header.highlightArea);
-                header.surface = (header.x2 - header.x1) * (header.y2 - header.y1);
-                this._itemAreas.push(header);
+                if (area instanceof Array) {
+                    areas = areas.concat(area);
+                } else {
+                    areas.push(area);
+                    areas.push(this._$computeHeaderArea(area));
+                }
             }
         }
+
+        this._dragSourceArea.clear();
+
+        if (countAreas === 1) {
+            areas.push(myArea);
+            areas.push(this._$computeHeaderArea(myHeader));
+        } else {
+            this._dragSourceArea.set(myArea, myHeader, ignoreContentItem);
+        }
+
+        this._itemAreas = areas;
+
     }
 
     /**
@@ -775,7 +852,7 @@ export default class LayoutManager extends EventEmitter {
     _getAllContentItems() {
         var allContentItems = [];
 
-        var addChildren = function(contentItem) {
+        var addChildren = function (contentItem) {
             allContentItems.push(contentItem);
 
             if (contentItem.contentItems instanceof Array) {
@@ -838,7 +915,7 @@ export default class LayoutManager extends EventEmitter {
 
         config = $.extend(true, {}, defaultConfig, config);
 
-        var nextNode = function(node) {
+        var nextNode = function (node) {
             for (var key in node) {
                 if (key !== 'props' && typeof node[key] === 'object') {
                     nextNode(node[key]);
@@ -872,7 +949,7 @@ export default class LayoutManager extends EventEmitter {
             '<div class="lm_bg"></div>' +
             '</div>');
 
-        popInButton.click(fnBind(function() {
+        popInButton.click(fnBind(function () {
             this.emit('popIn');
         }, this));
 
@@ -1063,12 +1140,12 @@ export default class LayoutManager extends EventEmitter {
      */
     _addChildContentItemsToContainer(container, node) {
         if (node.type === 'stack') {
-            node.contentItems.forEach(function(item) {
+            node.contentItems.forEach(function (item) {
                 container.addChild(item);
                 node.removeChild(item, true);
             });
         } else {
-            node.contentItems.forEach(fnBind(function(item) {
+            node.contentItems.forEach(fnBind(function (item) {
                 this._addChildContentItemsToContainer(container, item);
             }, this));
         }
@@ -1094,7 +1171,7 @@ export default class LayoutManager extends EventEmitter {
      * @returns {void}
      */
     _findAllStackContainersRecursive(stackContainers, node) {
-        node.contentItems.forEach(fnBind(function(item) {
+        node.contentItems.forEach(fnBind(function (item) {
             if (item.type == 'stack') {
                 stackContainers.push(item);
             } else if (!item.isComponent) {

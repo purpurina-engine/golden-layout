@@ -74,7 +74,7 @@ export default class DragProxy extends EventEmitter {
         // this.childElementContainer.append(contentItem.element);
 
         this._undisplayTree();
-        this._layoutManager._$calculateItemAreas();
+        this._layoutManager._$calculateItemAreas(this._contentItem.parent);
         this._setDimensions();
 
         $(document.body).append(this.element);

@@ -200,3 +200,25 @@ export function filterXss(input, keepTags) {
 export function stripTags(input) {
     return $.trim(input.replace(/(<([^>]+)>)/ig, ''));
 }
+
+export function mergeAreas(sourceA, sourceB, target) {
+
+    if (target === undefined) {
+        target = {
+            surface: -1,
+            x1: -1,
+            x2: -1,
+            y1: -1,
+            y2: -1,
+        };
+    }
+
+    target.x1 = Math.min(sourceA.x1, sourceB.x1);
+    target.x2 = Math.max(sourceA.x2, sourceB.x2);
+    target.y1 = Math.min(sourceA.y1, sourceB.y1);
+    target.y2 = Math.max(sourceA.y2, sourceB.y2);
+    target.surface = (target.x2 - target.x1) * (target.y2 - target.y1);
+
+    return target;
+
+}
