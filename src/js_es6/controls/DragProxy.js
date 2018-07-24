@@ -19,6 +19,17 @@ import {
  * @param {AbstractContentItem} contentItem
  * @param {AbstractContentItem} originalParent
  */
+// const _template = '<div class="lm_dragProxy">' +
+//     '<div class="lm_header">' +
+//     '<ul class="lm_tabs">' +
+//     '<li class="lm_tab lm_active"><i class="lm_left"></i>' +
+//     '<span class="lm_title"></span>' +
+//     '<i class="lm_right"></i></li>' +
+//     '</ul>' +
+//     '</div>' +
+//     '<div class="lm_content"></div>' +
+//     '</div>'
+
 const _template = '<div class="lm_dragProxy">' +
     '<div class="lm_header">' +
     '<ul class="lm_tabs">' +
@@ -27,7 +38,6 @@ const _template = '<div class="lm_dragProxy">' +
     '<i class="lm_right"></i></li>' +
     '</ul>' +
     '</div>' +
-    '<div class="lm_content"></div>' +
     '</div>'
 
 export default class DragProxy extends EventEmitter {
@@ -61,7 +71,7 @@ export default class DragProxy extends EventEmitter {
         this.element.find('.lm_tab').attr('title', stripTags(this._contentItem.config.title));
         this.element.find('.lm_title').html(this._contentItem.config.title);
         this.childElementContainer = this.element.find('.lm_content');
-        this.childElementContainer.append(contentItem.element);
+        // this.childElementContainer.append(contentItem.element);
 
         this._undisplayTree();
         this._layoutManager._$calculateItemAreas();
@@ -190,9 +200,9 @@ export default class DragProxy extends EventEmitter {
         /**
          * parent is null if the drag had been initiated by a external drag source
          */
-        if (this._contentItem.parent) {
-            this._contentItem.parent.undisplayChild(this._contentItem);
-        }
+        // if (this._contentItem.parent) {
+        //     this._contentItem.parent.undisplayChild(this._contentItem);
+        // }
     }
 
     /**

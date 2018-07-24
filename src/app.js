@@ -2,7 +2,7 @@ import 'less/test.less'
 import 'less/goldenlayout-base.less'
 import 'less/goldenlayout-dark-theme.less'
 // import {beforeMethod, Metadata} from 'aspect.js';
-
+import Peteca from './images/peteca.png';
 
 console.log('compling from ES6:', env.ES6) // variable comes from environment (check package.json)
 console.log('ZEPTO active: ', env.ZEPTO)
@@ -46,7 +46,7 @@ window.addEventListener('load', () => {
     // 
     // set layout type
     // 
-    var layout = 'standard'
+    var layout = 'mini'
 
     // 
     // init
@@ -69,7 +69,21 @@ window.addEventListener('load', () => {
 
     window.myLayout = GoldenLayout ? new GoldenLayout( config ) : new window.GoldenLayout( config )
 
-    myLayout.registerComponent( 'html', function( container, state ) {} )
+    myLayout.registerComponent( 'html', function( container, state ) {
+
+
+      const element = container._contentElement;
+
+      //let elm = $(element);
+
+      
+      //elm.css('background-image', state.bg);
+      element.css('backgound-color','#000');
+      let elm = element.append('<div class=\'bla\'\>');
+      elm.css('backgound-color','#000');
+      elm.append('<p>Random ' + Math.round(Math.random() * 100) + '</p>')
+      elm.append('<img src=\'' + state.bg + '\' style=\'max-width:100%\'\>')
+    } )
 
     myLayout.init()
 
@@ -94,7 +108,7 @@ window.addEventListener('load', () => {
                           header: { show: 'top', popout: false },
                           type: 'component',
                           componentName: 'html',
-                          componentState: { bg: 'golden_layout_text.png' }
+                          componentState: { bg: Peteca }
                         }
 
               ]
