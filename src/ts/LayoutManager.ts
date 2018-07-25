@@ -26,8 +26,9 @@ import {
     isFunction,
     stripTags,
     getQueryStringParam,
-    mergeAreas
 } from './utils/utils';
+import DragSourceControl from './controls/DragSourceControl';
+import Config from './config';
 
 /**
  * The main class that will be exposed as GoldenLayout.
@@ -39,10 +40,36 @@ import {
  *
  * @returns {VOID}
  */
-
-
 export default class LayoutManager extends EventEmitter {
-    constructor(config, container) {
+
+    private isInitialised: boolean = false;
+    private _isFullPage: boolean = false;
+    private _resizeTimeoutId: any = null;
+    private _components = {
+        'lm-react-component': ReactComponentHandler
+    };
+    private _itemAreas = [];
+    private _dragSourceArea: DragSourceControl;
+
+    openPopouts: Array<any>;
+    isSubWindow: boolean;
+
+    root: Root;
+    container: Element | HTMLElement | JQuery;
+    width: number;
+    height: number;
+
+    config: Config;
+    eventHub: EventHub;
+
+
+    /**
+    * @param config A GoldenLayout configuration object
+    * @param container The DOM element the layout will be initialised in. Default: document.body
+    */
+    constructor(config: Config, container?: Element | HTMLElement | JQuery) {
+
+        super();
 
         if (!$) {
             var errorMsg = 'jQuery is missing as dependency for GoldenLayout. ';
@@ -51,43 +78,9 @@ export default class LayoutManager extends EventEmitter {
             throw new Error(errorMsg);
         }
 
-        super();
 
-        this.isInitialised = false;
-        this._isFullPage = false;
-        this._resizeTimeoutId = null;
-        this._components = {
-            'lm-react-component': ReactComponentHandler
-        };
-        this._itemAreas = [];
-        this._dragSourceArea = {
-            area: null,
-            header: null,
-            fullArea: {
-                surface: -1,
-                x1: -1,
-                x2: -1,
-                y1: -1,
-                y2: -1,
-                contentItem: null
-            },
-            hasArea: false,
-            clear: function () {
-                this.area = null;
-                this.header = null;
-                this.hasArea = false;
-                this.fullArea.contentItem = null;
-            },
 
-            set: function (area, header, item) {
-                this.area = area;
-                this.header = header;
-                mergeAreas(area, header, this.fullArea);
-                this.fullArea.contentItem = item.parent;
-                this.hasArea = true;
-                console.log(this);
-            }
-        };
+
         this._resizeFunction = fnBind(this._onResize, this);
         this._unloadFunction = fnBind(this._onUnload, this);
         this._maximisedItem = null;
@@ -111,7 +104,7 @@ export default class LayoutManager extends EventEmitter {
         this.transitionIndicator = null;
         this.tabDropPlaceholder = $('<div class="lm_drop_tab_placeholder"></div>');
 
-        if (this.isSubWindow === true) {
+        if (this.isSubWindow) {
             $('body').css('visibility', 'hidden');
         }
 
@@ -653,8 +646,8 @@ export default class LayoutManager extends EventEmitter {
             y > area.y1 &&
             y < area.y2 &&
             smallestSurface > area.surface) {
-                return true;
-            }
+            return true;
+        }
 
         return false;
     }
@@ -673,7 +666,7 @@ export default class LayoutManager extends EventEmitter {
         for (let i = 0; i < this._itemAreas.length; i++) {
             const area = this._itemAreas[i];
 
-            if (this._$intersectsArea(x,y, smallestSurface, area)) {
+            if (this._$intersectsArea(x, y, smallestSurface, area)) {
                 smallestSurface = area.surface;
                 matchingArea = area;
             }
@@ -788,7 +781,7 @@ export default class LayoutManager extends EventEmitter {
      *
      * @returns {AbtractContentItem}
      */
-    _$normalizeContentItem(contentItemOrConfig, parent) {
+    _$normalizeContentItem(contentItemOrConfig, parent?: AbstractContentItem) {
         if (!contentItemOrConfig) {
             throw new Error('No content item defined');
         }
@@ -849,7 +842,7 @@ export default class LayoutManager extends EventEmitter {
      *
      * @returns {void}
      */
-    _getAllContentItems() {
+    private _getAllContentItems() {
         var allContentItems = [];
 
         var addChildren = function (contentItem) {
@@ -874,7 +867,7 @@ export default class LayoutManager extends EventEmitter {
      *
      * @returns {void}
      */
-    _bindEvents() {
+    private _bindEvents() {
         if (this._isFullPage) {
             $(window).resize(this._resizeFunction);
         }
@@ -888,7 +881,7 @@ export default class LayoutManager extends EventEmitter {
      *
      * @returns {void}
      */
-    _onResize() {
+    private _onResize() {
         clearTimeout(this._resizeTimeoutId);
         this._resizeTimeoutId = setTimeout(fnBind(this.updateSize, this), 100);
     }
@@ -898,17 +891,17 @@ export default class LayoutManager extends EventEmitter {
      * derivations. Please note that there's a separate method (AbstractContentItem._extendItemNode)
      * that deals with the extension of item configs
      *
-     * @param   {Object} config
+     * @param   {Config} config
      * @static
-     * @returns {Object} config
+     * @returns {Config} config
      */
-    _createConfig(config) {
-        var windowConfigKey = getQueryStringParam('gl-window');
+    private _createConfig(config: Config) {
+        let windowConfigKey = getQueryStringParam('gl-window');
 
         if (windowConfigKey) {
             this.isSubWindow = true;
-            config = localStorage.getItem(windowConfigKey);
-            config = JSON.parse(config);
+            const json = localStorage.getItem(windowConfigKey);
+            config = JSON.parse(json);
             config = (new ConfigMinifier()).unminifyConfig(config);
             localStorage.removeItem(windowConfigKey);
         }
@@ -982,7 +975,7 @@ export default class LayoutManager extends EventEmitter {
      *
      * @returns {void}
      */
-    _createSubWindows() {
+    private _createSubWindows() {
         var i, popout;
 
         for (i = 0; i < this.config.openPopouts.length; i++) {
@@ -1004,7 +997,7 @@ export default class LayoutManager extends EventEmitter {
      *
      * @returns {void}
      */
-    _setContainer() {
+    private _setContainer() {
         var container = $(this.container || 'body');
 
         if (container.length === 0) {
@@ -1036,7 +1029,7 @@ export default class LayoutManager extends EventEmitter {
      *
      * @returns {void}
      */
-    _create(config) {
+    private _create(config) {
         var errorMsg;
 
         if (!(config.content instanceof Array)) {
@@ -1070,7 +1063,7 @@ export default class LayoutManager extends EventEmitter {
      *
      * @returns {void}
      */
-    _onUnload() {
+    private _onUnload() {
         if (this.config.settings.closePopoutsOnUnload === true) {
             for (var i = 0; i < this.openPopouts.length; i++) {
                 this.openPopouts[i].close();
@@ -1083,7 +1076,7 @@ export default class LayoutManager extends EventEmitter {
      *
      * @returns {void}
      */
-    _adjustColumnsResponsive() {
+    private _adjustColumnsResponsive() {
         // If there is no min width set, or not content items, do nothing.
         if (!this._useResponsiveLayout() || this._updatingColumnsResponsive || !this.config.dimensions || !this.config.dimensions.minItemWidth || this.root.contentItems.length === 0 || !this.root.contentItems[0].isRow) {
             this._firstLoad = false;
@@ -1128,7 +1121,7 @@ export default class LayoutManager extends EventEmitter {
      *
      * @returns {bool} - True if responsive layout should be used; otherwise false.
      */
-    _useResponsiveLayout() {
+    private _useResponsiveLayout() {
         return this.config.settings && (this.config.settings.responsiveMode == 'always' || (this.config.settings.responsiveMode == 'onload' && this._firstLoad));
     }
 
@@ -1138,7 +1131,7 @@ export default class LayoutManager extends EventEmitter {
      * @param {object} node - Node to search for content items.
      * @returns {void}
      */
-    _addChildContentItemsToContainer(container, node) {
+    private _addChildContentItemsToContainer(container, node) {
         if (node.type === 'stack') {
             node.contentItems.forEach(function (item) {
                 container.addChild(item);
@@ -1155,7 +1148,7 @@ export default class LayoutManager extends EventEmitter {
      * Finds all the stack containers.
      * @returns {array} - The found stack containers.
      */
-    _findAllStackContainers() {
+    private _findAllStackContainers() {
         var stackContainers = [];
         this._findAllStackContainersRecursive(stackContainers, this.root);
 
@@ -1170,7 +1163,7 @@ export default class LayoutManager extends EventEmitter {
      *
      * @returns {void}
      */
-    _findAllStackContainersRecursive(stackContainers, node) {
+    private _findAllStackContainersRecursive(stackContainers, node) {
         node.contentItems.forEach(fnBind(function (item) {
             if (item.type == 'stack') {
                 stackContainers.push(item);

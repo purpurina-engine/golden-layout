@@ -1,8 +1,11 @@
-import EventEmitter from '../utils/EventEmitter'
+import EventEmitter from '../utils/EventEmitter';
+import LayoutManager from '../LayoutManager';
+import DragListener from '../utils/DragListener';
 import {
     stripTags,
     getTouchEvent
-} from '../utils/utils'
+} from '../utils/utils';
+
 
 /**
  * This class creates a temporary container
@@ -42,7 +45,28 @@ const _template = '<div class="lm_dragProxy">' +
 
 export default class DragProxy extends EventEmitter {
 
-    constructor(x, y, dragListener, layoutManager, contentItem, originalParent) {
+    private _dragListener: DragListener;
+    private _layoutManager: LayoutManager;
+    private _contentItem;
+    private _originalParent;
+
+    private _area = null;
+    private _lastValidArea = null;
+    private _sided;
+
+    private _minX: number;
+    private _minY: number;
+    private _maxX: number;
+    private _maxY: number;
+    private _width: number;
+    private _height: number;
+
+    element: JQuery;
+    childElementContainer: JQuery;
+    
+
+
+    constructor(x:number, y:number, dragListener:DragListener, layoutManager:LayoutManager, contentItem, originalParent) {
 
         super();
 
@@ -104,7 +128,7 @@ export default class DragProxy extends EventEmitter {
      *
      * @returns {void}
      */
-    _onDrag(offsetX, offsetY, event) {
+    private _onDrag(offsetX: number, offsetY: number, event): void {
         event = getTouchEvent(event)
 
         var x = event.pageX,
@@ -128,7 +152,7 @@ export default class DragProxy extends EventEmitter {
      *
      * @returns {void}
      */
-    _setDropPosition(x, y) {
+    private _setDropPosition(x: number, y: number): void {
         this.element.css({
             left: x,
             top: y
@@ -149,7 +173,7 @@ export default class DragProxy extends EventEmitter {
      *
      * @returns {void}
      */
-    _onDrop() {
+    private _onDrop() {
         this._updateTree();
         this._layoutManager.dropTargetIndicator.hide();
 
@@ -195,7 +219,7 @@ export default class DragProxy extends EventEmitter {
      *
      * @returns {void}
      */
-    _undisplayTree() {
+    private _undisplayTree() {
 
         /**
          * parent is null if the drag had been initiated by a external drag source
@@ -212,7 +236,7 @@ export default class DragProxy extends EventEmitter {
      *
      * @returns {void}
      */
-    _updateTree() {
+    private _updateTree() {
 
         /**
          * parent is null if the drag had been initiated by a external drag source
@@ -231,7 +255,7 @@ export default class DragProxy extends EventEmitter {
      *
      * @returns {void}
      */
-    _setDimensions() {
+    private _setDimensions() {
         var dimensions = this._layoutManager.config.dimensions,
             width = dimensions.dragProxyWidth,
             height = dimensions.dragProxyHeight;
