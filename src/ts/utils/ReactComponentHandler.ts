@@ -19,7 +19,7 @@ export default class ReactComponentHandler {
     private _originalComponentWillUpdate: any;
     private _container: ItemContainer;
     private _initialState: Object;
-    private _reactClass: Object;
+    private _reactClass: any;
 
 
 

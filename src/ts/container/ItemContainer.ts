@@ -24,8 +24,8 @@ export default class ItemContainer extends EventEmitter {
         return this._layoutManager;
     }
 
-    get config():  {
-        retur
+    get config() {
+        return this._config;
     }
 
     // get isHidden() {
