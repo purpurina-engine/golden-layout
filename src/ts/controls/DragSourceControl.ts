@@ -1,4 +1,4 @@
-import ContentArea from "./ContentArea";
+import { ContentArea} from "../Commons";
 import { mergeAreas } from "../utils/utils";
 
 export default class DragSourceControl {

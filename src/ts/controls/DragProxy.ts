@@ -43,6 +43,25 @@ const _template = '<div class="lm_dragProxy">' +
     '</div>' +
     '</div>'
 
+function buildTemplate(showPreview: boolean = true): string {
+    let _template = '<div class="lm_dragProxy">' +
+        '<div class="lm_header">' +
+        '<ul class="lm_tabs">' +
+        '<li class="lm_tab lm_active"><i class="lm_left"></i>' +
+        '<span class="lm_title"></span>' +
+        '<i class="lm_right"></i></li>' +
+        '</ul>' +
+        '</div>';
+
+    if (showPreview) {
+        _template.concat('<div class="lm_content"></div>');
+    }
+
+    _template.concat('</div>');
+
+    return _template;
+}
+
 export default class DragProxy extends EventEmitter {
 
     private _dragListener: DragListener;
@@ -63,10 +82,8 @@ export default class DragProxy extends EventEmitter {
 
     element: JQuery;
     childElementContainer: JQuery;
-    
 
-
-    constructor(x:number, y:number, dragListener:DragListener, layoutManager:LayoutManager, contentItem, originalParent) {
+    constructor(x: number, y: number, dragListener: DragListener, layoutManager: LayoutManager, contentItem, originalParent) {
 
         super();
 
@@ -81,7 +98,8 @@ export default class DragProxy extends EventEmitter {
         this._dragListener.on('drag', this._onDrag, this);
         this._dragListener.on('dragStop', this._onDrop, this);
 
-        this.element = $(_template);
+        this.element = $(buildTemplate());
+
         if (originalParent && originalParent._side) {
             this._sided = originalParent._sided;
             this.element.addClass('lm_' + originalParent._side);

@@ -17,6 +17,9 @@ import TransitionIndicator from './controls/TransitionIndicator';
 import ConfigurationError from './errors/ConfigurationError';
 import defaultConfig from './config/defaultConfig';
 
+import DragSourceControl from './controls/DragSourceControl';
+import Config from './config';
+
 import {
     fnBind,
     objectKeys,
@@ -27,8 +30,8 @@ import {
     stripTags,
     getQueryStringParam,
 } from './utils/utils';
-import DragSourceControl from './controls/DragSourceControl';
-import Config from './config';
+import { ElementDimensions } from './Commons';
+
 
 /**
  * The main class that will be exposed as GoldenLayout.
@@ -48,6 +51,16 @@ export default class LayoutManager extends EventEmitter {
     private _components = {
         'lm-react-component': ReactComponentHandler
     };
+    private _resizeFunction;
+    private _unloadFunction;
+    private _maximisedItem;
+    private _maximisePlaceholder: JQuery;
+    private _creationTimeoutPassed: boolean;
+    private _subWindowsCreated: boolean;
+    private _dragSources = [];
+    private _updatingColumnsResponsive: boolean;
+    private _firstLoad: boolean;
+
     private _itemAreas = [];
     private _dragSourceArea: DragSourceControl;
 
@@ -55,12 +68,17 @@ export default class LayoutManager extends EventEmitter {
     isSubWindow: boolean;
 
     root: Root;
-    container: Element | HTMLElement | JQuery;
+    container: JQuery;
     width: number;
     height: number;
 
     config: Config;
     eventHub: EventHub;
+
+    selectedItem;
+    dropTargetIndicator;
+    transitionIndicator;
+    tabDropPlaceholder: JQuery;
 
 
     /**
@@ -72,7 +90,7 @@ export default class LayoutManager extends EventEmitter {
         super();
 
         if (!$) {
-            var errorMsg = 'jQuery is missing as dependency for GoldenLayout. ';
+            let errorMsg = 'jQuery is missing as dependency for GoldenLayout. ';
             errorMsg += 'Please either expose $ on GoldenLayout\'s scope (e.g. window) or add "jquery" to ';
             errorMsg += 'your paths when using RequireJS/AMD';
             throw new Error(errorMsg);
@@ -123,11 +141,11 @@ export default class LayoutManager extends EventEmitter {
      *
      * @static
      * @public
-     * @param   {Object} config A GoldenLayout config object
+     * @param   {Config} config A GoldenLayout config object
      *
      * @returns {Object} minified config
      */
-    minifyConfig(config) {
+    minifyConfig(config: Config): Config {
         return (new ConfigMinifier()).minifyConfig(config);
     }
 
@@ -137,11 +155,11 @@ export default class LayoutManager extends EventEmitter {
      *
      * @static
      * @public
-     * @param   {Object} minifiedConfig
+     * @param   {Config} minifiedConfig
      *
-     * @returns {Object} the original configuration
+     * @returns {Config} the original configuration
      */
-    unminifyConfig(config) {
+    unminifyConfig(config: Config): Config {
         return (new ConfigMinifier()).unminifyConfig(config);
     }
 
@@ -163,7 +181,7 @@ export default class LayoutManager extends EventEmitter {
      *
      * @returns {void}
      */
-    registerComponent(name, constructor) {
+    registerComponent(name: string, constructor: Function): void {
         if (typeof constructor !== 'function') {
             throw new Error('Please register a constructor function');
         }
@@ -181,8 +199,8 @@ export default class LayoutManager extends EventEmitter {
      * @public
      * @returns {Object} GoldenLayout configuration
      */
-    toConfig(root) {
-        var config, next, i;
+    toConfig(root?: AbstractContentItem): Config {
+        let config: Config, next, i;
 
         if (this.isInitialised === false) {
             throw new Error('Can\'t create config, layout not yet initialised');
@@ -206,7 +224,7 @@ export default class LayoutManager extends EventEmitter {
          */
         config.content = [];
         next = function (configNode, item) {
-            var key, i;
+            let key, i;
 
             for (key in item.config) {
                 if (key !== 'content') {
@@ -256,7 +274,7 @@ export default class LayoutManager extends EventEmitter {
      *
      * @returns {Function}
      */
-    getComponent(name) {
+    getComponent(name: string): any {
         if (this._components[name] === undefined) {
             throw new ConfigurationError('Unknown component "' + name + '"');
         }
@@ -276,7 +294,7 @@ export default class LayoutManager extends EventEmitter {
      *
      * @returns {void}
      */
-    init() {
+    init(): void {
 
         /**
          * Create the popout windows straight away. If popouts are blocked
@@ -332,7 +350,7 @@ export default class LayoutManager extends EventEmitter {
      *
      * @returns {void}
      */
-    updateSize(width, height) {
+    updateSize(width?: number, height?: number): void {
         if (arguments.length === 2) {
             this.width = width;
             this.height = height;
@@ -361,7 +379,7 @@ export default class LayoutManager extends EventEmitter {
      * @public
      * @returns {void}
      */
-    destroy() {
+    destroy(): void {
         if (this.isInitialised === false) {
             return;
         }
@@ -395,7 +413,7 @@ export default class LayoutManager extends EventEmitter {
      * @returns {ContentItem}
      */
     createContentItem(config, parent) {
-        var typeErrorMsg, contentItem;
+        let typeErrorMsg, contentItem;
 
         if (typeof config.type !== 'string') {
             throw new ConfigurationError('Missing parameter \'type\'', config);
@@ -453,8 +471,8 @@ export default class LayoutManager extends EventEmitter {
      
      * @returns {BrowserPopout}
      */
-    createPopout(configOrContentItem, dimensions, parentId, indexInParent) {
-        var config = configOrContentItem,
+    createPopout(configOrContentItem, dimensions?:ElementDimensions, parentId?:string, indexInParent?:number) {
+        let config = configOrContentItem,
             isItem = configOrContentItem instanceof AbstractContentItem,
             self = this,
             windowLeft,
@@ -547,9 +565,9 @@ export default class LayoutManager extends EventEmitter {
      *
      * @returns {void}
      */
-    createDragSource(element, itemConfig) {
+    createDragSource(element: JQuery | HTMLElement, itemConfig): DragSource {
         this.config.settings.constrainDragToContainer = false;
-        var dragSource = new DragSource($(element), itemConfig, this);
+        let dragSource = new DragSource($(element), itemConfig, this);
         this._dragSources.push(dragSource);
 
         return dragSource;
@@ -795,7 +813,7 @@ export default class LayoutManager extends EventEmitter {
         }
 
         if ($.isPlainObject(contentItemOrConfig) && contentItemOrConfig.type) {
-            var newContentItem = this.createContentItem(contentItemOrConfig, parent);
+            let newContentItem = this.createContentItem(contentItemOrConfig, parent);
             newContentItem.callDownwards('_$init');
             return newContentItem;
         } else {
@@ -813,7 +831,7 @@ export default class LayoutManager extends EventEmitter {
      * @returns {void}
      */
     _$reconcilePopoutWindows() {
-        var openPopouts = [],
+        let openPopouts = [],
             i;
 
         for (i = 0; i < this.openPopouts.length; i++) {
@@ -843,13 +861,13 @@ export default class LayoutManager extends EventEmitter {
      * @returns {void}
      */
     private _getAllContentItems() {
-        var allContentItems = [];
+        let allContentItems = [];
 
-        var addChildren = function (contentItem) {
+        let addChildren = function (contentItem) {
             allContentItems.push(contentItem);
 
             if (contentItem.contentItems instanceof Array) {
-                for (var i = 0; i < contentItem.contentItems.length; i++) {
+                for (let i = 0; i < contentItem.contentItems.length; i++) {
                     addChildren(contentItem.contentItems[i]);
                 }
             }
@@ -908,8 +926,8 @@ export default class LayoutManager extends EventEmitter {
 
         config = $.extend(true, {}, defaultConfig, config);
 
-        var nextNode = function (node) {
-            for (var key in node) {
+        let nextNode = function (node) {
+            for (let key in node) {
                 if (key !== 'props' && typeof node[key] === 'object') {
                     nextNode(node[key]);
                 } else if (key === 'type' && node[key] === 'react-component') {
@@ -937,7 +955,7 @@ export default class LayoutManager extends EventEmitter {
      * @returns {void}
      */
     _adjustToWindowMode() {
-        var popInButton = $('<div class="lm_popin" title="' + this.config.labels.popin + '">' +
+        let popInButton = $('<div class="lm_popin" title="' + this.config.labels.popin + '">' +
             '<div class="lm_icon"></div>' +
             '<div class="lm_bg"></div>' +
             '</div>');
@@ -959,7 +977,7 @@ export default class LayoutManager extends EventEmitter {
          * This seems a bit pointless, but actually causes a reflow/re-evaluation getting around
          * slickgrid's "Cannot find stylesheet." bug in chrome
          */
-        var x = document.body.offsetHeight; // jshint ignore:line
+        let x = document.body.offsetHeight; // jshint ignore:line
 
         /*
          * Expose this instance on the window object
@@ -976,7 +994,7 @@ export default class LayoutManager extends EventEmitter {
      * @returns {void}
      */
     private _createSubWindows() {
-        var i, popout;
+        let i, popout;
 
         for (i = 0; i < this.config.openPopouts.length; i++) {
             popout = this.config.openPopouts[i];
@@ -998,7 +1016,7 @@ export default class LayoutManager extends EventEmitter {
      * @returns {void}
      */
     private _setContainer() {
-        var container = $(this.container || 'body');
+        let container = $(this.container || 'body');
 
         if (container.length === 0) {
             throw new Error('GoldenLayout container not found');
@@ -1030,7 +1048,7 @@ export default class LayoutManager extends EventEmitter {
      * @returns {void}
      */
     private _create(config) {
-        var errorMsg;
+        let errorMsg;
 
         if (!(config.content instanceof Array)) {
             if (config.content === undefined) {
@@ -1065,7 +1083,7 @@ export default class LayoutManager extends EventEmitter {
      */
     private _onUnload() {
         if (this.config.settings.closePopoutsOnUnload === true) {
-            for (var i = 0; i < this.openPopouts.length; i++) {
+            for (let i = 0; i < this.openPopouts.length; i++) {
                 this.openPopouts[i].close();
             }
         }
@@ -1086,14 +1104,14 @@ export default class LayoutManager extends EventEmitter {
         this._firstLoad = false;
 
         // If there is only one column, do nothing.
-        var columnCount = this.root.contentItems[0].contentItems.length;
+        let columnCount = this.root.contentItems[0].contentItems.length;
         if (columnCount <= 1) {
             return;
         }
 
         // If they all still fit, do nothing.
-        var minItemWidth = this.config.dimensions.minItemWidth;
-        var totalMinWidth = columnCount * minItemWidth;
+        let minItemWidth = this.config.dimensions.minItemWidth;
+        let totalMinWidth = columnCount * minItemWidth;
         if (totalMinWidth <= this.width) {
             return;
         }
@@ -1102,14 +1120,14 @@ export default class LayoutManager extends EventEmitter {
         this._updatingColumnsResponsive = true;
 
         // Figure out how many columns to stack, and put them all in the first stack container.
-        var finalColumnCount = Math.max(Math.floor(this.width / minItemWidth), 1);
-        var stackColumnCount = columnCount - finalColumnCount;
+        let finalColumnCount = Math.max(Math.floor(this.width / minItemWidth), 1);
+        let stackColumnCount = columnCount - finalColumnCount;
 
-        var rootContentItem = this.root.contentItems[0];
-        var firstStackContainer = this._findAllStackContainers()[0];
-        for (var i = 0; i < stackColumnCount; i++) {
+        let rootContentItem = this.root.contentItems[0];
+        let firstStackContainer = this._findAllStackContainers()[0];
+        for (let i = 0; i < stackColumnCount; i++) {
             // Stack from right.
-            var column = rootContentItem.contentItems[rootContentItem.contentItems.length - 1];
+            let column = rootContentItem.contentItems[rootContentItem.contentItems.length - 1];
             this._addChildContentItemsToContainer(firstStackContainer, column);
         }
 
@@ -1149,7 +1167,7 @@ export default class LayoutManager extends EventEmitter {
      * @returns {array} - The found stack containers.
      */
     private _findAllStackContainers() {
-        var stackContainers = [];
+        let stackContainers = [];
         this._findAllStackContainersRecursive(stackContainers, this.root);
 
         return stackContainers;

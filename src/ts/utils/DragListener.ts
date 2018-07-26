@@ -39,7 +39,7 @@ export default class DragListener extends EventEmitter {
     private _fDown = fnBind(this.onMouseDown, this);
 
 
-    constructor(eElement, nButtonCode?: number) {
+    constructor(eElement: JQuery, nButtonCode?: number) {
 
         super();
 
@@ -77,7 +77,7 @@ export default class DragListener extends EventEmitter {
         this._eBody = null;
     }
 
-    private onMouseDown(oEvent) {
+    private onMouseDown(oEvent: JQuery.Event) {
         oEvent.preventDefault();
 
         if (oEvent.button == 0 || oEvent.type === "touchstart") {
@@ -93,7 +93,7 @@ export default class DragListener extends EventEmitter {
         }
     }
 
-    private onMouseMove(oEvent) {
+    private onMouseMove(oEvent: JQuery.Event) {
         if (this._timeout != null) {
             oEvent.preventDefault();
 
@@ -118,7 +118,7 @@ export default class DragListener extends EventEmitter {
         }
     }
 
-    private onMouseUp(oEvent) {
+    private onMouseUp(oEvent: JQuery.Event) {
         if (this._timeout != null) {
             clearTimeout(this._timeout);
             this._eBody.removeClass('lm_dragging');

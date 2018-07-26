@@ -1,13 +1,26 @@
-import ContentArea from "../controls/ContentArea";
+import { ContentArea, Callback, BoundFunction } from '../Commons';
+
+let vendors = [
+    'ms',
+    'moz',
+    'webkit',
+    'o'
+];
+
+for (let x = 0; x < vendors.length && !window.requestAnimationFrame; x++) {
+    window.requestAnimationFrame = window[vendors[x] + 'RequestAnimationFrame'];
+    window.cancelAnimationFrame = window[vendors[x] + 'CancelAnimationFrame'];
+}
 
 
-export function F() {}
 
-export function getTouchEvent(event){
+export function F() { }
+
+export function getTouchEvent(event) {
     // if($.zepto){
     //     return event.touches ? event.targetTouches[0] : event;
     // } else {
-        return event.originalEvent && event.originalEvent.touches ? event.originalEvent.touches[0] : event;
+    return event.originalEvent && event.originalEvent.touches ? event.originalEvent.touches[0] : event;
     // }
 }
 
@@ -25,7 +38,7 @@ export function createObject(prototype) {
     }
 }
 
-export function objectKeys(object) {
+export function objectKeys(object: Object): Array<string> {
     let keys;
 
     if (typeof Object.keys === 'function') {
@@ -39,12 +52,12 @@ export function objectKeys(object) {
     }
 }
 
-export function getHashValue(key) {
+export function getHashValue(key: string): string {
     let matches = location.hash.match(new RegExp(key + '=([^&]*)'));
     return matches ? matches[1] : null;
 }
 
-export function getQueryStringParam(param) {
+export function getQueryStringParam(param: string): string {
     if (window.location.hash) {
         return getHashValue(param);
     } else if (!window.location.search) {
@@ -64,7 +77,7 @@ export function getQueryStringParam(param) {
     return params[param] || null;
 }
 
-export function copy(target, source) {
+export function copy(target: Object, source: Object): Object {
     for (let key in source) {
         target[key] = source[key];
     }
@@ -82,27 +95,13 @@ export function copy(target, source) {
  * @returns {void}
  */
 export function animFrame(fn) {
-
-    let vendors = [
-        'ms',
-        'moz',
-        'webkit',
-        'o'
-    ];
-    
-    for (let x = 0; x < vendors.length && !window.requestAnimationFrame; x++)
-    {
-        window.requestAnimationFrame = window[vendors[x] + 'RequestAnimationFrame'];
-        window.cancelAnimationFrame  = window[vendors[x] + 'CancelAnimationFrame'];
-    }
-
     return (window.requestAnimationFrame ||
-        function(callback) {
+        function (callback) {
             window.setTimeout(callback, 1000 / 60);
         })(fn);
 }
 
-export function indexOf(needle, haystack) {
+export function indexOf(needle: any, haystack: Array<any>): number {
     if (!(haystack instanceof Array)) {
         throw new Error('Haystack is not an Array');
     }
@@ -120,20 +119,32 @@ export function indexOf(needle, haystack) {
 }
 
 
-export let isFunction = (typeof /./ != 'function' && typeof Int8Array != 'object') ? 
-    function isFunction(obj) {
+export function isFunction(obj: any | Callback) : boolean {
+
+    if (typeof /./ != 'function' && typeof Int8Array != 'object') {
         return typeof obj == 'function' || false;
-    } : function isFunction(obj) {
+    } else {
         return toString.call(obj) === '[object Function]';
     }
 
-export function fnBind(fn, context, ...boundArgs) {
+}
+
+// export let isFunction = (typeof /./ != 'function' && typeof Int8Array != 'object') ?
+//     function isFunction(obj) {
+//         return typeof obj == 'function' || false;
+//     } : function isFunction(obj) {
+//         return toString.call(obj) === '[object Function]';
+//     }
+
+
+
+export function fnBind(fn: Callback, context?: Object, ...boundArgs): BoundFunction {
 
     if (Function.prototype.bind !== undefined) {
         return Function.prototype.bind.apply(fn, [context].concat(boundArgs || []));
     }
 
-    let bound = function() {
+    let bound = function () {
 
         // Join the already applied arguments to the now called ones (after converting to an array again).
         let args = (boundArgs || []).concat(Array.prototype.slice.call(arguments, 0));
@@ -146,6 +157,7 @@ export function fnBind(fn, context, ...boundArgs) {
         // If being called as a constructor, apply the function bound to self.
         fn.apply(this, args);
     };
+
     // Attach the prototype of the function to our newly created function.
     bound.prototype = fn.prototype;
     return bound;
@@ -161,7 +173,7 @@ export function removeFromArray(item, array) {
     array.splice(index, 1);
 }
 
-export function now() {
+export function now(): number {
     if (typeof Date.now === 'function') {
         return Date.now();
     } else {
@@ -169,7 +181,7 @@ export function now() {
     }
 }
 
-export function getUniqueId() {
+export function getUniqueId(): string {
     return (Math.random() * 1000000000000000)
         .toString(36)
         .replace('.', '');
@@ -185,7 +197,7 @@ export function getUniqueId() {
  *
  * @returns {String} filtered input
  */
-export function filterXss(input: string, keepTags: boolean): string {
+export function filterXss(input: string, keepTags?: boolean): string {
 
     let output = input
         .replace(/javascript/gi, 'j&#97;vascript')
@@ -210,7 +222,7 @@ export function filterXss(input: string, keepTags: boolean): string {
  *
  * @returns {String} input without tags
  */
-export function stripTags(input) {
+export function stripTags(input: string): string {
     return $.trim(input.replace(/(<([^>]+)>)/ig, ''));
 }
 

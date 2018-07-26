@@ -1,14 +1,16 @@
 import AbstractContentItem from './AbstractContentItem';
 import Stack from './Stack'
 import Splitter from '../controls/Splitter';
+import LayoutManager from '../LayoutManager';
+import { Dimension } from '../Commons';
+
 import {
     fnBind,
     animFrame,
     indexOf
 } from '../utils/utils';
-import LayoutManager from '../LayoutManager';
 
-type Dimension = 'height' | 'width';
+
 
 
 export default class RowOrColumn extends AbstractContentItem {
@@ -60,9 +62,9 @@ export default class RowOrColumn extends AbstractContentItem {
      *
      * @returns {void}
      */
-    addChild(contentItem, index: number, _$suspendResize: boolean) {
+    addChild(contentItem, index?: number, _$suspendResize?: boolean) {
 
-        var newItemSize, itemSize, i, splitterElement;
+        let newItemSize, itemSize, i, splitterElement;
 
         contentItem = this.layoutManager._$normalizeContentItem(contentItem, this);
 
@@ -119,8 +121,8 @@ export default class RowOrColumn extends AbstractContentItem {
      *
      * @returns {void}
      */
-    undisplayChild(contentItem) {
-        var undisplayedItemSize = contentItem.config[this._dimension],
+    undisplayChild(contentItem): void {
+        let undisplayedItemSize = contentItem.config[this._dimension],
             index = indexOf(contentItem, this.contentItems),
             splitterIndex = Math.max(index - 1, 0),
             i,
@@ -146,7 +148,7 @@ export default class RowOrColumn extends AbstractContentItem {
         /**
          * Allocate the space that the hidden item occupied to the remaining items
          */
-        var docked = this._isDocked();
+        let docked = this._isDocked();
         for (i = 0; i < this.contentItems.length; i++) {
             if (this.contentItems[i] !== contentItem) {
                 if (!this._isDocked(i))
@@ -173,8 +175,8 @@ export default class RowOrColumn extends AbstractContentItem {
      *
      * @returns {void}
      */
-    removeChild(contentItem, keepChild) {
-        var removedItemSize = contentItem.config[this._dimension],
+    removeChild(contentItem, keepChild: boolean): void {
+        let removedItemSize = contentItem.config[this._dimension],
             index = indexOf(contentItem, this.contentItems),
             splitterIndex = Math.max(index - 1, 0),
             i,
@@ -199,7 +201,7 @@ export default class RowOrColumn extends AbstractContentItem {
         /**
          * Allocate the space that the removed item occupied to the remaining items
          */
-        var docked = this._isDocked();
+        let docked = this._isDocked();
         for (i = 0; i < this.contentItems.length; i++) {
             if (this.contentItems[i] !== contentItem) {
                 if (!this._isDocked(i))
@@ -230,8 +232,8 @@ export default class RowOrColumn extends AbstractContentItem {
      *
      * @returns {void}
      */
-    replaceChild(oldChild, newChild) {
-        var size = oldChild.config[this._dimension];
+    replaceChild(oldChild, newChild): void {
+        let size = oldChild.config[this._dimension];
         AbstractContentItem.prototype.replaceChild.call(this, oldChild, newChild);
         newChild.config[this._dimension] = size;
         this.callDownwards('setSize');
@@ -243,7 +245,7 @@ export default class RowOrColumn extends AbstractContentItem {
      *
      * @returns {void}
      */
-    setSize() {
+    setSize(): void {
         if (this.contentItems.length > 0) {
             this._calculateRelativeSizes();
             this._setAbsoluteSizes();
@@ -261,11 +263,11 @@ export default class RowOrColumn extends AbstractContentItem {
      *
      * @returns {void}
      */
-    dock(contentItem, mode, collapsed) {
+    dock(contentItem, mode: boolean, collapsed: boolean): void {
         if (this.contentItems.length === 1)
             throw new Error('Can\'t dock child when it single');
 
-        var removedItemSize = contentItem.config[this._dimension],
+        let removedItemSize = contentItem.config[this._dimension],
             headerSize = this.layoutManager.config.dimensions.headerHeight,
             index = indexOf(contentItem, this.contentItems),
             splitterIndex = Math.max(index - 1, 0);
@@ -273,15 +275,17 @@ export default class RowOrColumn extends AbstractContentItem {
         if (index === -1) {
             throw new Error('Can\'t dock child. ContentItem is not child of this Row or Column');
         }
-        var isDocked = contentItem._docker && contentItem._docker.docked;
-        var i
+        let isDocked = contentItem._docker && contentItem._docker.docked;
         if (typeof mode != 'undefined')
             if (mode == isDocked)
                 return;
+
         if (isDocked) { // undock it
             this._splitter[splitterIndex].element.show();
-            for (i = 0; i < this.contentItems.length; i++) {
-                var newItemSize = contentItem._docker.size;
+            let itemSize: number;
+
+            for (let i = 0; i < this.contentItems.length; i++) {
+                let newItemSize = contentItem._docker.size;
                 if (this.contentItems[i] === contentItem) {
                     contentItem.config[this._dimension] = newItemSize;
                 } else {
@@ -289,13 +293,14 @@ export default class RowOrColumn extends AbstractContentItem {
                     this.contentItems[i].config[this._dimension] = itemSize;
                 }
             }
+
             contentItem._docker = {
                 docked: false
             };
         } else { // dock
             if (this.contentItems.length - this._isDocked() < 2)
                 throw new Error('Can\'t dock child when it is last in ' + this.config.type);
-            var autoside = {
+            let autoside = {
                 column: {
                     first: 'top',
                     last: 'bottom'
@@ -305,21 +310,23 @@ export default class RowOrColumn extends AbstractContentItem {
                     last: 'right'
                 }
             };
-            var required = autoside[this.config.type][index ? 'last' : 'first'];
+            let required = autoside[this.config.type][index ? 'last' : 'first'];
             if (contentItem.header.position() != required)
                 contentItem.header.position(required);
 
             if (this._splitter[splitterIndex]) {
                 this._splitter[splitterIndex].element.hide();
             }
-            var docked = this._isDocked();
-            for (i = 0; i < this.contentItems.length; i++) {
+            let docked = this._isDocked();
+
+            for (let i = 0; i < this.contentItems.length; i++) {
                 if (this.contentItems[i] !== contentItem) {
                     if (!this._isDocked(i))
                         this.contentItems[i].config[this._dimension] += removedItemSize / (this.contentItems.length - 1 - docked);
                 } else
                     this.contentItems[i].config[this._dimension] = 0;
             }
+
             contentItem._docker = {
                 dimension: this._dimension,
                 size: removedItemSize,
@@ -347,7 +354,7 @@ export default class RowOrColumn extends AbstractContentItem {
     _$init() {
         if (this.isInitialised === true) return;
 
-        var i;
+        let i;
 
         AbstractContentItem.prototype._$init.call(this);
 
@@ -369,8 +376,8 @@ export default class RowOrColumn extends AbstractContentItem {
      * @private
      * @returns {void}
      */
-    _setAbsoluteSizes() {
-        var i,
+    private _setAbsoluteSizes() {
+        let i,
             sizeData = this._calculateAbsoluteSizes();
 
         for (i = 0; i < this.contentItems.length; i++) {
@@ -392,8 +399,8 @@ export default class RowOrColumn extends AbstractContentItem {
      * Calculates the absolute sizes of all of the children of this Item.
      * @returns {object} - Set with absolute sizes and additional pixels.
      */
-    _calculateAbsoluteSizes() {
-        var i,
+    private _calculateAbsoluteSizes() {
+        let i,
             totalSplitterSize = (this.contentItems.length - 1) * this._splitterSize,
             headerSize = this.layoutManager.config.dimensions.headerHeight,
             totalWidth = this.element.width(),
@@ -461,9 +468,9 @@ export default class RowOrColumn extends AbstractContentItem {
      * @private
      * @returns {void}
      */
-    _calculateRelativeSizes() {
+    private _calculateRelativeSizes() {
 
-        var i,
+        let i,
             total = 0,
             itemsWithoutSetDimension = [],
             dimension = this._isColumn ? 'height' : 'width';
@@ -522,8 +529,8 @@ export default class RowOrColumn extends AbstractContentItem {
      * Adjusts the column widths to respect the dimensions minItemWidth if set.
      * @returns {}
      */
-    _respectMinItemWidth() {
-        var minItemWidth = this.layoutManager.config.dimensions ? (this.layoutManager.config.dimensions.minItemWidth || 0) : 0,
+    private _respectMinItemWidth() {
+        let minItemWidth = this.layoutManager.config.dimensions ? (this.layoutManager.config.dimensions.minItemWidth || 0) : 0,
             sizeData = null,
             entriesOverMin = [],
             totalOverMin = 0,
@@ -545,7 +552,7 @@ export default class RowOrColumn extends AbstractContentItem {
         /**
          * Figure out how much we are under the min item size total and how much room we have to use.
          */
-        for (var i = 0; i < this.contentItems.length; i++) {
+        for (let i = 0; i < this.contentItems.length; i++) {
 
             contentItem = this.contentItems[i];
             itemSize = sizeData.itemSizes[i];
@@ -579,7 +586,7 @@ export default class RowOrColumn extends AbstractContentItem {
          */
         reducePercent = totalUnderMin / totalOverMin;
         remainingWidth = totalUnderMin;
-        for (i = 0; i < entriesOverMin.length; i++) {
+        for (let i = 0; i < entriesOverMin.length; i++) {
             entry = entriesOverMin[i];
             reducedWidth = Math.round((entry.width - minItemWidth) * reducePercent);
             remainingWidth -= reducedWidth;
@@ -596,7 +603,7 @@ export default class RowOrColumn extends AbstractContentItem {
         /**
          * Set every items size relative to 100 relative to its size to total
          */
-        for (i = 0; i < this.contentItems.length; i++) {
+        for (let i = 0; i < this.contentItems.length; i++) {
             this.contentItems[i].config.width = (allEntries[i].width / sizeData.totalWidth) * 100;
         }
     }
@@ -611,8 +618,8 @@ export default class RowOrColumn extends AbstractContentItem {
      *
      * @returns {Splitter}
      */
-    _createSplitter(index) {
-        var splitter;
+    private _createSplitter(index: number): Splitter {
+        let splitter;
         splitter = new Splitter(this._isColumn, this._splitterSize, this._splitterGrabSize);
         splitter.on('drag', fnBind(this._onSplitterDrag, this, [splitter]), this);
         splitter.on('dragStop', fnBind(this._onSplitterDragStop, this, [splitter]), this);
@@ -631,8 +638,8 @@ export default class RowOrColumn extends AbstractContentItem {
      *
      * @returns {Object} A map of contentItems that the splitter affects
      */
-    _getItemsForSplitter(splitter) {
-        var index = indexOf(splitter, this._splitter);
+    private _getItemsForSplitter(splitter: Splitter) {
+        let index = indexOf(splitter, this._splitter);
 
         return {
             before: this.contentItems[index],
@@ -644,10 +651,10 @@ export default class RowOrColumn extends AbstractContentItem {
      * Gets docking information
      * @private
      */
-    _isDocked(index) {
+    private _isDocked(index?: number) {
         if (typeof index == 'undefined') {
-            var count = 0;
-            for (var i = 0; i < this.contentItems.length; ++i)
+            let count = 0;
+            for (let i = 0; i < this.contentItems.length; ++i)
                 if (this._isDocked(i))
                     count++;
             return count;
@@ -660,10 +667,10 @@ export default class RowOrColumn extends AbstractContentItem {
      * Validate if row or column has ability to dock
      * @private
      */
-    _validateDocking(that?:any) {
+    private _validateDocking(that?: any) {
         that = that || this;
-        var can = that.contentItems.length - that._isDocked() > 1;
-        for (var i = 0; i < that.contentItems.length; ++i)
+        let can = that.contentItems.length - that._isDocked() > 1;
+        for (let i = 0; i < that.contentItems.length; ++i)
             if (that.contentItems[i] instanceof Stack) {
                 that.contentItems[i].header._setDockable(that._isDocked(i) || can);
                 that.contentItems[i].header._$setClosable(can);
@@ -675,11 +682,11 @@ export default class RowOrColumn extends AbstractContentItem {
      * @param item
      * @private
      */
-    _getMinimumDimensions(arr) {
-        var minWidth = 0,
+    private _getMinimumDimensions(arr) {
+        let minWidth = 0,
             minHeight = 0;
 
-        for (var i = 0; i < arr.length; ++i) {
+        for (let i = 0; i < arr.length; ++i) {
             minWidth = Math.max(arr[i].minWidth || 0, minWidth);
             minHeight = Math.max(arr[i].minHeight || 0, minHeight);
         }
@@ -698,15 +705,15 @@ export default class RowOrColumn extends AbstractContentItem {
      *
      * @returns {void}
      */
-    _onSplitterDragStart(splitter) {
-        var items = this._getItemsForSplitter(splitter),
+    private _onSplitterDragStart(splitter) {
+        let items = this._getItemsForSplitter(splitter),
             minSize = this.layoutManager.config.dimensions[this._isColumn ? 'minItemHeight' : 'minItemWidth'];
 
-        var beforeMinDim = this._getMinimumDimensions(items.before.config.content);
-        var beforeMinSize = this._isColumn ? beforeMinDim.vertical : beforeMinDim.horizontal;
+        let beforeMinDim = this._getMinimumDimensions(items.before.config.content);
+        let beforeMinSize = this._isColumn ? beforeMinDim.vertical : beforeMinDim.horizontal;
 
-        var afterMinDim = this._getMinimumDimensions(items.after.config.content);
-        var afterMinSize = this._isColumn ? afterMinDim.vertical : afterMinDim.horizontal;
+        let afterMinDim = this._getMinimumDimensions(items.after.config.content);
+        let afterMinSize = this._isColumn ? afterMinDim.vertical : afterMinDim.horizontal;
 
         this._splitterPosition = 0;
         this._splitterMinPosition = -1 * (items.before.element[this._dimension]() - (beforeMinSize || minSize));
@@ -723,8 +730,8 @@ export default class RowOrColumn extends AbstractContentItem {
      *
      * @returns {void}
      */
-    _onSplitterDrag(splitter, offsetX, offsetY) {
-        var offset = this._isColumn ? offsetY : offsetX;
+    private _onSplitterDrag(splitter: Splitter, offsetX: number, offsetY: number): void {
+        let offset = this._isColumn ? offsetY : offsetX;
 
         if (offset > this._splitterMinPosition && offset < this._splitterMaxPosition) {
             this._splitterPosition = offset;
@@ -741,9 +748,9 @@ export default class RowOrColumn extends AbstractContentItem {
      *
      * @returns {void}
      */
-    _onSplitterDragStop(splitter) {
+    private _onSplitterDragStop(splitter: Splitter): void {
 
-        var items = this._getItemsForSplitter(splitter),
+        let items = this._getItemsForSplitter(splitter),
             sizeBefore = items.before.element[this._dimension](),
             sizeAfter = items.after.element[this._dimension](),
             splitterPositionInRange = (this._splitterPosition + sizeBefore) / (sizeBefore + sizeAfter),

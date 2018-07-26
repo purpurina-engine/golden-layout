@@ -1,14 +1,11 @@
 import LayoutManager from '../LayoutManager';
 import DragListener from '../utils/DragListener';
-import DragProxy from './DragProxy'
+import DragProxy from './DragProxy';
 import Header from './Header';
 import {
     fnBind,
     stripTags
 } from '../utils/utils'
-
-
-
 
 /**
  * Represents an individual tab within a Stack's header
@@ -20,8 +17,8 @@ import {
  */
 
 const _template = '<li class="lm_tab"><i class="lm_left"></i>' +
-        '<span class="lm_title"></span><div class="lm_close_tab"></div>' +
-        '<i class="lm_right"></i></li>'
+    '<span class="lm_title"></span><div class="lm_close_tab"></div>' +
+    '<i class="lm_right"></i></li>'
 
 export default class Tab {
 
@@ -32,10 +29,10 @@ export default class Tab {
 
     header: Header;
     contentItem;
-    element:JQuery;
-    titleElement:JQuery;
-    closeElement:JQuery;
-    isActive:boolean;
+    element: JQuery;
+    titleElement: JQuery;
+    closeElement: JQuery;
+    isActive: boolean;
 
     constructor(header: Header, contentItem) {
         this.header = header;
@@ -143,7 +140,7 @@ export default class Tab {
      * @returns {void}
      */
     private _onDragStart(x: number, y: number) {
-        if (!this.header._canDestroy)
+        if (!this.header.canDestroy)
             return null;
 
         if (this.contentItem.parent.isMaximised === true) {
@@ -170,7 +167,7 @@ export default class Tab {
     private _onTabClick(event) {
         // left mouse button or tap
         if (event.button === 0 || event.type === 'touchstart') {
-            this.header.parent.setActiveContentItem( this.contentItem );
+            this.header.parent.setActiveContentItem(this.contentItem);
 
             // middle mouse button
         } else if (event.button === 1 && this.contentItem.config.isClosable) {
@@ -189,7 +186,7 @@ export default class Tab {
      */
     private _onCloseClick(event) {
         event.stopPropagation();
-        if (!this.header._canDestroy)
+        if (!this.header.canDestroy)
             return;
         this.header.parent.removeChild(this.contentItem);
     }

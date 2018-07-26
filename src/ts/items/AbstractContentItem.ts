@@ -1,6 +1,6 @@
 import EventEmitter from '../utils/EventEmitter';
-import { 
-  ALL_EVENT
+import {
+    ALL_EVENT
 } from '../utils/EventEmitter';
 
 import BubblingEvent from '../utils/BubblingEvent';
@@ -14,6 +14,7 @@ import {
     indexOf
 } from '../utils/utils'
 import LayoutManager from '../LayoutManager';
+import { ContentArea } from '../Commons';
 
 /**
  * This is the baseclass that all content items inherit from.
@@ -38,7 +39,7 @@ import LayoutManager from '../LayoutManager';
  */
 
 
-export default class AbstractContentItem extends EventEmitter {
+export default abstract class AbstractContentItem extends EventEmitter {
 
     config: any;
     type: string;
@@ -91,9 +92,7 @@ export default class AbstractContentItem extends EventEmitter {
      * @abstract
      * @returns void
      */
-    setSize() {
-        throw new Error('Abstract Method');
-    }
+    abstract setSize(width?: number, height?: number): void;
 
     /**
      * Calls a method recursively downwards on the tree
@@ -124,7 +123,7 @@ export default class AbstractContentItem extends EventEmitter {
      *
      * @returns {void}
      */
-    removeChild(contentItem, keepChild) {
+    removeChild(contentItem, keepChild?: boolean): void {
         /*
          * Get the position of the item that's to be removed within all content items this node contains
          */
@@ -175,7 +174,7 @@ export default class AbstractContentItem extends EventEmitter {
      *
      * @returns {void}
      */
-    undisplayChild(contentItem) {
+    undisplayChild(contentItem): void {
         /*
          * Get the position of the item that's to be removed within all content items this node contains
          */
@@ -201,7 +200,7 @@ export default class AbstractContentItem extends EventEmitter {
      * @param {AbstractContentItem} contentItem
      * @param {[Int]} index If omitted item will be appended
      */
-    addChild(contentItem, index: number, ...args) {
+    addChild(contentItem, index?: number, ...args) {
         if (index === undefined) {
             index = this.contentItems.length;
         }
@@ -315,7 +314,7 @@ export default class AbstractContentItem extends EventEmitter {
      *
      * @returns {void}
      */
-    select() {
+    select(): void {
         if (this.layoutManager.selectedItem !== this) {
             this.layoutManager.selectItem(this, true);
             this.element.addClass('lm_selected');
@@ -327,7 +326,7 @@ export default class AbstractContentItem extends EventEmitter {
      *
      * @returns {void}
      */
-    deselect() {
+    deselect(): void {
         if (this.layoutManager.selectedItem === this) {
             this.layoutManager.selectedItem = null;
             this.element.removeClass('lm_selected');
@@ -342,7 +341,7 @@ export default class AbstractContentItem extends EventEmitter {
      *
      * @returns {void}
      */
-    setTitle(title) {
+    setTitle(title: string): void {
         this.config.title = title;
         this.emit('titleChanged', title);
         this.emit('stateChanged');
@@ -356,7 +355,7 @@ export default class AbstractContentItem extends EventEmitter {
      *
      * @returns {Boolean} isPresent
      */
-    hasId(id) {
+    hasId(id: string): boolean {
         if (!this.config.id) {
             return false;
         } else if (typeof this.config.id === 'string') {
@@ -375,7 +374,7 @@ export default class AbstractContentItem extends EventEmitter {
      *
      * @returns {void}
      */
-    addId(id) {
+    addId(id: string): void {
         if (this.hasId(id)) {
             return;
         }
@@ -398,7 +397,7 @@ export default class AbstractContentItem extends EventEmitter {
      *
      * @returns {void}
      */
-    removeId(id) {
+    removeId(id: string): void {
         if (!this.hasId(id)) {
             throw new Error('Id not found');
         }
@@ -415,9 +414,9 @@ export default class AbstractContentItem extends EventEmitter {
      * SELECTOR
      ****************************************/
     getItemsByFilter(filter) {
-        var result = [],
-            next = function(contentItem) {
-                for (var i = 0; i < contentItem.contentItems.length; i++) {
+        let result = [],
+            next = function (contentItem) {
+                for (let i = 0; i < contentItem.contentItems.length; i++) {
 
                     if (filter(contentItem.contentItems[i]) === true) {
                         result.push(contentItem.contentItems[i]);
@@ -432,7 +431,7 @@ export default class AbstractContentItem extends EventEmitter {
     }
 
     getItemsById(id) {
-        return this.getItemsByFilter(function(item) {
+        return this.getItemsByFilter(function (item) {
             if (item.config.id instanceof Array) {
                 return indexOf(id, item.config.id) !== -1;
             } else {
@@ -446,11 +445,10 @@ export default class AbstractContentItem extends EventEmitter {
     }
 
     getComponentsByName(componentName) {
-        var components = this._$getItemsByProperty('componentName', componentName),
-            instances = [],
-            i;
+        let components = this._$getItemsByProperty('componentName', componentName),
+            instances = [];
 
-        for (i = 0; i < components.length; i++) {
+        for (let i = 0; i < components.length; i++) {
             instances.push(components[i].instance);
         }
 
@@ -461,7 +459,7 @@ export default class AbstractContentItem extends EventEmitter {
      * PACKAGE PRIVATE
      ****************************************/
     _$getItemsByProperty(key, value) {
-        return this.getItemsByFilter(function(item) {
+        return this.getItemsByFilter(function (item) {
             return item[key] === value;
         });
     }
@@ -490,12 +488,11 @@ export default class AbstractContentItem extends EventEmitter {
         this.layoutManager.updateSize();
     }
 
-    _callOnActiveComponents(methodName) {
+    private _callOnActiveComponents(methodName: string): void {
         var stacks = this.getItemsByType('stack'),
-            activeContentItem,
-            i;
+            activeContentItem;
 
-        for (i = 0; i < stacks.length; i++) {
+        for (let i = 0; i < stacks.length; i++) {
             activeContentItem = stacks[i].getActiveContentItem();
 
             if (activeContentItem && activeContentItem.isComponent) {
@@ -509,7 +506,7 @@ export default class AbstractContentItem extends EventEmitter {
      *
      * @returns {void}
      */
-    _$destroy() {
+    _$destroy(): void {
         this.emitBubblingEvent('beforeItemDestroyed');
         this.callDownwards('_$destroy', [], true, true);
         this.element.remove();
@@ -527,7 +524,7 @@ export default class AbstractContentItem extends EventEmitter {
      *		contentItem: contentItem
      * }
      */
-    _$getArea(element) {
+    _$getArea(element): ContentArea {
         element = element || this.element;
 
         var offset = element.offset(),
@@ -555,7 +552,7 @@ export default class AbstractContentItem extends EventEmitter {
      *
      * @returns {void}
      */
-    _$init() {
+    _$init(): void {
         var i;
         this.setSize();
 
@@ -575,7 +572,7 @@ export default class AbstractContentItem extends EventEmitter {
      *
      * @returns {void}
      */
-    emitBubblingEvent(name) {
+    emitBubblingEvent(name: string): void {
         var event = new BubblingEvent(name, this);
         this.emit(name, event);
     }
@@ -628,7 +625,7 @@ export default class AbstractContentItem extends EventEmitter {
      *
      * @returns {void}
      */
-    private _propagateEvent(name, event) {
+    private _propagateEvent(name: string, event: BubblingEvent): void {
         if (event instanceof BubblingEvent &&
             event.isPropagationStopped === false &&
             this.isInitialised === true) {
@@ -657,7 +654,7 @@ export default class AbstractContentItem extends EventEmitter {
      * @private
      * @returns {void}
      */
-    private _scheduleEventPropagationToLayoutManager(name, event) {
+    private _scheduleEventPropagationToLayoutManager(name: string, event): void {
         if (indexOf(name, this._throttledEvents) === -1) {
             this.layoutManager.emit(name, event.origin);
         } else {
@@ -672,12 +669,12 @@ export default class AbstractContentItem extends EventEmitter {
     /**
      * Callback for events scheduled by _scheduleEventPropagationToLayoutManager
      *
-     * @param {String} name the name of the event
+     * @param {string} name the name of the event
      *
      * @private
      * @returns {void}
      */
-    private _propagateEventToLayoutManager(name, event) {
+    private _propagateEventToLayoutManager(name: string, event): void {
         this._pendingEventPropagations[name] = false;
         this.layoutManager.emit(name, event);
     }

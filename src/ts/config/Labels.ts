@@ -28,10 +28,10 @@
      * The tooltip text that appears when hovering over the popin icon.
      * Default: 'pop in'
      */
-    popin: string;
+    popin?: string;
 
     /**
      * Default: additional tabs'
      */
-    tabDropdown: string;
+    tabDropdown?: string;
 }

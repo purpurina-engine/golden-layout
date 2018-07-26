@@ -2,6 +2,7 @@
 import {
     indexOf
 } from './utils'
+import Config from '../config';
 
 /**
  * Minifies and unminifies configs by replacing frequent keys
@@ -50,10 +51,6 @@ export default class ConfigMinifier {
             'activeItemIndex',
             'reorderEnabled',
             'borderGrabWidth',
-
-
-
-
             //Maximum 36 entries, do not cross this line!
         ];
         if (this._keys.length > 36) {
@@ -84,7 +81,7 @@ export default class ConfigMinifier {
      *
      * @returns {Object} minified config
      */
-    minifyConfig(config) {
+    minifyConfig(config: Config): Object {
         var min = {};
         this._nextLevel(config, min, '_min');
         return min;
@@ -98,7 +95,7 @@ export default class ConfigMinifier {
      *
      * @returns {Object} the original configuration
      */
-    unminifyConfig(minifiedConfig) {
+    unminifyConfig(minifiedConfig: Object): Config {
         var orig = {};
         this._nextLevel(minifiedConfig, orig, '_max');
         return orig;
@@ -113,7 +110,7 @@ export default class ConfigMinifier {
      *
      * @returns {void}
      */
-    private _nextLevel(from, to, translationFn) {
+    private _nextLevel(from: Object | Array<any>, to: Object | Array<any>, translationFn: string): void {
         let minKey;
         let key;
 
@@ -129,7 +126,7 @@ export default class ConfigMinifier {
             /**
              * In case something has extended Object prototypes
              */
-            if (!from.hasOwnProperty(key)) 
+            if (!from.hasOwnProperty(key))
                 continue;
 
             /**
@@ -163,7 +160,7 @@ export default class ConfigMinifier {
      *
      * @returns {String} The minified version
      */
-    static _min(value, dictionary) {
+    static _min(value: string | boolean, dictionary: Array<string | boolean>): string | boolean {
         /**
          * If a value actually is a single character, prefix it
          * with ___ to avoid mistaking it for a minification code
@@ -172,7 +169,7 @@ export default class ConfigMinifier {
             return '___' + value;
         }
 
-        var index = indexOf(value, dictionary);
+        let index = indexOf(value, dictionary);
 
         /**
          * value not found in the dictionary, return it unmodified
@@ -188,7 +185,7 @@ export default class ConfigMinifier {
         }
     }
 
-    static _max(value: any, dictionary: any) {
+    static _max(value: any, dictionary: Object) {
         /**
          * value is a single character. Assume that it's a translation
          * and return the original value from the dictionary

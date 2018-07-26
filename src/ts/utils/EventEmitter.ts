@@ -2,6 +2,7 @@
 import {
     isFunction
 } from './utils'
+import { Callback } from '../Commons';
 
 /**
  * A generic and very fast EventEmitter
@@ -78,18 +79,18 @@ export default class EventEmitter {
     *
     * @returns {void}
     */
-    on(sEvent: string, fCallback: Function, oContext?: Object): void {
-        if (!isFunction(fCallback)) {
-            throw new Error('Tried to listen to event ' + sEvent + ' with non-function callback ' + fCallback);
+    on(event: string, callback: Callback, context?: Object): void {
+        if (!isFunction(callback)) {
+            throw new Error('Tried to listen to event ' + event + ' with non-function callback ' + callback);
         }
 
-        if (!this._mSubscriptions[sEvent]) {
-            this._mSubscriptions[sEvent] = [];
+        if (!this._mSubscriptions[event]) {
+            this._mSubscriptions[event] = [];
         }
 
-        this._mSubscriptions[sEvent].push({
-            fn: fCallback,
-            ctx: oContext
+        this._mSubscriptions[event].push({
+            fn: callback,
+            ctx: context
         });
     };
 

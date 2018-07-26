@@ -1,21 +1,38 @@
 
 import EventEmitter from '../utils/EventEmitter';
 import LayoutManager from '../LayoutManager';
+import ItemConfigType from '../config/ItemConfigType';
 
 export default class ItemContainer extends EventEmitter {
 
-    private _config : any;
-    private _element : JQuery;
+    private _config: ItemConfigType;
+    private _element: JQuery;
     private _contentElement: JQuery<HTMLElement>;
 
     private width: number;
     private height: number;
     private title: string;
     private parent: any;
-    private layoutManager: LayoutManager;
+    private _layoutManager: LayoutManager;
     private isHidden: boolean;
 
-    constructor(config, parent, layoutManager: LayoutManager) {
+    get element(): JQuery {
+        return this._element;
+    }
+
+    get layoutManager(): LayoutManager {
+        return this._layoutManager;
+    }
+
+    get config():  {
+        retur
+    }
+
+    // get isHidden() {
+    //     return this._isHidden;
+    // }
+
+    constructor(config: ItemConfigType, parent, layoutManager: LayoutManager) {
 
         super();
 
@@ -23,7 +40,7 @@ export default class ItemContainer extends EventEmitter {
         this.height = null;
         this.title = config.componentName;
         this.parent = parent;
-        this.layoutManager = layoutManager;
+        this._layoutManager = layoutManager;
         this.isHidden = false;
 
         this._config = config;
@@ -35,11 +52,6 @@ export default class ItemContainer extends EventEmitter {
 
         this._contentElement = this._element.find('.lm_content');
     }
-
-    // get isHidden() {
-    //     return this._isHidden;
-    // }
-
 
     /**
      * Get the inner DOM element the container's content
@@ -194,7 +206,7 @@ export default class ItemContainer extends EventEmitter {
      *
      * @param {String} title
      */
-    setTitle(title: string) {
+    setTitle(title: string): void {
         this.parent.setTitle(title);
     }
 

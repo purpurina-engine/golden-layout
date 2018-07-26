@@ -6,7 +6,7 @@ import {
 } from '../utils/utils'
 import LayoutManager from '../LayoutManager';
 
-export type Position = 'top' | 'bottom' | 'left' | 'right';
+
 
 /**
  * This class represents a header above a Stack ContentItem.
@@ -15,19 +15,20 @@ export type Position = 'top' | 'bottom' | 'left' | 'right';
  * @param {AbstractContentItem} parent
  */
 const _template = [
-        '<div class="lm_header">',
-        '<ul class="lm_tabs"></ul>',
-        '<ul class="lm_controls"></ul>',
-        '<ul class="lm_tabdropdown_list"></ul>',
-        '</div>'
-    ].join('')
+    '<div class="lm_header">',
+    '<ul class="lm_tabs"></ul>',
+    '<ul class="lm_controls"></ul>',
+    '<ul class="lm_tabdropdown_list"></ul>',
+    '</div>'
+].join('')
 
 export default class Header extends EventEmitter {
 
     private _lastVisibleTabIndex: number;
     private _tabControlOffset: number;
+    private _canDestroy: boolean;
 
-    layoutManager:LayoutManager;
+    layoutManager: LayoutManager;
     element: JQuery;
 
     tabsContainer: JQuery;
@@ -42,11 +43,14 @@ export default class Header extends EventEmitter {
     tabDropdownButton = null;
     hideAdditionalTabsDropdown: any;
 
+    get canDestroy(): boolean {
+        return this._canDestroy;
+    }
 
     constructor(layoutManager: LayoutManager, parent) {
 
         super();
-        
+
         this.layoutManager = layoutManager;
         this.element = $(_template);
 
@@ -124,7 +128,7 @@ export default class Header extends EventEmitter {
      * @returns {void}
      */
     removeTab(contentItem) {
-        for (var i = 0; i < this.tabs.length; i++) {
+        for (let i = 0; i < this.tabs.length; i++) {
             if (this.tabs[i].contentItem === contentItem) {
                 this.tabs[i]._$destroy();
                 this.tabs.splice(i, 1);
@@ -132,7 +136,7 @@ export default class Header extends EventEmitter {
             }
         }
 
-        for (i = 0; i < this.tabsMarkedForRemoval.length; i++) {
+        for (let i = 0; i < this.tabsMarkedForRemoval.length; i++) {
             if (this.tabsMarkedForRemoval[i].contentItem === contentItem) {
                 this.tabsMarkedForRemoval[i]._$destroy();
                 this.tabsMarkedForRemoval.splice(i, 1);
@@ -152,15 +156,15 @@ export default class Header extends EventEmitter {
      *
      * @returns {void}
      */
-    hideTab(contentItem) {
-        for (var i = 0; i < this.tabs.length; i++) {
+    hideTab(contentItem): void {
+        for (let i = 0; i < this.tabs.length; i++) {
             if (this.tabs[i].contentItem === contentItem) {
                 this.tabs[i].element.hide()
                 this.tabsMarkedForRemoval.push(this.tabs[i])
                 this.tabs.splice(i, 1);
                 return;
             }
-        }        
+        }
 
         throw new Error('contentItem is not controlled by this header');
     }
@@ -171,11 +175,12 @@ export default class Header extends EventEmitter {
      * @param {AbstractContentItem} contentItem
      */
     setActiveContentItem(contentItem) {
-        var i, j, isActive, activeTab;
+        let j, isActive, activeTab;
 
-        if (this.activeContentItem === contentItem) return;
+        if (this.activeContentItem === contentItem)
+            return;
 
-        for (i = 0; i < this.tabs.length; i++) {
+        for (let i = 0; i < this.tabs.length; i++) {
             isActive = this.tabs[i].contentItem === contentItem;
             this.tabs[i].setActive(isActive);
             if (isActive === true) {
@@ -249,7 +254,7 @@ export default class Header extends EventEmitter {
      *
      * @returns {Boolean} Whether the action was successful
      */
-    _setDockable(isDockable: boolean): boolean {
+    private _setDockable(isDockable: boolean): boolean {
         if (this.dockButton && this.parent._header && this.parent._header.dock) {
             this.dockButton.element.toggle(!!isDockable);
             return true;
@@ -332,11 +337,11 @@ export default class Header extends EventEmitter {
             minimiseLabel = this._getHeaderSetting('minimise');
             maximiseButton = new HeaderButton(this, maximiseLabel, 'lm_maximise', maximise);
 
-            this.parent.on('maximised', function() {
+            this.parent.on('maximised', function () {
                 maximiseButton.element.attr('title', minimiseLabel);
             });
 
-            this.parent.on('minimised', function() {
+            this.parent.on('minimised', function () {
                 maximiseButton.element.attr('title', maximiseLabel);
             });
         }
@@ -413,7 +418,7 @@ export default class Header extends EventEmitter {
         //Show the menu based on function argument
         this.tabDropdownButton.element.toggle(showTabMenu === true);
 
-        var size = function(val) {
+        var size = function (val) {
             return val ? 'width' : 'height';
         };
         this.element.css(size(!this.parent._sided), '');

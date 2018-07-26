@@ -15,16 +15,18 @@ interface HeaderConfig {
     maximise: string,
     close: string,
     minimise: string,
+    dock?: boolean
 }
 
 export default class Stack extends AbstractContentItem {
 
-    private _activeContentItem:any;
+    private _activeContentItem: any;
     private _dropZones: Object;
     private _dropSegment = null;
     private _contentAreaDimensions = null;
     private _dropIndex: number;
     private _header: HeaderConfig;
+    private _docker: any;
 
 
     element: JQuery<HTMLElement>;
@@ -47,8 +49,10 @@ export default class Stack extends AbstractContentItem {
         };
         if (cfg.header) // load simplified version of header configuration (https://github.com/deepstreamIO/golden-layout/pull/245)
             copy(this._header, cfg.header);
+
         if (config.header) // load from stack
             copy(this._header, config.header);
+
         if (config.content && config.content[0] && config.content[0].header) // load from component if stack omitted
             copy(this._header, config.content[0].header);
 
@@ -62,7 +66,7 @@ export default class Stack extends AbstractContentItem {
         this.childElementContainer = $('<div class="lm_items"></div>');
         this.header = new Header(layoutManager, this);
 
-        this.element.on('mouseleave mouseenter', fnBind(function(event) {
+        this.element.on('mouseleave mouseenter', fnBind(function (event) {
             if (this._docker && this._docker.docked)
                 this.childElementContainer[this._docker.dimension](event.type == 'mouseenter' ? this._docker.realSize : 0);
         }, this));
@@ -150,7 +154,7 @@ export default class Stack extends AbstractContentItem {
     }
 
     addChild(contentItem, index) {
-        if(index > this.contentItems.length){
+        if (index > this.contentItems.length) {
             /* 
              * UGLY PATCH: PR #428, commit a4e84ec5 fixed a bug appearing on touchscreens during the drag of a panel. 
              * The bug was caused by the physical removal of the element on drag: partial documentation is at issue #425. 
@@ -159,7 +163,7 @@ export default class Stack extends AbstractContentItem {
              * original container (at the end), the index here could be off by one.
              */
             index -= 1
-        }        
+        }
         contentItem = this.layoutManager._$normalizeContentItem(contentItem, this);
         AbstractContentItem.prototype.addChild.call(this, contentItem, index);
         this.childElementContainer.append(contentItem.element);
@@ -191,10 +195,10 @@ export default class Stack extends AbstractContentItem {
     }
 
     undisplayChild(contentItem) {
-        if(this.contentItems.length > 1){
+        if (this.contentItems.length > 1) {
             var index = indexOf(contentItem, this.contentItems)
             contentItem._$hide && contentItem._$hide()
-            this.setActiveContentItem(this.contentItems[index === 0 ? index+1 : index-1])
+            this.setActiveContentItem(this.contentItems[index === 0 ? index + 1 : index - 1])
         } else {
             this.header.hideTab(contentItem);
             contentItem._$hide && contentItem._$hide()
@@ -310,7 +314,7 @@ export default class Stack extends AbstractContentItem {
          * which would wrap the contentItem in a Stack) we need to check whether contentItem is a RowOrColumn.
          * If it is, we need to re-wrap it in a Stack like it was when it was dragged by its Tab (it was dragged!).
          */
-        if(contentItem.config.type === 'row' || contentItem.config.type === 'column'){
+        if (contentItem.config.type === 'row' || contentItem.config.type === 'column') {
             stack = this.layoutManager.createContentItem({
                 type: 'stack'
             }, this)

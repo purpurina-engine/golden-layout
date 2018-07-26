@@ -19,7 +19,7 @@ export default class Splitter {
         this._dragListener = new DragListener(this.element);
     }
 
-    on(event, callback, context) {
+    on(event: string, callback, context) {
         this._dragListener.on(event, callback, context);
     }
 
