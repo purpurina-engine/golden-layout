@@ -13,8 +13,12 @@ import {
     animFrame,
     indexOf
 } from '../utils/utils'
-import LayoutManager from '../LayoutManager';
-import { ContentArea } from '../Commons';
+import LayoutManager from '../GoldenLayout';
+import { ContentArea, Callback, FilterFunction } from '../Commons';
+import ItemConfigType, { ItemConfig, ComponentConfig } from '../config/ItemConfigType';
+import Docker from './Docker';
+import ContentItem from './ContentItem';
+import Container from '../container/Container';
 
 /**
  * This is the baseclass that all content items inherit from.
@@ -39,11 +43,12 @@ import { ContentArea } from '../Commons';
  */
 
 
-export default abstract class AbstractContentItem extends EventEmitter {
+export default abstract class AbstractContentItem extends EventEmitter implements ContentItem {
 
-    config: any;
+    config: ItemConfigType;
     type: string;
     contentItems;
+    element: Container;
     parent: any;
 
     isInitialised: boolean;
@@ -54,11 +59,18 @@ export default abstract class AbstractContentItem extends EventEmitter {
     isStack: boolean;
     isComponent: boolean;
 
+    header: any;
+
+    _docker: Docker;
+    childElementContainer;
+
     layoutManager: LayoutManager;
+
     private _pendingEventPropagations: Object;
     private _throttledEvents: Array<string>;
 
-    constructor(layoutManager: LayoutManager, config, parent) {
+
+    constructor(layoutManager: LayoutManager, config: ItemConfigType, parent) {
 
         super();
 
@@ -127,7 +139,7 @@ export default abstract class AbstractContentItem extends EventEmitter {
         /*
          * Get the position of the item that's to be removed within all content items this node contains
          */
-        var index = indexOf(contentItem, this.contentItems);
+        let index = indexOf(contentItem, this.contentItems);
 
         /*
          * Make sure the content item to be removed is actually a child of this item
@@ -178,7 +190,7 @@ export default abstract class AbstractContentItem extends EventEmitter {
         /*
          * Get the position of the item that's to be removed within all content items this node contains
          */
-        var index = indexOf(contentItem, this.contentItems);
+        let index = indexOf(contentItem, this.contentItems);
 
         /*
          * Make sure the content item to be removed is actually a child of this item
@@ -196,26 +208,28 @@ export default abstract class AbstractContentItem extends EventEmitter {
      * Sets up the tree structure for the newly added child
      * The responsibility for the actual DOM manipulations lies
      * with the concrete item
-     *
-     * @param {AbstractContentItem} contentItem
-     * @param {[Int]} index If omitted item will be appended
+     * *********************
+     * Adds an item as a child to this item. If the item is already a part of a layout it will be removed
+     * from its original position before adding it to this item.
+     * @param itemOrItemConfig A content item (or tree of content items) or an ItemConfiguration to create the item from
+     * @param index last index  An optional index that determines at which position the new item should be added. Default: last index.
      */
-    addChild(contentItem, index?: number, ...args) {
+    addChild(itemOrItemConfig: ContentItem | ItemConfigType, index?: number, ...args) {
         if (index === undefined) {
             index = this.contentItems.length;
         }
 
-        this.contentItems.splice(index, 0, contentItem);
+        this.contentItems.splice(index, 0, itemOrItemConfig);
 
         if (this.config.content === undefined) {
             this.config.content = [];
         }
 
-        this.config.content.splice(index, 0, contentItem.config);
-        contentItem.parent = this;
+        this.config.content.splice(index, 0, itemOrItemConfig.config);
+        itemOrItemConfig.parent = this;
 
-        if (contentItem.parent.isInitialised === true && contentItem.isInitialised === false) {
-            contentItem._$init();
+        if (itemOrItemConfig.parent.isInitialized === true && itemOrItemConfig.isInitialized === false) {
+            itemOrItemConfig._$init();
         }
     }
 
@@ -228,11 +242,11 @@ export default abstract class AbstractContentItem extends EventEmitter {
      *
      * @returns {void}
      */
-    replaceChild(oldChild: AbstractContentItem, newChild: AbstractContentItem, _$destroyOldChild): void {
+    replaceChild(oldChild: ContentItem, newChild: ContentItem | ItemConfigType, _$destroyOldChild): void {
 
         newChild = this.layoutManager._$normalizeContentItem(newChild);
 
-        var index = indexOf(oldChild, this.contentItems),
+        let index = indexOf(oldChild, this.contentItems),
             parentNode = oldChild.element[0].parentNode;
 
         if (index === -1) {
@@ -287,7 +301,7 @@ export default abstract class AbstractContentItem extends EventEmitter {
      * @returns {BrowserPopout}
      */
     popout() {
-        var browserPopout = this.layoutManager.createPopout(this);
+        let browserPopout = this.layoutManager.createPopout(this);
         this.emitBubblingEvent('stateChanged');
         return browserPopout;
     }
@@ -405,7 +419,7 @@ export default abstract class AbstractContentItem extends EventEmitter {
         if (typeof this.config.id === 'string') {
             delete this.config.id;
         } else if (this.config.id instanceof Array) {
-            var index = indexOf(id, this.config.id);
+            let index = indexOf(id, this.config.id);
             this.config.id.splice(index, 1);
         }
     }
@@ -413,7 +427,7 @@ export default abstract class AbstractContentItem extends EventEmitter {
     /****************************************
      * SELECTOR
      ****************************************/
-    getItemsByFilter(filter) {
+    getItemsByFilter(filter: FilterFunction) {
         let result = [],
             next = function (contentItem) {
                 for (let i = 0; i < contentItem.contentItems.length; i++) {
@@ -458,38 +472,38 @@ export default abstract class AbstractContentItem extends EventEmitter {
     /****************************************
      * PACKAGE PRIVATE
      ****************************************/
-    _$getItemsByProperty(key, value) {
+    private _$getItemsByProperty(key, value) {
         return this.getItemsByFilter(function (item) {
             return item[key] === value;
         });
     }
 
-    _$setParent(parent) {
+    protected _$setParent(parent) {
         this.parent = parent;
     }
 
-    _$highlightDropZone(x, y, area) {
+    protected _$highlightDropZone(_x: number, _y: number, area?: ContentArea): void {
         this.layoutManager.dropTargetIndicator.highlightArea(area);
     }
 
-    _$onDrop(contentItem) {
+    protected _$onDrop(contentItem, _area?: ContentArea): void {
         this.addChild(contentItem);
     }
 
-    _$hide() {
+    protected _$hide(): void {
         this._callOnActiveComponents('hide');
         this.element.hide();
         this.layoutManager.updateSize();
     }
 
-    _$show() {
+    protected _$show(): void {
         this._callOnActiveComponents('show');
         this.element.show();
         this.layoutManager.updateSize();
     }
 
     private _callOnActiveComponents(methodName: string): void {
-        var stacks = this.getItemsByType('stack'),
+        let stacks = this.getItemsByType('stack'),
             activeContentItem;
 
         for (let i = 0; i < stacks.length; i++) {
@@ -506,7 +520,7 @@ export default abstract class AbstractContentItem extends EventEmitter {
      *
      * @returns {void}
      */
-    _$destroy(): void {
+    protected _$destroy(): void {
         this.emitBubblingEvent('beforeItemDestroyed');
         this.callDownwards('_$destroy', [], true, true);
         this.element.remove();
@@ -524,10 +538,10 @@ export default abstract class AbstractContentItem extends EventEmitter {
      *		contentItem: contentItem
      * }
      */
-    _$getArea(element): ContentArea {
+    protected _$getArea(element?: JQuery): ContentArea {
         element = element || this.element;
 
-        var offset = element.offset(),
+        let offset = element.offset(),
             width = element.width(),
             height = element.height();
 
@@ -552,11 +566,10 @@ export default abstract class AbstractContentItem extends EventEmitter {
      *
      * @returns {void}
      */
-    _$init(): void {
-        var i;
+    protected _$init(): void {
         this.setSize();
 
-        for (i = 0; i < this.contentItems.length; i++) {
+        for (let i = 0; i < this.contentItems.length; i++) {
             this.childElementContainer.append(this.contentItems[i].element);
         }
 
@@ -573,7 +586,7 @@ export default abstract class AbstractContentItem extends EventEmitter {
      * @returns {void}
      */
     emitBubblingEvent(name: string): void {
-        var event = new BubblingEvent(name, this);
+        let event = new BubblingEvent(name, this);
         this.emit(name, event);
     }
 
@@ -585,8 +598,8 @@ export default abstract class AbstractContentItem extends EventEmitter {
      *
      * @returns {void}
      */
-    private _createContentItems(config) {
-        var oContentItem, i;
+    private _createContentItems(config: ItemConfigType): void {
+        let oContentItem, i;
 
         if (!(config.content instanceof Array)) {
             throw new ConfigurationError('content must be an Array', config);
@@ -605,14 +618,12 @@ export default abstract class AbstractContentItem extends EventEmitter {
      *
      * @returns {configuration item node} extended config
      */
-    private _extendItemNode(config) {
-
-        for (var key in itemDefaultConfig) {
+    private _extendItemNode(config: ItemConfigType): ItemConfigType {
+        for (let key in itemDefaultConfig) {
             if (config[key] === undefined) {
                 config[key] = itemDefaultConfig[key];
             }
         }
-
         return config;
     }
 

@@ -1,20 +1,27 @@
 
 import EventEmitter from '../utils/EventEmitter';
 import LayoutManager from '../LayoutManager';
-import ItemConfigType from '../config/ItemConfigType';
+import ItemConfigType, { ComponentConfig } from '../config/ItemConfigType';
+import Container from './Container';
+import Tab from '../controls/Tab';
+import ContentItem from '../items/ContentItem';
+import { Dimension } from '../Commons';
 
-export default class ItemContainer extends EventEmitter {
+export default class ItemContainer extends EventEmitter implements Container {
 
-    private _config: ItemConfigType;
+    private _config: ComponentConfig;
     private _element: JQuery;
     private _contentElement: JQuery<HTMLElement>;
-
-    private width: number;
-    private height: number;
-    private title: string;
-    private parent: any;
     private _layoutManager: LayoutManager;
-    private isHidden: boolean;
+
+    tab: Tab;
+
+    width: number;
+    height: number;
+    title: string;
+    parent: ContentItem;
+
+    isHidden: boolean;
 
     get element(): JQuery {
         return this._element;
@@ -32,7 +39,7 @@ export default class ItemContainer extends EventEmitter {
     //     return this._isHidden;
     // }
 
-    constructor(config: ItemConfigType, parent, layoutManager: LayoutManager) {
+    constructor(config: ComponentConfig, parent: ContentItem, layoutManager: LayoutManager) {
 
         super();
 
@@ -69,12 +76,13 @@ export default class ItemContainer extends EventEmitter {
      * and then hides the DOM node. If the container is already hidden
      * this should have no effect
      *
-     * @returns {void}
+     * @returns {boolean}
      */
-    hide(): void {
+    hide(): boolean {
         this.emit('hide');
         this.isHidden = true;
         this._element.hide();
+        return true;
     }
 
 
@@ -83,16 +91,18 @@ export default class ItemContainer extends EventEmitter {
      * containers content first and then shows the DOM element.
      * If the container is already visible this has no effect.
      *
-     * @returns {void}
+     * @returns {boolean}
      */
-    show(): void {
+    show(): boolean {
         this.emit('show');
         this.isHidden = false;
         this._element.show();
         // call shown only if the container has a valid size
         if (this.height != 0 || this.width != 0) {
             this.emit('shown');
+            return true;
         }
+        return false;
     }
 
 
@@ -111,19 +121,16 @@ export default class ItemContainer extends EventEmitter {
      */
     setSize(width: number, height: number): boolean {
         let rowOrColumn = this.parent,
-            rowOrColumnChild = this,
-            totalPixel,
-            percentage,
-            direction,
-            newSize,
-            delta,
-            i;
+            rowOrColumnChild: any = this;
+        let totalPixel: number,
+            percentage: number;
+        let direction: Dimension;
+        let newSize: number,
+            delta: number;
 
         while (!rowOrColumn.isColumn && !rowOrColumn.isRow) {
             rowOrColumnChild = rowOrColumn;
             rowOrColumn = rowOrColumn.parent;
-
-
             /**
              * No row or column has been found
              */
@@ -139,7 +146,7 @@ export default class ItemContainer extends EventEmitter {
         percentage = (newSize / totalPixel) * 100;
         delta = (rowOrColumnChild._config[direction] - percentage) / (rowOrColumn.contentItems.length - 1);
 
-        for (i = 0; i < rowOrColumn.contentItems.length; i++) {
+        for (let i = 0; i < rowOrColumn.contentItems.length; i++) {
             if (rowOrColumn.contentItems[i] === rowOrColumnChild) {
                 rowOrColumn.contentItems[i].config[direction] = percentage;
             } else {
@@ -160,11 +167,13 @@ export default class ItemContainer extends EventEmitter {
      *
      * @returns {void}
      */
-    close(): void {
+    close(): boolean {
         if (this._config.isClosable) {
             this.emit('close');
             this.parent.close();
+            return true;
         }
+        return false;
     }
 
 

@@ -7,7 +7,7 @@ export default class DropTargetIndicator {
 
     private element:JQuery;
 
-    constructor() {
+    constructor(element?:JQuery) {
         this.element = $(_template);
         $(document.body).append(this.element);
     }

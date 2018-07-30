@@ -6,8 +6,12 @@ import {
 import {
     fnBind
 } from './utils';
-import LayoutManager from '../LayoutManager';
+import LayoutManager from '../GoldenLayout';
 import * as $ from 'jquery';
+
+
+
+
 
 /**
  * An EventEmitter singleton that propagates events

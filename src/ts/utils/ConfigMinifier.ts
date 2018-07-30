@@ -81,7 +81,7 @@ export default class ConfigMinifier {
      *
      * @returns {Object} minified config
      */
-    minifyConfig(config: Config): Object {
+    minifyConfig(config: Object): Object {
         var min = {};
         this._nextLevel(config, min, '_min');
         return min;

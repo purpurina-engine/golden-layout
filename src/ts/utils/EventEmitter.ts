@@ -40,17 +40,13 @@ export default class EventEmitter {
     }
 
     /**
-     * Emit an event and notify listeners
-     * 
-     * @param {string} sEvent 
-     * @param {any[]} args 
-     * 
-     * @returns {void} 
+     * Notify listeners of an event and pass arguments along
+     * @param eventName The name of the event to emit
      */
-    emit(sEvent: string, ...args: any[]): void {
+    emit(eventName: string, ...args: any[]): void {
         let ctx;
         args = Array.prototype.slice.call(arguments, 1);
-        let subs = this._mSubscriptions[sEvent];
+        let subs = this._mSubscriptions[eventName];
 
         if (subs) {
             subs = subs.slice();
@@ -60,7 +56,7 @@ export default class EventEmitter {
             }
         }
 
-        args.unshift(sEvent);
+        args.unshift(eventName);
 
         let allEventSubs = this._mSubscriptions[ALL_EVENT].slice()
 
@@ -71,14 +67,11 @@ export default class EventEmitter {
     };
 
     /**
-    * Listen for events
-    *
-    * @param   {string} sEvent    The name of the event to listen to
-    * @param   {Function} fCallback The callback to execute when the event occurs
-    * @param   {[Object]} oContext The value of the this pointer within the callback function
-    *
-    * @returns {void}
-    */
+     * Subscribe to an event
+     * @param eventName The name of the event to describe to
+     * @param callback The function that should be invoked when the event occurs
+     * @param context The value of the this pointer in the callback function
+     */
     on(event: string, callback: Callback, context?: Object): void {
         if (!isFunction(callback)) {
             throw new Error('Tried to listen to event ' + event + ' with non-function callback ' + callback);
@@ -94,34 +87,33 @@ export default class EventEmitter {
         });
     };
 
-    /**
-    * Removes a listener for an event, or all listeners if no callback and context is provided.
-    *
-    * @param   {string} sEvent    The name of the event
-    * @param   {Function} fCallback The previously registered callback method (optional)
-    * @param   {Object} oContext  The previously registered context (optional)
-    *
-    * @returns {void}
-    */
-    unbind(sEvent: string, fCallback: Function, oContext?: Object): void {
-        if (!this._mSubscriptions[sEvent]) {
-            throw new Error('No subscriptions to unsubscribe for event ' + sEvent);
+     /**
+     * Unsubscribes either all listeners if just an eventName is provided, just a specific callback if invoked with
+     * eventName and callback or just a specific callback with a specific context if invoked with all three
+     * arguments.
+     * @param eventName The name of the event to unsubscribe from
+     * @param callback The function that should be invoked when the event occurs
+     * @param context The value of the this pointer in the callback function
+     */
+    unbind(eventName: string, callback?: Callback, context?: any): void {
+        if (!this._mSubscriptions[eventName]) {
+            throw new Error('No subscriptions to unsubscribe for event ' + eventName);
         }
 
         let bUnbound = false;
 
-        for (let i = 0; i < this._mSubscriptions[sEvent].length; i++) {
+        for (let i = 0; i < this._mSubscriptions[eventName].length; i++) {
             if (
-                (!fCallback || this._mSubscriptions[sEvent][i].fn === fCallback) &&
-                (!oContext || oContext === this._mSubscriptions[sEvent][i].ctx)
+                (!callback || this._mSubscriptions[eventName][i].fn === callback) &&
+                (!context || context === this._mSubscriptions[eventName][i].ctx)
             ) {
-                this._mSubscriptions[sEvent].splice(i, 1);
+                this._mSubscriptions[eventName].splice(i, 1);
                 bUnbound = true;
             }
         }
 
         if (bUnbound === false) {
-            throw new Error('Nothing to unbind for ' + sEvent);
+            throw new Error('Nothing to unbind for ' + eventName);
         }
     };
 
@@ -130,8 +122,45 @@ export default class EventEmitter {
     */
     off = this.unbind;
 
-    /**
+     /**
      * Alias for emit
      */
     trigger = this.emit;
 }
+
+
+// export interface EventEmitter {
+//     /**
+//      * Subscribe to an event
+//      * @param eventName The name of the event to describe to
+//      * @param callback The function that should be invoked when the event occurs
+//      * @param context The value of the this pointer in the callback function
+//      */
+//     on(eventName: string, callback: Function, context?: any): void;
+
+//     /**
+//      * Notify listeners of an event and pass arguments along
+//      * @param eventName The name of the event to emit
+//      */
+//     emit(eventName: string, arg1?: any, arg2?: any, ...argN: any[]): void;
+
+//     /**
+//      * Alias for emit
+//      */
+//     trigger(eventName: string, arg1?: any, arg2?: any, ...argN: any[]): void;
+
+//     /**
+//      * Unsubscribes either all listeners if just an eventName is provided, just a specific callback if invoked with
+//      * eventName and callback or just a specific callback with a specific context if invoked with all three
+//      * arguments.
+//      * @param eventName The name of the event to unsubscribe from
+//      * @param callback The function that should be invoked when the event occurs
+//      * @param context The value of the this pointer in the callback function
+//      */
+//     unbind(eventName: string, callback?: Function, context?: any): void;
+
+//     /**
+//      * Alias for unbind
+//      */
+//     off(eventName: string, callback?: Function, context?: any): void;
+// }

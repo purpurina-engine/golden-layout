@@ -1,4 +1,5 @@
-import { ContentArea, Callback, BoundFunction } from '../Commons';
+import { ContentArea, Callback, BoundFunction, ContentItemConfigFunction } from '../Commons';
+import { ComponentConfig } from '../config/ItemConfigType';
 
 let vendors = [
     'ms',
@@ -119,7 +120,7 @@ export function indexOf(needle: any, haystack: Array<any>): number {
 }
 
 
-export function isFunction(obj: any | Callback) : boolean {
+export function isFunction(obj: any | Callback): boolean {
 
     if (typeof /./ != 'function' && typeof Int8Array != 'object') {
         return typeof obj == 'function' || false;
@@ -138,7 +139,7 @@ export function isFunction(obj: any | Callback) : boolean {
 
 
 
-export function fnBind(fn: Callback, context?: Object, ...boundArgs): BoundFunction {
+export function fnBind(fn: Callback|any, context?: Object, ...boundArgs): BoundFunction {
 
     if (Function.prototype.bind !== undefined) {
         return Function.prototype.bind.apply(fn, [context].concat(boundArgs || []));
@@ -246,4 +247,12 @@ export function mergeAreas(sourceA: ContentArea, sourceB: ContentArea, target?: 
 
     return target;
 
+}
+
+export function isHTMLElement(element: Element | HTMLElement | JQuery): element is HTMLElement {
+    return (element.scroll !== undefined);
+}
+
+export function isContentItemConfig(component: ComponentConfig | ContentItemConfigFunction): component is ComponentConfig {
+    return ((<ComponentConfig>component).type !== undefined || (<ComponentConfig>component).componentName !== undefined)
 }

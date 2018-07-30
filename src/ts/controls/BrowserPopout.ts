@@ -11,6 +11,16 @@ import {
 import GoldenLayoutError from '../errors/GoldenLayoutError';
 
 /**
+* Window configuration object from the Popout.
+*/
+export interface BrowserPopoutConfig {
+    dimensions: ElementDimensions;
+    content: Config;
+    parentId: string;
+    indexInParent: number;
+}
+
+/**
  * Pops a content item out into a new browser window.
  * This is achieved by
  *
@@ -27,31 +37,33 @@ import GoldenLayoutError from '../errors/GoldenLayoutError';
  * @param {lm.LayoutManager} layoutManager
  */
 
- export interface BrowserPopoutConfig {
-    dimensions: ElementDimensions;
-    content
-    parentId: number;
-    indexInParent: number;
 
- }
 
 export default class BrowserPopout extends EventEmitter {
 
-    private isInitialised: boolean;
 
-    private _config;
+    private _isInitialized: boolean;
+
+    private _config: Config;
     private _dimensions;
-    private _parentId;
+    private _parentId: string;
     private _indexInParent: number;
     private _layoutManager: LayoutManager;
-    private _popoutWindow = null;
+    private _popoutWindow: Window;
     private _id: number;
 
-    constructor(config: Config, dimensions, parentId: number, indexInParent: number, layoutManager: LayoutManager) {
+    /**
+    * True if the window has been opened and its GoldenLayout instance initialised.
+    */
+    get isInitialized(): boolean {
+        return this._isInitialized;
+    }
+
+    constructor(config: Config, dimensions, parentId: string, indexInParent: number, layoutManager: LayoutManager) {
 
         super();
 
-        this.isInitialised = false;
+        this._isInitialized = false;
 
         this._config = config;
         this._dimensions = dimensions;
@@ -63,11 +75,15 @@ export default class BrowserPopout extends EventEmitter {
         this._createWindow();
     }
 
-    toConfig() {
-        if (this.isInitialised === false) {
+
+    /**
+     * Creates a window configuration object from the Popout.
+     */
+    toConfig(): BrowserPopoutConfig {
+        if (this._isInitialized === false) {
             throw new Error('Can\'t create config, layout not yet initialised');
         }
-        return {
+        const config: BrowserPopoutConfig = {
             dimensions: {
                 width: this.getGlInstance().width,
                 height: this.getGlInstance().height,
@@ -78,16 +94,26 @@ export default class BrowserPopout extends EventEmitter {
             parentId: this._parentId,
             indexInParent: this._indexInParent
         };
+        return config;
     }
 
-    getGlInstance() {
+    /**
+     * Returns the GoldenLayout instance from the child window
+     */
+    getGlInstance(): LayoutManager {
         return this._popoutWindow.__glInstance;
     }
 
-    getWindow() {
+    /**
+     * Returns the native Window object
+     */
+    getWindow(): Window {
         return this._popoutWindow;
     }
 
+    /**
+     * Closes the popout
+     */
     close() {
         if (this.getGlInstance()) {
             this.getGlInstance()._$closeWindow();
@@ -105,9 +131,9 @@ export default class BrowserPopout extends EventEmitter {
      * parent isn't available anymore it falls back to the layout's topmost element
      */
     popIn() {
-        var childConfig,
-            parentItem,
-            index = this._indexInParent;
+        let childConfig,
+            parentItem;
+            //index = this._indexInParent;
 
         if (this._parentId) {
 
@@ -133,7 +159,6 @@ export default class BrowserPopout extends EventEmitter {
                 } else {
                     parentItem = this._layoutManager.root;
                 }
-                index = 0;
             }
         }
 
@@ -150,7 +175,7 @@ export default class BrowserPopout extends EventEmitter {
      * @returns {void}
      */
     private _createWindow() {
-        var checkReadyInterval,
+        let checkReadyInterval,
             url = this._createUrl(),
 
             /**
@@ -215,7 +240,7 @@ export default class BrowserPopout extends EventEmitter {
      * @returns {String} serialised window options
      */
     private _serializeWindowOptions(windowOptions): string {
-        var windowOptionsString = [],
+        let windowOptionsString = [],
             key;
 
         for (key in windowOptions) {
@@ -278,7 +303,7 @@ export default class BrowserPopout extends EventEmitter {
      * @returns {void}
      */
     private _onInitialised(): void {
-        this.isInitialised = true;
+        this._isInitialized = true;
         this.getGlInstance().on('popIn', this.popIn, this);
         this.emit('initialised');
     }

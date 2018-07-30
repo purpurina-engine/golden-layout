@@ -37,6 +37,8 @@
      * Default: componentName or ''
      */
     title?: string;
+
+    header: any;
 }
 
 export interface ComponentConfig extends ItemConfig {

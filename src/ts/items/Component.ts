@@ -1,6 +1,8 @@
 import AbstractContentItem from './AbstractContentItem';
 import ItemContainer from '../container/ItemContainer';
 import LayoutManager from '../LayoutManager';
+import ItemConfigType, { ComponentConfig } from '../config/ItemConfigType';
+import { isContentItemConfig } from '../utils/utils';
 
 
 /**
@@ -12,29 +14,30 @@ import LayoutManager from '../LayoutManager';
 
 export default class Component extends AbstractContentItem {
 
+    private container: ItemContainer;
     componentName: string;
-    container: ItemContainer;
     instance: any;
     element: JQuery<HTMLElement>
 
-    constructor(layoutManager: LayoutManager, config, parent) {
+    constructor(layoutManager: LayoutManager, config: ComponentConfig, parent) {
 
         super(layoutManager, config, parent);
 
-        let ComponentConstructor = layoutManager.getComponent(this.config.componentName),
-            componentConfig = $.extend(true, {}, this.config.componentState || {});
 
-        componentConfig.componentName = this.config.componentName;
-        this.componentName = this.config.componentName;
+        let ComponentConstructor = layoutManager.getComponent(config.componentName),
+            componentConfig = $.extend(true, {}, config.componentState || {});
+
+        componentConfig.componentName = config.componentName;
+        this.componentName = config.componentName;
 
         if (this.config.title === '') {
-            this.config.title = this.config.componentName;
+            this.config.title = config.componentName;
         }
 
         this.isComponent = true;
-        this.container = new ItemContainer(this.config, this, layoutManager);
+        this.container = new ItemContainer(config, this, layoutManager);
         this.instance = new ComponentConstructor(this.container, componentConfig);
-        this.element = this.container._element;
+        this.element = this.container.element;
     }
 
     close() {
@@ -49,28 +52,35 @@ export default class Component extends AbstractContentItem {
     }
 
     _$init() {
-        AbstractContentItem.prototype._$init.call(this);
+        //AbstractContentItem.prototype._$init.call(this);
+        super._$init();
         this.container.emit('open');
+        
     }
 
     _$hide() {
         this.container.hide();
-        AbstractContentItem.prototype._$hide.call(this);
+        super._$hide();
+        //AbstractContentItem.prototype._$hide.call(this);
     }
 
     _$show() {
         this.container.show();
-        AbstractContentItem.prototype._$show.call(this);
+        
+        //AbstractContentItem.prototype._$show.call(this);
+        super._$show();
     }
 
     _$shown() {
-        this.container.shown();
-        AbstractContentItem.prototype._$shown.call(this);
+        // TODO
+        // this.container.shown();
+        // AbstractContentItem.prototype._$shown.call(this);
     }
 
     _$destroy() {
         this.container.emit('destroy', this);
-        AbstractContentItem.prototype._$destroy.call(this);
+        //AbstractContentItem.prototype._$destroy.call(this);
+        super._$destroy();
     }
 
     /**

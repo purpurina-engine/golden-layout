@@ -6,13 +6,16 @@ export default class DragSourceControl {
     private area: ContentArea;
     private header: ContentArea;
     private fullArea: ContentArea;
-    private hasArea: boolean = false;
+    private _hasArea: boolean = false;
 
+    get hasArea(): boolean {
+        return this._hasArea;
+    }
 
     clear() {
         this.area = null;
         this.header = null;
-        this.hasArea = false;
+        this._hasArea = false;
         this.fullArea.contentItem = null;
     }
 
@@ -21,6 +24,6 @@ export default class DragSourceControl {
         this.header = header;
         mergeAreas(area, header, this.fullArea);
         this.fullArea.contentItem = item.parent;
-        this.hasArea = true;
+        this._hasArea = true;
     }
 }

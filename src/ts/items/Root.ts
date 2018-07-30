@@ -1,22 +1,21 @@
 import AbstractContentItem from './AbstractContentItem';
 import RowOrColumn from './RowOrColumn';
 import LayoutManager from '../LayoutManager';
+import { ComponentConfig } from '../config/ItemConfigType';
 
 
 
 export default class Root extends AbstractContentItem {
 
-    private _containerElement;
-
-
+    private _containerElement: JQuery;
     isRoot: boolean;
     type: string;
     element: JQuery;
     childElementContainer: JQuery;
-   
 
-    constructor(layoutManager: LayoutManager, config, containerElement) {
-      
+
+    constructor(layoutManager: LayoutManager, config: ComponentConfig, containerElement: JQuery) {
+
         super(layoutManager, config, null);
 
         this.isRoot = true;
@@ -40,7 +39,7 @@ export default class Root extends AbstractContentItem {
         this.emitBubblingEvent('stateChanged');
     }
 
-    setSize(width, height) {
+    setSize(width?: number, height?: number): void {
         width = (typeof width === 'undefined') ? this._containerElement.width() : width;
         height = (typeof height === 'undefined') ? this._containerElement.height() : height;
 
@@ -56,13 +55,14 @@ export default class Root extends AbstractContentItem {
         }
     }
 
-    _$highlightDropZone(x, y, area) {
+    _$highlightDropZone(x: number, y: number, area) {
         this.layoutManager.tabDropPlaceholder.remove();
-        AbstractContentItem.prototype._$highlightDropZone.apply(this, arguments);
+        //AbstractContentItem.prototype._$highlightDropZone.apply(this, arguments);
+        super._$highlightDropZone(x, y, area);
     }
 
     _$onDrop(contentItem, area) {
-        var stack;
+        let stack;
 
         if (contentItem.isComponent) {
             stack = this.layoutManager.createContentItem({
@@ -82,7 +82,7 @@ export default class Root extends AbstractContentItem {
              * which would wrap the contentItem in a Stack) we need to check whether contentItem is a RowOrColumn.
              * If it is, we need to re-wrap it in a Stack like it was when it was dragged by its Tab (it was dragged!).
              */
-            if(contentItem.config.type === 'row' || contentItem.config.type === 'column'){
+            if (contentItem.config.type === 'row' || contentItem.config.type === 'column') {
                 stack = this.layoutManager.createContentItem({
                     type: 'stack'
                 }, this)
@@ -90,12 +90,12 @@ export default class Root extends AbstractContentItem {
                 contentItem = stack
             }
 
-            var type = area.side[0] == 'x' ? 'row' : 'column';
-            var dimension = area.side[0] == 'x' ? 'width' : 'height';
-            var insertBefore = area.side[1] == '2';
-            var column = this.contentItems[0];
+            let type = area.side[0] == 'x' ? 'row' : 'column';
+            let dimension = area.side[0] == 'x' ? 'width' : 'height';
+            let insertBefore = area.side[1] == '2';
+            let column = this.contentItems[0];
             if (!(column instanceof RowOrColumn) || column.type != type) {
-                var rowOrColumn = this.layoutManager.createContentItem({
+                let rowOrColumn = this.layoutManager.createContentItem({
                     type: type
                 }, this);
                 this.replaceChild(column, rowOrColumn);
@@ -105,7 +105,7 @@ export default class Root extends AbstractContentItem {
                 contentItem.config[dimension] = 50;
                 rowOrColumn.callDownwards('setSize');
             } else {
-                var sibbling = column.contentItems[insertBefore ? 0 : column.contentItems.length - 1]
+                let sibbling = column.contentItems[insertBefore ? 0 : column.contentItems.length - 1]
                 column.addChild(contentItem, insertBefore ? 0 : undefined, true);
                 sibbling.config[dimension] *= 0.5;
                 contentItem.config[dimension] = sibbling.config[dimension];

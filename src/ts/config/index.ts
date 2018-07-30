@@ -8,4 +8,7 @@ export default interface Config {
     dimensions?: Dimensions;
     labels?: Labels;
     content?: ItemConfigType[];
+    openPopouts?: any[];
+    maximisedItemId?:any;
+    header?:any;
 }

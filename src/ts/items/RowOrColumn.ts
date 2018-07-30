@@ -27,7 +27,7 @@ export default class RowOrColumn extends AbstractContentItem {
     isRow: boolean;
     isColumn: boolean;
     element: JQuery;
-    childElementContainer: JQuery;
+
 
 
     constructor(isColumn: boolean, layoutManager: LayoutManager, config, parent) {
@@ -62,9 +62,9 @@ export default class RowOrColumn extends AbstractContentItem {
      *
      * @returns {void}
      */
-    addChild(contentItem, index?: number, _$suspendResize?: boolean) {
+    addChild(contentItem: AbstractContentItem, index?: number, _$suspendResize?: boolean): void {
 
-        let newItemSize, itemSize, i, splitterElement;
+        let newItemSize, itemSize, splitterElement;
 
         contentItem = this.layoutManager._$normalizeContentItem(contentItem, this);
 
@@ -99,7 +99,7 @@ export default class RowOrColumn extends AbstractContentItem {
             return;
         }
 
-        for (i = 0; i < this.contentItems.length; i++) {
+        for (let i = 0; i < this.contentItems.length; i++) {
             if (this.contentItems[i] === contentItem) {
                 contentItem.config[this._dimension] = newItemSize;
             } else {
@@ -121,12 +121,10 @@ export default class RowOrColumn extends AbstractContentItem {
      *
      * @returns {void}
      */
-    undisplayChild(contentItem): void {
+    undisplayChild(contentItem: AbstractContentItem): void {
         let undisplayedItemSize = contentItem.config[this._dimension],
             index = indexOf(contentItem, this.contentItems),
-            splitterIndex = Math.max(index - 1, 0),
-            i,
-            childItem;
+            splitterIndex = Math.max(index - 1, 0);
 
         if (index === -1) {
             throw new Error('Can\'t undisplay child. ContentItem is not child of this Row or Column');
@@ -149,7 +147,7 @@ export default class RowOrColumn extends AbstractContentItem {
          * Allocate the space that the hidden item occupied to the remaining items
          */
         let docked = this._isDocked();
-        for (i = 0; i < this.contentItems.length; i++) {
+        for (let i = 0; i < this.contentItems.length; i++) {
             if (this.contentItems[i] !== contentItem) {
                 if (!this._isDocked(i))
                     this.contentItems[i].config[this._dimension] += undisplayedItemSize / (this.contentItems.length - 1 - docked);
@@ -175,7 +173,7 @@ export default class RowOrColumn extends AbstractContentItem {
      *
      * @returns {void}
      */
-    removeChild(contentItem, keepChild: boolean): void {
+    removeChild(contentItem: AbstractContentItem, keepChild: boolean): void {
         let removedItemSize = contentItem.config[this._dimension],
             index = indexOf(contentItem, this.contentItems),
             splitterIndex = Math.max(index - 1, 0),
@@ -202,7 +200,7 @@ export default class RowOrColumn extends AbstractContentItem {
          * Allocate the space that the removed item occupied to the remaining items
          */
         let docked = this._isDocked();
-        for (i = 0; i < this.contentItems.length; i++) {
+        for (let i = 0; i < this.contentItems.length; i++) {
             if (this.contentItems[i] !== contentItem) {
                 if (!this._isDocked(i))
                     this.contentItems[i].config[this._dimension] += removedItemSize / (this.contentItems.length - 1 - docked);
@@ -232,7 +230,7 @@ export default class RowOrColumn extends AbstractContentItem {
      *
      * @returns {void}
      */
-    replaceChild(oldChild, newChild): void {
+    replaceChild(oldChild: AbstractContentItem, newChild: AbstractContentItem): void {
         let size = oldChild.config[this._dimension];
         AbstractContentItem.prototype.replaceChild.call(this, oldChild, newChild);
         newChild.config[this._dimension] = size;
@@ -263,7 +261,7 @@ export default class RowOrColumn extends AbstractContentItem {
      *
      * @returns {void}
      */
-    dock(contentItem, mode: boolean, collapsed: boolean): void {
+    dock(contentItem: AbstractContentItem, mode: boolean, collapsed: boolean): void {
         if (this.contentItems.length === 1)
             throw new Error('Can\'t dock child when it single');
 
@@ -276,7 +274,7 @@ export default class RowOrColumn extends AbstractContentItem {
             throw new Error('Can\'t dock child. ContentItem is not child of this Row or Column');
         }
         let isDocked = contentItem._docker && contentItem._docker.docked;
-        if (typeof mode != 'undefined')
+        if (typeof mode !== 'undefined')
             if (mode == isDocked)
                 return;
 
@@ -354,14 +352,12 @@ export default class RowOrColumn extends AbstractContentItem {
     _$init() {
         if (this.isInitialised === true) return;
 
-        let i;
-
         AbstractContentItem.prototype._$init.call(this);
 
-        for (i = 0; i < this.contentItems.length - 1; i++) {
+        for (let i = 0; i < this.contentItems.length - 1; i++) {
             this.contentItems[i].element.after(this._createSplitter(i).element);
         }
-        for (i = 0; i < this.contentItems.length; i++) {
+        for (let i = 0; i < this.contentItems.length; i++) {
             if (this.contentItems[i]._header && this.contentItems[i]._header.docked)
                 this.dock(this.contentItems[i], true, true);
         }
@@ -376,11 +372,10 @@ export default class RowOrColumn extends AbstractContentItem {
      * @private
      * @returns {void}
      */
-    private _setAbsoluteSizes() {
-        let i,
-            sizeData = this._calculateAbsoluteSizes();
+    private _setAbsoluteSizes(): void {
+        let sizeData = this._calculateAbsoluteSizes();
 
-        for (i = 0; i < this.contentItems.length; i++) {
+        for (let i = 0; i < this.contentItems.length; i++) {
             if (sizeData.additionalPixel - i > 0) {
                 sizeData.itemSizes[i]++;
             }
@@ -400,14 +395,13 @@ export default class RowOrColumn extends AbstractContentItem {
      * @returns {object} - Set with absolute sizes and additional pixels.
      */
     private _calculateAbsoluteSizes() {
-        let i,
-            totalSplitterSize = (this.contentItems.length - 1) * this._splitterSize,
+        let totalSplitterSize = (this.contentItems.length - 1) * this._splitterSize,
             headerSize = this.layoutManager.config.dimensions.headerHeight,
             totalWidth = this.element.width(),
             totalHeight = this.element.height(),
-            totalAssigned = 0,
-            additionalPixel,
-            itemSize,
+            totalAssigned = 0;
+            let additionalPixel: number,
+            itemSize: number,
             itemSizes = [];
 
         if (this._isColumn) {
@@ -415,7 +409,7 @@ export default class RowOrColumn extends AbstractContentItem {
         } else {
             totalWidth -= totalSplitterSize;
         }
-        for (i = 0; i < this.contentItems.length; i++) {
+        for (let i = 0; i < this.contentItems.length; i++) {
             if (this._isDocked(i))
                 if (this._isColumn) {
                     totalHeight -= headerSize - this._splitterSize;
@@ -424,7 +418,7 @@ export default class RowOrColumn extends AbstractContentItem {
                 }
         }
 
-        for (i = 0; i < this.contentItems.length; i++) {
+        for (let i = 0; i < this.contentItems.length; i++) {
             if (this._isColumn) {
                 itemSize = Math.floor(totalHeight * (this.contentItems[i].config.height / 100));
             } else {
@@ -468,14 +462,13 @@ export default class RowOrColumn extends AbstractContentItem {
      * @private
      * @returns {void}
      */
-    private _calculateRelativeSizes() {
+    private _calculateRelativeSizes(): void {
 
-        let i,
-            total = 0,
+        let total = 0,
             itemsWithoutSetDimension = [],
             dimension = this._isColumn ? 'height' : 'width';
 
-        for (i = 0; i < this.contentItems.length; i++) {
+        for (let i = 0; i < this.contentItems.length; i++) {
             if (this.contentItems[i].config[dimension] !== undefined) {
                 total += this.contentItems[i].config[dimension];
             } else {
@@ -495,7 +488,7 @@ export default class RowOrColumn extends AbstractContentItem {
          * Allocate the remaining size to the items without a set dimension
          */
         if (Math.round(total) < 100 && itemsWithoutSetDimension.length > 0) {
-            for (i = 0; i < itemsWithoutSetDimension.length; i++) {
+            for (let i = 0; i < itemsWithoutSetDimension.length; i++) {
                 itemsWithoutSetDimension[i].config[dimension] = (100 - total) / itemsWithoutSetDimension.length;
             }
             this._respectMinItemWidth();
@@ -509,7 +502,7 @@ export default class RowOrColumn extends AbstractContentItem {
          * This will be reset in the next step
          */
         if (Math.round(total) > 100) {
-            for (i = 0; i < itemsWithoutSetDimension.length; i++) {
+            for (let i = 0; i < itemsWithoutSetDimension.length; i++) {
                 itemsWithoutSetDimension[i].config[dimension] = 50;
                 total += 50;
             }
@@ -518,7 +511,7 @@ export default class RowOrColumn extends AbstractContentItem {
         /**
          * Set every items size relative to 100 relative to its size to total
          */
-        for (i = 0; i < this.contentItems.length; i++) {
+        for (let i = 0; i < this.contentItems.length; i++) {
             this.contentItems[i].config[dimension] = (this.contentItems[i].config[dimension] / total) * 100;
         }
 
