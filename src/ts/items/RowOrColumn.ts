@@ -675,13 +675,16 @@ export default class RowOrColumn extends ContentItem {
      * Validate if row or column has ability to dock
      * @private
      */
-    _validateDocking(that?: any) {
+    _validateDocking(that?: ContentItem) {
         that = that || this;
-        let can = that.contentItems.length - that._isDocked() > 1;
+        const isDocked = ((<RowOrColumn>that)._isDocked() > 1) ? 1 : 0;
+        let can = (that.contentItems.length - isDocked > 0);
+        // REVIEW
         for (let i = 0; i < that.contentItems.length; ++i)
             if (that.contentItems[i] instanceof Stack) {
-                that.contentItems[i].header._setDockable(that._isDocked(i) || can);
-                that.contentItems[i].header._$setClosable(can);
+                const itemIsDocked = ((<RowOrColumn>that)._isDocked(i) >= 1) ? true : false;
+                that.contentItems[i].header._setDockable(itemIsDocked || can);
+                that.contentItems[i].header.setClosable(can);
             }
     }
 

@@ -262,7 +262,7 @@ export default class Header extends EventEmitter {
      *
      * @returns {boolean} Whether the action was successful
      */
-    private _setDockable(isDockable: boolean): boolean {
+    _setDockable(isDockable: boolean): boolean {
         if (this.dockButton && this.parent.header && this.parent.headerConfig.dock) {
             this.dockButton.element.toggle(!!isDockable);
             return true;

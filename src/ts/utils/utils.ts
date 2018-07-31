@@ -80,6 +80,10 @@ export function getQueryStringParam(param: string): string {
 }
 
 export function copy(target: Object, source: Object): Object {
+
+    if (target === undefined)
+        target = {};
+
     for (let key in source) {
         target[key] = source[key];
     }

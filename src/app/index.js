@@ -1,27 +1,29 @@
-import 'less/test.less'
-import 'less/goldenlayout-base.less'
-import 'less/goldenlayout-dark-theme.less'
+import 'less/test.less';
+import 'less/goldenlayout-base.less';
+import 'less/goldenlayout-dark-theme.less';
 // import {beforeMethod, Metadata} from 'aspect.js';
 import Peteca from './images/peteca.png';
+//import GoldenLayout from './../ts/GoldenLayout';
 
-console.log('compling from ES6:', env.ES6) // variable comes from environment (check package.json)
-console.log('ZEPTO active: ', env.ZEPTO)
-console.log('JQUERY active: ', env.JQUERY)
+// console.log('compling from ES6:', env.ES6) // variable comes from environment (check package.json)
+// console.log('ZEPTO active: ', env.ZEPTO)
+// console.log('JQUERY active: ', env.JQUERY)
 
-export var GoldenLayout = function trick_preprocessor_and_webpack_hmr (a) {
-  if(env.ES6){
-    return require('js/LayoutManager').default // if ES6 exists 'js/' is alias for 'js_es6/'
-  } else {
-    // makes webpack sense that the files (in ./js & subdirs) have changed and restart the build process via concat()
-    () => require('./js/' + a).default
-    return null
-  }
+const GoldenLayout = function trick_preprocessor_and_webpack_hmr (a) {
+    return require('../ts/GoldenLayout.ts').default;
+  // if(env.ES6){
+  //   return require('js/LayoutManager').default // if ES6 exists 'js/' is alias for 'js_es6/'
+  // } else {
+  //   // makes webpack sense that the files (in ./js & subdirs) have changed and restart the build process via concat()
+  //   () => require('./js/' + a).default
+  //   return null
+  // }
 }()
 
-if(env.ZEPTO && env.ES6){
-  require('script-loader!../node_modules/zepto/dist/zepto.js');
-  require('../lib/zepto-extras.js');
-}
+// if(env.ZEPTO && env.ES6){
+//   require('script-loader!../node_modules/zepto/dist/zepto.js');
+//   require('../../lib/zepto-extras');
+// }
 
 
 
@@ -33,6 +35,12 @@ if(env.ZEPTO && env.ES6){
 //   invokeBeforeMethod(meta: Metadata) {
 //     // meta.woveMetadata == { bar: 42 }
 //     console.log(`Inside of the logger. Called ${meta.className}.${meta.method.name} with args: ${meta.method.args.join(', ')}.`);
+//   }
+// }
+
+// declare global {
+//   interface Window { 
+//     myLayout: GoldenLayout; 
 //   }
 // }
 
@@ -67,9 +75,13 @@ window.addEventListener('load', () => {
         break
     }
 
-    window.myLayout = GoldenLayout ? new GoldenLayout( config ) : new window.GoldenLayout( config )
+    //let gl = new GoldenLayout( config );
 
-    myLayout.registerComponent( 'html', function( container, state ) {
+
+    
+    let gl = GoldenLayout ? new GoldenLayout( config ) : new window.GoldenLayout( config );
+    window.myLayout = gl;
+    gl.registerComponent( 'html', function( container, state ) {
 
 
       const element = container._contentElement;
@@ -85,7 +97,7 @@ window.addEventListener('load', () => {
       elm.append('<img src=\'' + state.bg + '\' style=\'max-width:100%\'\>')
     } )
 
-    myLayout.init()
+    gl.init();
 
 
     function createMiniConfig(){

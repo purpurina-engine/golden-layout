@@ -9,7 +9,7 @@
     "outDir": "build/ts",
   },
   "include": [
-    "typings",
+    "src/ts/typings/**/*.ts",
     "src/ts/**/*.ts",
     //"node_modules/@types/**/*.d.ts"
   ],

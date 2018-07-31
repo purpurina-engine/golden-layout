@@ -9,10 +9,10 @@ export type BoundFunction = (...args) => any;
 export type ContentItemConfigFunction = () => ComponentConfig;
 
 export interface Area {
-    x1: number;
-    x2: number;
-    y1: number;
-    y2: number;
+    x1?: number;
+    x2?: number;
+    y1?: number;
+    y2?: number;
 }
 
 export interface ContentArea extends Area {

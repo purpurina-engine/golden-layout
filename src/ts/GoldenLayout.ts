@@ -30,21 +30,17 @@ import {
     stripTags,
     getQueryStringParam,
     isHTMLElement,
-    isContentItemConfig,
 } from './utils/utils';
 import { ElementDimensions, ContentItemConfigFunction, ContentArea, Callback, Area } from './Commons';
 import ItemConfigType, { ComponentConfig, ItemConfig } from './config/ItemConfigType';
 
 type NewContentItem = Stack | Component | RowOrColumn;
 
-
-
-
 const typeToItem = {
-    'column': fnBind(RowOrColumn, this, [true]),
-    'row': fnBind(RowOrColumn, this, [false]),
-    'stack': typeof Stack,
-    'component': typeof Component
+    'column': fnBind(RowOrColumn, this, true),
+    'row': fnBind(RowOrColumn, this, false),
+    'stack': Stack,
+    'component': Component
 };
 
 /**
@@ -85,13 +81,13 @@ export default class GoldenLayout extends EventEmitter {
     private _firstLoad: boolean;
 
     private _itemAreas = [];
-    private _dragSourceArea: DragSourceControl;
+    private _dragSourceArea: DragSourceControl = new DragSourceControl();
 
     private _tabDropPlaceholder: JQuery;
-    
+
     dropTargetIndicator: DropTargetIndicator;
     transitionIndicator: TransitionIndicator;
-    
+
     public get tabDropPlaceholder(): JQuery {
         return this._tabDropPlaceholder;
     }
@@ -163,14 +159,14 @@ export default class GoldenLayout extends EventEmitter {
         return this._selectedItem;
     }
 
-    set selectedItem(value:ContentItem) {
+    set selectedItem(value: ContentItem) {
         this._selectedItem = value;
     }
 
     /**
      * A singleton instance of EventEmitter that works across windows
-     */    
-    get eventHub() : EventHub {
+     */
+    get eventHub(): EventHub {
         return this._eventHub;
     }
 
@@ -208,10 +204,12 @@ export default class GoldenLayout extends EventEmitter {
         this._eventHub = new EventHub(this);
         this._config = this._createConfig(config);
 
-        if (isHTMLElement(container)) {
-            this._container = $(container);
-        } else {
-            this._container = container;
+        if (container !== undefined) {
+            if (isHTMLElement(container)) {
+                this._container = $(container);
+            } else {
+                this._container = container;
+            }
         }
 
         this.dropTargetIndicator = null;
@@ -806,7 +804,7 @@ export default class GoldenLayout extends EventEmitter {
     }
 
     _$computeHeaderArea(area: ContentArea) {
-        let header: ContentArea;
+        let header: ContentArea = {};
         copy(header, area);
         copy(header, area.contentItem._contentAreaDimensions.header.highlightArea);
         header.surface = (header.x2 - header.x1) * (header.y2 - header.y1);
@@ -867,14 +865,14 @@ export default class GoldenLayout extends EventEmitter {
             }
         }
 
-        this._dragSourceArea.clear();
+        // this._dragSourceArea.clear();
 
-        if (countAreas === 1) {
-            areas.push(myArea);
-            areas.push(this._$computeHeaderArea(myHeader));
-        } else {
-            this._dragSourceArea.set(myArea, myHeader, ignoreContentItem);
-        }
+        // if (countAreas === 1) {
+        //     areas.push(myArea);
+        //     areas.push(this._$computeHeaderArea(myHeader));
+        // } else {
+        //     this._dragSourceArea.set(myArea, myHeader, ignoreContentItem);
+        // }
 
         this._itemAreas = areas;
 
@@ -1039,7 +1037,7 @@ export default class GoldenLayout extends EventEmitter {
             config.dimensions.headerHeight = 0;
         }
 
-        return config;
+          return config;
     }
 
     /**
@@ -1090,11 +1088,11 @@ export default class GoldenLayout extends EventEmitter {
      * @returns {void}
      */
     private _createSubWindows(): void {
-        let i, popout;
+        
+        if (this._config.openPopouts === undefined) 
+            return;
 
-        for (i = 0; i < this._config.openPopouts.length; i++) {
-            popout = this._config.openPopouts[i];
-
+        for (const popout of this._config.openPopouts) {
             this.createPopout(
                 popout.content,
                 popout.dimensions,
@@ -1102,6 +1100,7 @@ export default class GoldenLayout extends EventEmitter {
                 popout.indexInParent
             );
         }
+
     }
 
     /**

@@ -81,8 +81,9 @@ export default class Stack extends ContentItem {
             if (this._docker && this._docker.docked)
                 this.childElementContainer[this._docker.dimension](event.type == 'mouseenter' ? this._docker.realSize : 0);
         }, this));
+        
+        this.element.append(this._childElementContainer);
         this.element.append(this.header.element);
-        this.element.append(this.childElementContainer);
         this._setupHeaderPosition();
         this._$validateClosability();
     }
@@ -636,16 +637,16 @@ export default class Stack extends ContentItem {
         this.element.removeClass('lm_left lm_right lm_bottom');
         if (this._side)
             this.element.addClass('lm_' + this._side);
-        if (this.element.find('.lm_header').length && this.childElementContainer) {
+        if (this.element.find('.lm_header').length && this._childElementContainer) {
             //let headerPosition = ['right', 'bottom'].indexOf(this._side) >= 0 ? 'before' : 'after';
             let headerPosition: string;
-            if (this._side >= 0) {
+            if (this._side >= 1) {
                 headerPosition = 'before';
             } else {
                 headerPosition = 'after';
             }
 
-            this.header.element[headerPosition](this.childElementContainer);
+            this.header.element[headerPosition](this._childElementContainer);
             this.callDownwards('setSize');
         }
     }
