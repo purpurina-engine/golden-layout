@@ -1,4 +1,5 @@
-import LayoutManager from '../LayoutManager';
+import ContentItem from '../items/ContentItem';
+import GoldenLayout from '../GoldenLayout';
 import DragListener from '../utils/DragListener';
 import DragProxy from './DragProxy';
 import Header from './Header';
@@ -6,6 +7,8 @@ import {
     fnBind,
     stripTags
 } from '../utils/utils'
+import Component from '../items/Component';
+
 
 /**
  * Represents an individual tab within a Stack's header
@@ -22,19 +25,19 @@ const _template = '<li class="lm_tab"><i class="lm_left"></i>' +
 
 export default class Tab {
 
-    private _layoutManager: LayoutManager;
+    private _layoutManager: GoldenLayout;
     private _dragListener: DragListener;
     private _onTabClickFn: any;
     private _onCloseClickFn: any;
 
     header: Header;
-    contentItem;
+    contentItem: ContentItem;
     element: JQuery;
     titleElement: JQuery;
     closeElement: JQuery;
     isActive: boolean;
 
-    constructor(header: Header, contentItem) {
+    constructor(header: Header, contentItem: ContentItem) {
         this.header = header;
         this.contentItem = contentItem;
         this.element = $(_template);
@@ -74,8 +77,8 @@ export default class Tab {
         this.contentItem.layoutManager.emit('tabCreated', this);
 
         if (this.contentItem.isComponent) {
-            this.contentItem.container.tab = this;
-            this.contentItem.container.emit('tab', this);
+            (<Component>this.contentItem).container.tab = this;
+            (<Component>this.contentItem).container.emit('tab', this);
         }
     }
 
@@ -86,9 +89,9 @@ export default class Tab {
      * html tags) of the same string.
      *
      * @public
-     * @param {String} title can contain html
+     * @param {string} title can contain html
      */
-    setTitle(title: string) {
+    setTitle(title: string): void {
         this.element.attr('title', stripTags(title));
         this.titleElement.html(title);
     }
@@ -98,9 +101,9 @@ export default class Tab {
      * switch tabs, use header.setActiveContentItem( item ) instead.
      *
      * @public
-     * @param {Boolean} isActive
+     * @param {boolean} isActive
      */
-    setActive(isActive: boolean) {
+    setActive(isActive: boolean): void {
         if (isActive === this.isActive) {
             return;
         }
@@ -133,18 +136,18 @@ export default class Tab {
     /**
      * Callback for the DragListener
      *
-     * @param   {Number} x The tabs absolute x position
-     * @param   {Number} y The tabs absolute y position
+     * @param   {number} x The tabs absolute x position
+     * @param   {number} y The tabs absolute y position
      *
      * @private
      * @returns {void}
      */
-    private _onDragStart(x: number, y: number) {
+    private _onDragStart(x: number, y: number): void {
         if (!this.header.canDestroy)
             return null;
 
-        if (this.contentItem.parent.isMaximised === true) {
-            this.contentItem.parent.toggleMaximise();
+        if (this.contentItem.parent.isMaximized === true) {
+            this.contentItem.parent.toggleMaximize();
         }
         new DragProxy(
             x,

@@ -1,39 +1,37 @@
-import AbstractContentItem from './AbstractContentItem';
+import ContentItem from './ContentItem';
 import RowOrColumn from './RowOrColumn';
-import LayoutManager from '../LayoutManager';
-import { ComponentConfig } from '../config/ItemConfigType';
+import { ItemConfig } from '../config/ItemConfigType';
+import GoldenLayout from '../GoldenLayout';
+import { ContentArea, ContentItemType } from '../Commons';
+import Stack from './Stack';
 
 
 
-export default class Root extends AbstractContentItem {
+export default class Root extends ContentItem {
 
     private _containerElement: JQuery;
-    isRoot: boolean;
-    type: string;
-    element: JQuery;
-    childElementContainer: JQuery;
-
-
-    constructor(layoutManager: LayoutManager, config: ComponentConfig, containerElement: JQuery) {
+    
+    constructor(layoutManager: GoldenLayout, config: ItemConfig, containerElement: JQuery) {
 
         super(layoutManager, config, null);
 
-        this.isRoot = true;
-        this.type = 'root';
-        this.element = $('<div class="lm_goldenlayout lm_item lm_root"></div>');
-        this.childElementContainer = this.element;
+        this._isRoot = true;
+        this._type = 'root';
+        this._element = $('<div class="lm_goldenlayout lm_item lm_root"></div>');
+        this._childElementContainer = this.element;
         this._containerElement = containerElement;
         this._containerElement.append(this.element);
     }
 
-    addChild(contentItem) {
+    addChild(contentItem: ContentItem) {
         if (this.contentItems.length > 0) {
             throw new Error('Root node can only have a single child');
         }
 
         contentItem = this.layoutManager._$normalizeContentItem(contentItem, this);
         this.childElementContainer.append(contentItem.element);
-        AbstractContentItem.prototype.addChild.call(this, contentItem);
+        //AbstractContentItem.prototype.addChild.call(this, contentItem);
+        super.addChild(contentItem);
 
         this.callDownwards('setSize');
         this.emitBubblingEvent('stateChanged');
@@ -55,20 +53,20 @@ export default class Root extends AbstractContentItem {
         }
     }
 
-    _$highlightDropZone(x: number, y: number, area) {
+    _$highlightDropZone(x: number, y: number, area: ContentArea) {
         this.layoutManager.tabDropPlaceholder.remove();
         //AbstractContentItem.prototype._$highlightDropZone.apply(this, arguments);
         super._$highlightDropZone(x, y, area);
     }
 
-    _$onDrop(contentItem, area) {
-        let stack;
+    _$onDrop(contentItem: ContentItem, area?: ContentArea) {
+        let stack: Stack;
 
         if (contentItem.isComponent) {
             stack = this.layoutManager.createContentItem({
                 type: 'stack',
                 header: contentItem.config.header || {}
-            }, this);
+            }, this) as Stack;
             stack._$init();
             stack.addChild(contentItem);
             contentItem = stack;
@@ -85,30 +83,31 @@ export default class Root extends AbstractContentItem {
             if (contentItem.config.type === 'row' || contentItem.config.type === 'column') {
                 stack = this.layoutManager.createContentItem({
                     type: 'stack'
-                }, this)
+                }, this) as Stack;
                 stack.addChild(contentItem)
                 contentItem = stack
             }
 
-            let type = area.side[0] == 'x' ? 'row' : 'column';
+            let type: ContentItemType = area.side[0] == 'x' ? 'row' : 'column';
             let dimension = area.side[0] == 'x' ? 'width' : 'height';
             let insertBefore = area.side[1] == '2';
             let column = this.contentItems[0];
+
             if (!(column instanceof RowOrColumn) || column.type != type) {
                 let rowOrColumn = this.layoutManager.createContentItem({
                     type: type
                 }, this);
                 this.replaceChild(column, rowOrColumn);
-                rowOrColumn.addChild(contentItem, insertBefore ? 0 : undefined, true);
-                rowOrColumn.addChild(column, insertBefore ? undefined : 0, true);
+                rowOrColumn.addChild(contentItem, insertBefore ? 0 : undefined);
+                rowOrColumn.addChild(column, insertBefore ? undefined : 0);
                 column.config[dimension] = 50;
                 contentItem.config[dimension] = 50;
                 rowOrColumn.callDownwards('setSize');
             } else {
-                let sibbling = column.contentItems[insertBefore ? 0 : column.contentItems.length - 1]
+                let sibling = column.contentItems[insertBefore ? 0 : column.contentItems.length - 1]
                 column.addChild(contentItem, insertBefore ? 0 : undefined, true);
-                sibbling.config[dimension] *= 0.5;
-                contentItem.config[dimension] = sibbling.config[dimension];
+                sibling.config[dimension] *= 0.5;
+                contentItem.config[dimension] = sibling.config[dimension];
                 column.callDownwards('setSize');
             }
         }

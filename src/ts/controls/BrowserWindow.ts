@@ -6,7 +6,7 @@ export default interface BrowserWindow {
     /**
      * True if the window has been opened and its GoldenLayout instance initialised.
      */
-    isInitialised: boolean;
+    isInitialized: boolean;
 
     /**
      * Creates a window configuration object from the Popout.

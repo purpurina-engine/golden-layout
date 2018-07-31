@@ -1,7 +1,6 @@
 
 import EventEmitter from '../utils/EventEmitter';
 import ConfigMinifier from '../utils/ConfigMinifier';
-import LayoutManager from '../LayoutManager';
 import { ElementDimensions } from '../Commons';
 import Config from '../config';
 import {
@@ -9,6 +8,8 @@ import {
     getUniqueId,
 } from '../utils/utils'
 import GoldenLayoutError from '../errors/GoldenLayoutError';
+import GoldenLayout from '../GoldenLayout';
+import { ItemConfig } from '../config/ItemConfigType';
 
 /**
 * Window configuration object from the Popout.
@@ -44,11 +45,11 @@ export default class BrowserPopout extends EventEmitter {
 
     private _isInitialized: boolean;
 
-    private _config: Config;
-    private _dimensions;
+    private _config: ItemConfig;
+    private _dimensions: ElementDimensions;
     private _parentId: string;
     private _indexInParent: number;
-    private _layoutManager: LayoutManager;
+    private _layoutManager: GoldenLayout;
     private _popoutWindow: Window;
     private _id: number;
 
@@ -59,7 +60,7 @@ export default class BrowserPopout extends EventEmitter {
         return this._isInitialized;
     }
 
-    constructor(config: Config, dimensions, parentId: string, indexInParent: number, layoutManager: LayoutManager) {
+    constructor(config: ItemConfig, dimensions: ElementDimensions, parentId: string, indexInParent: number, layoutManager: GoldenLayout) {
 
         super();
 
@@ -81,7 +82,7 @@ export default class BrowserPopout extends EventEmitter {
      */
     toConfig(): BrowserPopoutConfig {
         if (this._isInitialized === false) {
-            throw new Error('Can\'t create config, layout not yet initialised');
+            throw new Error('Can\'t create config, layout not yet initialized');
         }
         const config: BrowserPopoutConfig = {
             dimensions: {
@@ -100,7 +101,7 @@ export default class BrowserPopout extends EventEmitter {
     /**
      * Returns the GoldenLayout instance from the child window
      */
-    getGlInstance(): LayoutManager {
+    getGlInstance(): GoldenLayout {
         return this._popoutWindow.__glInstance;
     }
 
@@ -256,7 +257,7 @@ export default class BrowserPopout extends EventEmitter {
      *
      * @returns {String} URL
      */
-    private _createUrl() {
+    private _createUrl(): string {
         let input = {
             content: this._config
         },

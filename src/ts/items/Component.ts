@@ -1,43 +1,49 @@
-import AbstractContentItem from './AbstractContentItem';
-import ItemContainer from '../container/ItemContainer';
-import LayoutManager from '../LayoutManager';
+import Container from '../container/Container';
 import ItemConfigType, { ComponentConfig } from '../config/ItemConfigType';
 import { isContentItemConfig } from '../utils/utils';
+import ContentItem from './ContentItem';
+import GoldenLayout from '../GoldenLayout';
 
 
-/**
- * @param {[type]} layoutManager [description]
- * @param {[type]} config      [description]
- * @param {[type]} parent        [description]
- */
+export default class Component extends ContentItem {
 
+    private _container: Container;
+    private _instance: any;
+    private _componentName: string;
 
-export default class Component extends AbstractContentItem {
+    public get instance(): any {
+        return this._instance;
+    }
 
-    private container: ItemContainer;
-    componentName: string;
-    instance: any;
-    element: JQuery<HTMLElement>
+    public get componentName(): string {
+        return this._componentName;
+    }
 
-    constructor(layoutManager: LayoutManager, config: ComponentConfig, parent) {
+    public get container(): Container {
+        return this._container;
+    }
+    public set container(value: Container) {
+        this._container = value;
+    }
+
+    constructor(layoutManager: GoldenLayout, config: ComponentConfig, parent: ContentItem) {
 
         super(layoutManager, config, parent);
-
 
         let ComponentConstructor = layoutManager.getComponent(config.componentName),
             componentConfig = $.extend(true, {}, config.componentState || {});
 
         componentConfig.componentName = config.componentName;
-        this.componentName = config.componentName;
+        this._componentName = config.componentName;
 
         if (this.config.title === '') {
             this.config.title = config.componentName;
         }
 
-        this.isComponent = true;
-        this.container = new ItemContainer(config, this, layoutManager);
-        this.instance = new ComponentConstructor(this.container, componentConfig);
-        this.element = this.container.element;
+        this._isComponent = true;
+        this._container = new Container(config, this, layoutManager);
+        this._instance = new ComponentConstructor(this.container, componentConfig);
+        this._element = this.container.element;
     }
 
     close() {

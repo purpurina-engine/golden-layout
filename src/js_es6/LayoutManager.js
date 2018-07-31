@@ -681,9 +681,9 @@ export default class LayoutManager extends EventEmitter {
         return matchingArea;
     }
 
-    _$createRootItemAreas(rootArea) {
+    _$createRootItemAreas(rootArea: Area) {
         let areaSize = 50;
-        let sides = {
+        let sides: Area = {
             y2: 0,
             x2: 0,
             y1: 'y2',

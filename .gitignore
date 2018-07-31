@@ -6,3 +6,4 @@ dist/
 dist/**
 build/
 package-lock.json
+_bkp/

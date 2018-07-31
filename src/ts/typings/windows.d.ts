@@ -1,8 +1,8 @@
-import LayoutManager from "../GoldenLayout";
+import GoldenLayout from "../GoldenLayout";
 
 declare global {
     interface Window { 
-        __glInstance: LayoutManager; 
+        __glInstance: GoldenLayout; 
     }
     interface Event {
         __gl?: any;

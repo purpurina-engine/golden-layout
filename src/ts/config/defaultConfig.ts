@@ -2,10 +2,7 @@ import Settings from './Settings'
 import Dimensions from './Dimensions';
 import Labels from './Labels';
 
-
-
-
-export default class defaultConfig {
+class DefaultLayoutConfig {
     openPopouts: Array<any>;
     
     settings: Settings = {
@@ -44,3 +41,7 @@ export default class defaultConfig {
         tabDropdown: 'additional tabs'
     }
 }
+
+const defaultConfig = new DefaultLayoutConfig();
+
+export default defaultConfig;

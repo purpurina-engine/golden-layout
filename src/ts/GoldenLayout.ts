@@ -7,7 +7,7 @@ import Root from './items/Root';
 import RowOrColumn from './items/RowOrColumn';
 import Stack from './items/Stack';
 import Component from './items/Component';
-import AbstractContentItem from './items/AbstractContentItem';
+import ContentItem from './items/ContentItem';
 
 import BrowserPopout from './controls/BrowserPopout';
 import DragSource from './controls/DragSource';
@@ -32,11 +32,20 @@ import {
     isHTMLElement,
     isContentItemConfig,
 } from './utils/utils';
-import { ElementDimensions, ContentItemConfigFunction, ContentArea, Callback } from './Commons';
-import ItemConfigType, { ComponentConfig } from './config/ItemConfigType';
-import ContentItem from './items/ContentItem';
-import LayoutManager from './LayoutManager';
+import { ElementDimensions, ContentItemConfigFunction, ContentArea, Callback, Area } from './Commons';
+import ItemConfigType, { ComponentConfig, ItemConfig } from './config/ItemConfigType';
 
+type NewContentItem = Stack | Component | RowOrColumn;
+
+
+
+
+const typeToItem = {
+    'column': fnBind(RowOrColumn, this, [true]),
+    'row': fnBind(RowOrColumn, this, [false]),
+    'stack': typeof Stack,
+    'component': typeof Component
+};
 
 /**
  * The main class that will be exposed as GoldenLayout.
@@ -44,13 +53,22 @@ import LayoutManager from './LayoutManager';
  * @public
  * @constructor
  * @param {GoldenLayout config} config
- * @param {[DOM element container]} container Can be a jQuery selector string or a Dom element. Defaults to body
- *
- * @returns {VOID}
+ * @param {JQuery<HTMLElement>} container Can be a jQuery selector string or a Dom element. Defaults to body
  */
-export default class GoldenLayout  extends EventEmitter implements LayoutManager {
+export default class GoldenLayout extends EventEmitter {
 
-    private isInitialised: boolean = false;
+    private _config: Config;
+    private _width: number;
+    private _height: number;
+    private _container: JQuery
+    private _selectedItem: ContentItem;
+    private _root: ContentItem;
+
+    private _isInitialized: boolean = false;
+    private _isSubWindow: boolean;
+    private _openPopouts: BrowserPopout[];
+    private _eventHub: EventHub;
+
     private _isFullPage: boolean = false;
     private _resizeTimeoutId: any = null;
     private _components = {
@@ -68,30 +86,99 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
 
     private _itemAreas = [];
     private _dragSourceArea: DragSourceControl;
-    private _typeToItem;
 
-    openPopouts: BrowserPopout[];
-    isSubWindow: boolean;
-
-    root: ContentItem;
-    container: JQuery;
-    width: number;
-    height: number;
-
-    config: Config;
-    eventHub: EventHub;
-
-    selectedItem;
+    private _tabDropPlaceholder: JQuery;
+    
     dropTargetIndicator: DropTargetIndicator;
     transitionIndicator: TransitionIndicator;
-    tabDropPlaceholder: JQuery;
+    
+    public get tabDropPlaceholder(): JQuery {
+        return this._tabDropPlaceholder;
+    }
 
+    /**
+     * True once the layout item tree has been created and the initialised event has been fired
+     */
+    get isInitialized(): boolean {
+        return this._isInitialized;
+    }
+
+    /**
+     * The topmost item in the layout item tree. In browser terms: Think of the GoldenLayout instance as window
+     * object and of goldenLayout.root as the document.
+     */
+    public get root(): ContentItem {
+        return this._root;
+    }
+
+    /**
+    * A reference to the current, extended top level config.
+    *
+    * Don't rely on this object for state saving / serialisation. Use layout.toConfig() instead.
+    */
+    get config(): Config {
+        return this._config;
+    }
+
+    /**
+     * The current outer width of the layout in pixels.
+     */
+    get width(): number {
+        return this._width;
+    }
+
+    /**
+     * The current outer height of the layout in pixels.
+     */
+    get height(): number {
+        return this._height;
+    }
+
+    /**
+     * True if the layout has been opened as a popout by another layout.
+     */
+    get isSubWindow(): boolean {
+        return this._isSubWindow;
+    }
+
+    /**
+     * An array of BrowserWindow instances
+     */
+    get openPopouts(): BrowserPopout[] {
+        return this._openPopouts;
+    }
+
+    /**
+     * A reference to the (jQuery) DOM element containing the layout
+     */
+    get container(): JQuery {
+        return this._container;
+    }
+
+    /**
+     * The currently selected item or null if no item is selected. Only relevant if settings.selectionEnabled is set
+     * to true.
+     */
+    get selectedItem(): ContentItem {
+        return this._selectedItem;
+    }
+
+    set selectedItem(value:ContentItem) {
+        this._selectedItem = value;
+    }
+
+    /**
+     * A singleton instance of EventEmitter that works across windows
+     */    
+    get eventHub() : EventHub {
+        return this._eventHub;
+    }
 
     /**
      * @param config A GoldenLayout configuration object
      * @param container The DOM element the layout will be initialised in. Default: document.body
      */
-    constructor(config: Config, container?: HTMLElement | JQuery) {
+    constructor(config: Config, container?: HTMLElement | JQuery<HTMLElement>) {
 
         super();
 
@@ -112,34 +199,30 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
         this._updatingColumnsResponsive = false;
         this._firstLoad = true;
 
-        this.width = null;
-        this.height = null;
-        this.root = null;
-        this.openPopouts = [];
-        this.selectedItem = null;
-        this.isSubWindow = false;
-        this.eventHub = new EventHub(this);
-        this.config = this._createConfig(config);
+        this._width = null;
+        this._height = null;
+        this._root = null;
+        this._openPopouts = [];
+        this._selectedItem = null;
+        this._isSubWindow = false;
+        this._eventHub = new EventHub(this);
+        this._config = this._createConfig(config);
+
         if (isHTMLElement(container)) {
-            this.container = $(container);
+            this._container = $(container);
         } else {
-            this.container = container;
+            this._container = container;
         }
 
         this.dropTargetIndicator = null;
         this.transitionIndicator = null;
-        this.tabDropPlaceholder = $('<div class="lm_drop_tab_placeholder"></div>');
+        this._tabDropPlaceholder = $('<div class="lm_drop_tab_placeholder"></div>');
 
-        if (this.isSubWindow) {
+        if (this._isSubWindow) {
             $('body').css('visibility', 'hidden');
         }
 
-        this._typeToItem = {
-            'column': fnBind(RowOrColumn, this, [true]),
-            'row': fnBind(RowOrColumn, this, [false]),
-            'stack': Stack,
-            'component': Component
-        };
+
     }
 
     /**
@@ -153,7 +236,7 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
      *
      * @returns {Object} minified config
      */
-    static minifyConfig(config: Config): Config {
+    static minifyConfig(config: Config): any {
         return (new ConfigMinifier()).minifyConfig(config);
     }
 
@@ -167,9 +250,10 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
      *
      * @returns {Config} the original configuration
      */
-    static unminifyConfig(config: Config): Config {
+    static unminifyConfig(config: any): Config {
         return (new ConfigMinifier()).unminifyConfig(config);
     }
+
 
 
     /**
@@ -184,12 +268,12 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
      *  }
      *
      * @public
-     * @param   {String} name
-     * @param   {Function} constructor
+     * @param   {string} name
+     * @param   {any} constructor
      *
      * @returns {void}
      */
-    registerComponent(name: string, constructor: Function): void {
+    registerComponent(name: string, constructor: any): void {
         if (typeof constructor !== 'function') {
             throw new Error('Please register a constructor function');
         }
@@ -205,16 +289,16 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
      * Creates a layout configuration object based on the the current state
      *
      * @public
-     * @returns {Object} GoldenLayout configuration
+     * @returns {Config} GoldenLayout configuration
      */
-    toConfig(root?: AbstractContentItem): Config {
-        let config: Config, next, i;
+    toConfig(root?: ContentItem): any {
+        let config, next;
 
-        if (this.isInitialised === false) {
+        if (this.isInitialized === false) {
             throw new Error('Can\'t create config, layout not yet initialized');
         }
 
-        if (root && !(root instanceof AbstractContentItem)) {
+        if (root && !(root instanceof ContentItem)) {
             throw new Error('Root must be a ContentItem');
         }
 
@@ -261,8 +345,8 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
          */
         this._$reconcilePopoutWindows();
         config.openPopouts = [];
-        for (let i = 0; i < this.openPopouts.length; i++) {
-            config.openPopouts.push(this.openPopouts[i].toConfig());
+        for (let i = 0; i < this._openPopouts.length; i++) {
+            config.openPopouts.push(this._openPopouts[i].toConfig());
         }
 
         /*
@@ -276,9 +360,9 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
      * Returns a previously registered component
      *
      * @public
-     * @param   {String} name The name used
+     * @param   {string} name The name used
      *
-     * @returns {Function}
+     * @returns {any}
      */
     getComponent(name: string): any {
         if (this._components[name] === undefined) {
@@ -312,7 +396,6 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
             this._subWindowsCreated = true;
         }
 
-
         /**
          * If the document isn't ready yet, wait for it.
          */
@@ -326,13 +409,13 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
          * page's js calls to be executed, then replace the bodies content
          * with GoldenLayout
          */
-        if (this.isSubWindow === true && this._creationTimeoutPassed === false) {
+        if (this._isSubWindow === true && this._creationTimeoutPassed === false) {
             setTimeout(fnBind(this.init, this), 7);
             this._creationTimeoutPassed = true;
             return;
         }
 
-        if (this.isSubWindow === true) {
+        if (this._isSubWindow === true) {
             this._adjustToWindowMode();
         }
 
@@ -342,7 +425,7 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
         this.updateSize();
         this._create(this.config);
         this._bindEvents();
-        this.isInitialised = true;
+        this._isInitialized = true;
         this._adjustColumnsResponsive();
         this.emit('initialised');
     }
@@ -351,26 +434,26 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
      * Updates the layout managers size
      *
      * @public
-     * @param   {[int]} width  height in pixels
-     * @param   {[int]} height width in pixels
+     * @param   {number} width  _height in pixels
+     * @param   {number} height _width in pixels
      *
      * @returns {void}
      */
     updateSize(width?: number, height?: number): void {
         if (arguments.length === 2) {
-            this.width = width;
-            this.height = height;
+            this._width = width;
+            this._height = height;
         } else {
-            this.width = this.container.width();
-            this.height = this.container.height();
+            this._width = this.container.width();
+            this._height = this.container.height();
         }
 
-        if (this.isInitialised === true) {
-            this.root.callDownwards('setSize', [this.width, this.height]);
+        if (this.isInitialized === true) {
+            this.root.callDownwards('setSize', [this._width, this._height]);
 
             if (this._maximisedItem) {
-                this._maximisedItem.element.width(this.container.width());
-                this._maximisedItem.element.height(this.container.height());
+                this._maximisedItem.element._width(this.container.width());
+                this._maximisedItem.element._height(this.container.height());
                 this._maximisedItem.callDownwards('setSize');
             }
 
@@ -386,18 +469,18 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
      * @returns {void}
      */
     destroy(): void {
-        if (this.isInitialised === false) {
+        if (this.isInitialized === false) {
             return;
         }
         this._onUnload();
         $(window).off('resize', this._resizeFunction);
         $(window).off('unload beforeunload', this._unloadFunction);
         this.root.callDownwards('_$destroy', [], true);
-        this.root.contentItems = [];
+        this.root.destroy();//contentItems = [];
         this.tabDropPlaceholder.remove();
         this.dropTargetIndicator.destroy();
         this.transitionIndicator.destroy();
-        this.eventHub.destroy();
+        this._eventHub.destroy();
 
         this._dragSources.forEach(function (dragSource) {
             dragSource._dragListener.destroy();
@@ -409,15 +492,16 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
     }
 
 
-     /**
-     * Creates a new content item or tree of content items from configuration. Usually you wouldn't call this
-     * directly, but instead use methods like layout.createDragSource(), item.addChild() or item.replaceChild() that
-     * all call this method implicitly.
-     * @param itemConfiguration An item configuration (can be an entire tree of items)
-     * @param parent A parent item
-     * @returns {ContentItem}
-     */
-    createContentItem(itemConfiguration?: ItemConfigType, parent?: ContentItem): void {
+
+    /**
+    * Creates a new content item or tree of content items from configuration. Usually you wouldn't call this
+    * directly, but instead use methods like layout.createDragSource(), item.addChild() or item.replaceChild() that
+    * all call this method implicitly.
+    * @param itemConfiguration An item configuration (can be an entire tree of items)
+    * @param parent A parent item
+    * @returns {ContentItem}
+    */
+    createContentItem(itemConfiguration?: ItemConfigType, parent?: ContentItem): NewContentItem {
         let typeErrorMsg, contentItem;
 
         if (typeof itemConfiguration.type !== 'string') {
@@ -429,9 +513,9 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
             (itemConfiguration as ComponentConfig).componentName = 'lm-react-component';
         }
 
-        if (!this._typeToItem[itemConfiguration.type]) {
+        if (!typeToItem[itemConfiguration.type]) {
             typeErrorMsg = 'Unknown type \'' + itemConfiguration.type + '\'. ' +
-                'Valid types are ' + objectKeys(this._typeToItem).join(',');
+                'Valid types are ' + objectKeys(typeToItem).join(',');
 
             throw new ConfigurationError(typeErrorMsg);
         }
@@ -451,46 +535,48 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
             !!parent &&
 
             // and it's not the topmost item in a new window
-            !(this.isSubWindow === true && parent instanceof Root)
+            !(this._isSubWindow === true && parent instanceof Root)
         ) {
-            itemConfiguration = {
+            const itemConfig: ItemConfig = {
                 type: 'stack',
                 width: itemConfiguration.width,
                 height: itemConfiguration.height,
                 content: [itemConfiguration]
             };
+
+            itemConfiguration = itemConfig;
         }
 
-        contentItem = new this._typeToItem[itemConfiguration.type](this, itemConfiguration, parent);
+        contentItem = new typeToItem[itemConfiguration.type](this, itemConfiguration, parent);
         return contentItem;
     }
 
     /**
      * Creates a popout window with the specified content and dimensions
      *
-     * @param   {Object|lm.itemsAbstractContentItem} configOrContentItem
-     * @param   {[Object]} dimensions A map with width, height, left and top
-     * @param    {[String]} parentId the id of the element this item will be appended to
+     * @param   {any|ContentItem} configOrContentItem
+     * @param   {ElementDimensions} dimensions A map with width, height, left and top
+     * @param   {string} parentId the id of the element this item will be appended to
      *                             when popIn is called
-     * @param    {[Number]} indexInParent The position of this item within its parent element
+     * @param   {number} indexInParent The position of this item within its parent element
      
      * @returns {BrowserPopout}
      */
-    createPopout(configOrContentItem, dimensions?: ElementDimensions, parentId?: string, indexInParent?: number): BrowserPopout {
-        let config = configOrContentItem,
-            isItem = configOrContentItem instanceof AbstractContentItem,
-            self = this;
+    createPopout(configOrContentItem: ContentItem | ItemConfigType | any[], dimensions?: ElementDimensions, parentId?: string, indexInParent?: number): BrowserPopout {
+        let config: ItemConfigType;
+        let self = this;
         let windowLeft: number,
             windowTop: number;
         let offset: any;
-        let parent,
-            child,
+        let parent: ContentItem,
+            child: ContentItem,
             browserPopout;
 
         parentId = parentId || null;
+        const isItem = configOrContentItem instanceof ContentItem;
 
         if (isItem) {
-            config = this.toConfig(configOrContentItem).content;
+            config = this.toConfig(<ContentItem>configOrContentItem).content;
             parentId = getUniqueId();
 
             /**
@@ -501,8 +587,8 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
              * In order to support this we move up the tree until we find something
              * that will remain after the item is being popped out
              */
-            parent = configOrContentItem.parent;
-            child = configOrContentItem;
+            parent = (<ContentItem>configOrContentItem).parent;
+            child = <ContentItem>configOrContentItem;
             while (parent.contentItems.length === 1 && !parent.isRoot) {
                 parent = parent.parent;
                 child = child.parent;
@@ -512,23 +598,25 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
             if (isNaN(indexInParent)) {
                 indexInParent = indexOf(child, parent.contentItems);
             }
+
+
         } else {
-            if (!(config instanceof Array)) {
-                config = [config];
-            }
+            // if (!(config instanceof Array)) {
+            //     config = [config];
+            // }
         }
 
 
         if (!dimensions && isItem) {
             windowLeft = window.screenX || window.screenLeft;
             windowTop = window.screenY || window.screenTop;
-            offset = configOrContentItem.element.offset();
+            offset = (<ContentItem>configOrContentItem).element.offset();
 
             dimensions = {
                 left: windowLeft + offset.left,
                 top: windowTop + offset.top,
-                width: configOrContentItem.element.width(),
-                height: configOrContentItem.element.height()
+                width: (<ContentItem>configOrContentItem).element.width(),
+                height: (<ContentItem>configOrContentItem).element.height()
             };
         }
 
@@ -542,7 +630,7 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
         }
 
         if (isItem) {
-            configOrContentItem.remove();
+            (<ContentItem>configOrContentItem).remove();
         }
 
         browserPopout = new BrowserPopout(config, dimensions, parentId, indexInParent, this);
@@ -555,7 +643,7 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
             self._$reconcilePopoutWindows();
         });
 
-        this.openPopouts.push(browserPopout);
+        this._openPopouts.push(browserPopout);
 
         return browserPopout;
     }
@@ -589,7 +677,7 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
      *
      * @returns {VOID}
      */
-    selectItem(contentItem: ContentItem, silent?:boolean): void {
+    selectItem(contentItem: ContentItem, silent?: boolean): void {
 
         if (this.config.settings.selectionEnabled !== true) {
             throw new Error('Please set selectionEnabled to true to use this feature');
@@ -607,7 +695,7 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
             contentItem.select();
         }
 
-        this.selectedItem = contentItem;
+        this._selectedItem = contentItem;
 
         this.emit('selectionChanged', contentItem);
     }
@@ -624,8 +712,8 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
         contentItem.element.addClass('lm_maximised');
         contentItem.element.after(this._maximisePlaceholder);
         this.root.element.prepend(contentItem.element);
-        contentItem.element.width(this.container.width());
-        contentItem.element.height(this.container.height());
+        contentItem.element._width(this.container.width());
+        contentItem.element._height(this.container.height());
         contentItem.callDownwards('setSize');
         this._maximisedItem.emit('maximised');
         this.emit('stateChanged');
@@ -697,7 +785,7 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
         return matchingArea;
     }
 
-    _$createRootItemAreas(rootArea) {
+    _$createRootItemAreas(rootArea: ContentArea) {
         let areaSize = 50;
         let sides = {
             y2: 0,
@@ -717,7 +805,7 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
         }
     }
 
-    _$computeHeaderArea(area) {
+    _$computeHeaderArea(area: ContentArea) {
         let header: ContentArea;
         copy(header, area);
         copy(header, area.contentItem._contentAreaDimensions.header.highlightArea);
@@ -799,12 +887,12 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
      *
      * @packagePrivate
      *
-     * @param   {AbtractContentItem|Object|Function} contentItemOrConfig
-     * @param   {AbtractContentItem} parent Only necessary when passing in config
+     * @param   {ContentItem|Object|Function} contentItemOrConfig
+     * @param   {ContentItem} parent Only necessary when passing in config
      *
-     * @returns {AbtractContentItem}
+     * @returns {ContentItem}
      */
-    _$normalizeContentItem(contentItemOrConfig: ComponentConfig | ContentItemConfigFunction | ContentItem, parent?: AbstractContentItem): AbstractContentItem {
+    _$normalizeContentItem(contentItemOrConfig: ItemConfigType | ContentItemConfigFunction | ContentItem, parent?: ContentItem): ContentItem {
         if (!contentItemOrConfig) {
             throw new Error('No content item defined');
         }
@@ -813,14 +901,15 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
             contentItemOrConfig = (<ContentItemConfigFunction>contentItemOrConfig)();
         }
 
-        if (contentItemOrConfig instanceof AbstractContentItem) {
+        if (contentItemOrConfig instanceof ContentItem) {
             return contentItemOrConfig;
         }
 
         // if ($.isPlainObject(contentItemOrConfig)) {
-        if (isContentItemConfig(contentItemOrConfig)) {
+        const isConfig = (contentItemOrConfig as ItemConfigType);
+        if (isConfig) {
             //  && contentItemOrConfig.type
-            let newContentItem = this.createContentItem(contentItemOrConfig, parent);
+            let newContentItem = this.createContentItem(isConfig, parent);
             newContentItem.callDownwards('_$init');
             return newContentItem;
         } else {
@@ -838,20 +927,20 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
      * @returns {void}
      */
     _$reconcilePopoutWindows() {
-        let openPopouts = [],
+        let _openPopouts = [],
             i;
 
-        for (i = 0; i < this.openPopouts.length; i++) {
-            if (this.openPopouts[i].getWindow().closed === false) {
-                openPopouts.push(this.openPopouts[i]);
+        for (i = 0; i < this._openPopouts.length; i++) {
+            if (this._openPopouts[i].getWindow().closed === false) {
+                _openPopouts.push(this._openPopouts[i]);
             } else {
-                this.emit('windowClosed', this.openPopouts[i]);
+                this.emit('windowClosed', this._openPopouts[i]);
             }
         }
 
-        if (this.openPopouts.length !== openPopouts.length) {
+        if (this._openPopouts.length !== _openPopouts.length) {
             this.emit('stateChanged');
-            this.openPopouts = openPopouts;
+            this._openPopouts = _openPopouts;
         }
 
     }
@@ -924,7 +1013,7 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
         let windowConfigKey = getQueryStringParam('gl-window');
 
         if (windowConfigKey) {
-            this.isSubWindow = true;
+            this._isSubWindow = true;
             const json = localStorage.getItem(windowConfigKey);
             config = JSON.parse(json);
             config = (new ConfigMinifier()).unminifyConfig(config);
@@ -975,7 +1064,7 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
 
         $('head').append($('body link, body style, template, .gl_keep'));
 
-        this.container = $('body')
+        this._container = $('body')
             .html('')
             .css('visibility', 'visible')
             .append(popInButton);
@@ -1003,8 +1092,8 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
     private _createSubWindows(): void {
         let i, popout;
 
-        for (i = 0; i < this.config.openPopouts.length; i++) {
-            popout = this.config.openPopouts[i];
+        for (i = 0; i < this._config.openPopouts.length; i++) {
+            popout = this._config.openPopouts[i];
 
             this.createPopout(
                 popout.content,
@@ -1043,14 +1132,14 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
             this._isFullPage = true;
 
             $('html, body').css({
-                height: '100%',
+                _height: '100%',
                 margin: 0,
                 padding: 0,
                 overflow: 'hidden'
             });
         }
 
-        this.container = container;
+        this._container = container;
     }
 
     /**
@@ -1078,13 +1167,14 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
             throw new ConfigurationError(errorMsg, config);
         }
 
-        this.root = new Root(this, {
+        this._root = new Root(this, {
+            type: 'root',
             content: config.content
         }, this.container);
         this.root.callDownwards('_$init');
 
         if (config.maximisedItemId === '__glMaximised') {
-            this.root.getItemsById(config.maximisedItemId)[0].toggleMaximise();
+            this.root.getItemsById(config.maximisedItemId)[0].toggleMaximize();
         }
     }
 
@@ -1096,8 +1186,8 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
      */
     private _onUnload(): void {
         if (this.config.settings.closePopoutsOnUnload === true) {
-            for (let i = 0; i < this.openPopouts.length; i++) {
-                this.openPopouts[i].close();
+            for (let i = 0; i < this._openPopouts.length; i++) {
+                this._openPopouts[i].close();
             }
         }
     }
@@ -1108,7 +1198,7 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
      * @returns {void}
      */
     private _adjustColumnsResponsive(): void {
-        // If there is no min width set, or not content items, do nothing.
+        // If there is no min _width set, or not content items, do nothing.
         if (!this._useResponsiveLayout() || this._updatingColumnsResponsive || !this.config.dimensions || !this.config.dimensions.minItemWidth || this.root.contentItems.length === 0 || !this.root.contentItems[0].isRow) {
             this._firstLoad = false;
             return;
@@ -1125,7 +1215,7 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
         // If they all still fit, do nothing.
         let minItemWidth = this.config.dimensions.minItemWidth;
         let totalMinWidth = columnCount * minItemWidth;
-        if (totalMinWidth <= this.width) {
+        if (totalMinWidth <= this._width) {
             return;
         }
 
@@ -1133,7 +1223,7 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
         this._updatingColumnsResponsive = true;
 
         // Figure out how many columns to stack, and put them all in the first stack container.
-        let finalColumnCount = Math.max(Math.floor(this.width / minItemWidth), 1);
+        let finalColumnCount = Math.max(Math.floor(this._width / minItemWidth), 1);
         let stackColumnCount = columnCount - finalColumnCount;
 
         let rootContentItem = this.root.contentItems[0];
@@ -1189,12 +1279,12 @@ export default class GoldenLayout  extends EventEmitter implements LayoutManager
     /**
      * Finds all the stack containers.
      *
-     * @param {array} - Set of containers to populate.
-     * @param {object} - Current node to process.
+     * @param {ContentItem[]} - Set of containers to populate.
+     * @param {ContentItem} - Current node to process.
      *
      * @returns {void}
      */
-    private _findAllStackContainersRecursive(stackContainers: any[], node): void {
+    private _findAllStackContainersRecursive(stackContainers: ContentItem[], node: ContentItem): void {
         node.contentItems.forEach(fnBind(function (item) {
             if (item.type == 'stack') {
                 stackContainers.push(item);

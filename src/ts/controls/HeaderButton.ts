@@ -1,4 +1,5 @@
 import Header from "./Header";
+import { Callback } from "../Commons";
 
 export default class HeaderButton {
 
@@ -6,7 +7,7 @@ export default class HeaderButton {
     private _action: any;
     element: JQuery;
 
-    constructor(header: Header, label: string, cssClass: string, action: any) {
+    constructor(header: Header, label: string, cssClass: string, action: Callback) {
         this._header = header;
         this._action = action;
 

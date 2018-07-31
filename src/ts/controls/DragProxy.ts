@@ -1,10 +1,10 @@
 import EventEmitter from '../utils/EventEmitter';
-import LayoutManager from '../LayoutManager';
 import DragListener from '../utils/DragListener';
 import {
     stripTags,
     getTouchEvent
 } from '../utils/utils';
+import GoldenLayout from '../GoldenLayout';
 
 
 /**
@@ -65,7 +65,7 @@ function buildTemplate(showPreview: boolean = true): string {
 export default class DragProxy extends EventEmitter {
 
     private _dragListener: DragListener;
-    private _layoutManager: LayoutManager;
+    private _layoutManager: GoldenLayout;
     private _contentItem;
     private _originalParent;
 
@@ -83,7 +83,7 @@ export default class DragProxy extends EventEmitter {
     element: JQuery;
     childElementContainer: JQuery;
 
-    constructor(x: number, y: number, dragListener: DragListener, layoutManager: LayoutManager, contentItem, originalParent) {
+    constructor(x: number, y: number, dragListener: DragListener, layoutManager: GoldenLayout, contentItem, originalParent) {
 
         super();
 

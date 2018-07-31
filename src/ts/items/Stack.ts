@@ -1,4 +1,6 @@
-import AbstractContentItem from './AbstractContentItem';
+import GoldenLayout from '../GoldenLayout';
+import ItemConfigType, { StackConfig, ItemConfig } from '../config/ItemConfigType';
+import ContentItem from './ContentItem';
 import RowOrColumn from './RowOrColumn';
 import Header from '../controls/Header';
 
@@ -7,63 +9,72 @@ import {
     copy,
     indexOf
 } from '../utils/utils'
-import LayoutManager from '../LayoutManager';
+import { HightlightAreas, ContentItemType, HeaderConfig } from '../Commons';
 
-interface HeaderConfig {
-    show: boolean,
-    popout: string,
-    maximise: string,
-    close: string,
-    minimise: string,
-    dock?: boolean
-}
 
-export default class Stack extends AbstractContentItem {
+
+export default class Stack extends ContentItem {
 
     private _activeContentItem: any;
     private _dropZones: Object;
     private _dropSegment = null;
-    private _contentAreaDimensions = null;
+    private _contentAreaDimensions: HightlightAreas = null;
     private _dropIndex: number;
-    private _header: HeaderConfig;
-    private _docker: any;
+    private _headerConfig: HeaderConfig;
+    private _sided: boolean;
+    private _side: number;
+
+    config: StackConfig;
+
+    // element: JQuery<HTMLElement>;
+    // childElementContainer: JQuery;
+
+    get headerConfig(): HeaderConfig {
+        return this._headerConfig;
+    }
+
+    get isSided(): boolean {
+        return this._sided;
+    }
+
+    get side(): any {
+        return this._side;
+    }
 
 
-    element: JQuery<HTMLElement>;
-    childElementContainer: JQuery;
-    header: Header;
-
-    constructor(layoutManager: LayoutManager, config, parent) {
+    constructor(layoutManager: GoldenLayout, config: ItemConfigType, parent: ContentItem) {
         super(layoutManager, config, parent)
 
-        this.element = $('<div class="lm_item lm_stack"></div>');
+        this._element = $('<div class="lm_item lm_stack"></div>');
         this._activeContentItem = null;
 
         let cfg = layoutManager.config;
-        this._header = { // defaults' reconstruction from old configuration style
-            show: cfg.settings.hasHeaders === true && config.hasHeaders !== false,
+
+        this._headerConfig = { // defaults' reconstruction from old configuration style
+            show: cfg.settings.hasHeaders === true && (<any>config).hasHeaders !== false,
             popout: cfg.settings.showPopoutIcon && cfg.labels.popout,
             maximise: cfg.settings.showMaximiseIcon && cfg.labels.maximise,
             close: cfg.settings.showCloseIcon && cfg.labels.close,
             minimise: cfg.labels.minimise,
         };
+
         if (cfg.header) // load simplified version of header configuration (https://github.com/deepstreamIO/golden-layout/pull/245)
-            copy(this._header, cfg.header);
+            copy(this._headerConfig, cfg.header);
 
         if (config.header) // load from stack
-            copy(this._header, config.header);
+            copy(this._headerConfig, config.header);
 
         if (config.content && config.content[0] && config.content[0].header) // load from component if stack omitted
-            copy(this._header, config.content[0].header);
+            copy(this._headerConfig, config.content[0].header);
 
         this._dropZones = {};
         this._dropSegment = null;
         this._contentAreaDimensions = null;
         this._dropIndex = null;
 
-        this.isStack = true;
+        this._isStack = true;
 
-        this.childElementContainer = $('<div class="lm_items"></div>');
+        this._childElementContainer = $('<div class="lm_items"></div>');
         this.header = new Header(layoutManager, this);
 
         this.element.on('mouseleave mouseenter', fnBind(function (event) {
@@ -77,29 +88,36 @@ export default class Stack extends AbstractContentItem {
     }
 
     dock(mode) {
-        if (this._header.dock)
-            if (this.parent instanceof RowOrColumn)
+        if (this._headerConfig.dock) {
+            if (this.parent instanceof RowOrColumn) {
                 this.parent.dock(this, mode);
+            }
+        }
     }
 
     setSize() {
-        if (this.element.css('display') === 'none') return;
-        var isDocked = this._docker && this._docker.docked,
-            content = {
-                width: this.element.width(),
-                height: this.element.height()
-            };
+        if (this.element.css('display') === 'none')
+            return;
 
-        if (this._header.show)
+        let isDocked = this.docker && this.docker.docked;
+        let content = {
+            width: this.element.width(),
+            height: this.element.height()
+        };
+
+        if (this._headerConfig.show)
             content[this._sided ? 'width' : 'height'] -= this.layoutManager.config.dimensions.headerHeight;
+        
         if (isDocked)
-            content[this._docker.dimension] = this._docker.realSize;
-        if (!isDocked || this._docker.dimension == 'height')
+            content[this.docker.dimension] = this.docker.realSize;
+
+        if (!isDocked || this.docker.dimension == 'height')
             this.childElementContainer.width(content.width);
-        if (!isDocked || this._docker.dimension == 'width')
+
+        if (!isDocked || this.docker.dimension == 'width')
             this.childElementContainer.height(content.height);
 
-        for (var i = 0; i < this.contentItems.length; i++) {
+        for (let i = 0; i < this.contentItems.length; i++) {
             this.contentItems[i].element.width(content.width);
             this.contentItems[i].element.height(content.height);
         }
@@ -108,13 +126,14 @@ export default class Stack extends AbstractContentItem {
     }
 
     _$init() {
-        var i, initialItem;
+        let initialItem;
 
-        if (this.isInitialised === true) return;
+        if (this._isInitialized === true) return;
 
-        AbstractContentItem.prototype._$init.call(this);
+        //AbstractContentItem.prototype._$init.call(this);
+        super._$init();
 
-        for (i = 0; i < this.contentItems.length; i++) {
+        for (let i = 0; i < this.contentItems.length; i++) {
             this.header.createTab(this.contentItems[i]);
             this.contentItems[i]._$hide();
         }
@@ -149,11 +168,11 @@ export default class Stack extends AbstractContentItem {
         this.emitBubblingEvent('stateChanged');
     }
 
-    getActiveContentItem() {
+    getActiveContentItem(): any {
         return this.header.activeContentItem;
     }
 
-    addChild(contentItem, index) {
+    addChild(contentItem: ContentItem, index?: number) {
         if (index > this.contentItems.length) {
             /* 
              * UGLY PATCH: PR #428, commit a4e84ec5 fixed a bug appearing on touchscreens during the drag of a panel. 
@@ -165,7 +184,8 @@ export default class Stack extends AbstractContentItem {
             index -= 1
         }
         contentItem = this.layoutManager._$normalizeContentItem(contentItem, this);
-        AbstractContentItem.prototype.addChild.call(this, contentItem, index);
+        //AbstractContentItem.prototype.addChild.call(this, contentItem, index);
+        super.addChild(contentItem, index);
         this.childElementContainer.append(contentItem.element);
         this.header.createTab(contentItem, index);
         this.setActiveContentItem(contentItem);
@@ -176,9 +196,10 @@ export default class Stack extends AbstractContentItem {
         this.emitBubblingEvent('stateChanged');
     }
 
-    removeChild(contentItem, keepChild) {
-        var index = indexOf(contentItem, this.contentItems);
-        AbstractContentItem.prototype.removeChild.call(this, contentItem, keepChild);
+    removeChild(contentItem: ContentItem, keepChild?: boolean): void {
+        let index = indexOf(contentItem, this.contentItems);
+        //AbstractContentItem.prototype.removeChild.call(this, contentItem, keepChild);
+        super.removeChild(contentItem, keepChild);
         this.header.removeTab(contentItem);
         if (this.header.activeContentItem === contentItem) {
             if (this.contentItems.length > 0) {
@@ -194,15 +215,16 @@ export default class Stack extends AbstractContentItem {
         this.emitBubblingEvent('stateChanged');
     }
 
-    undisplayChild(contentItem) {
+    undisplayChild(contentItem: ContentItem): void {
         if (this.contentItems.length > 1) {
-            var index = indexOf(contentItem, this.contentItems)
+            let index = indexOf(contentItem, this.contentItems)
             contentItem._$hide && contentItem._$hide()
             this.setActiveContentItem(this.contentItems[index === 0 ? index + 1 : index - 1])
         } else {
             this.header.hideTab(contentItem);
             contentItem._$hide && contentItem._$hide()
-            AbstractContentItem.prototype.undisplayChild.call(this, contentItem);
+            //AbstractContentItem.prototype.undisplayChild.call(this, contentItem);
+            super.undisplayChild(contentItem);
             if (this.parent instanceof RowOrColumn)
                 this.parent._validateDocking();
         }
@@ -216,15 +238,12 @@ export default class Stack extends AbstractContentItem {
      *
      * @returns {void}
      */
-    _$validateClosability() {
-        var contentItem,
-            isClosable,
-            len,
-            i;
+    private _$validateClosability(): void {
+        let contentItem;
+        const len = this.contentItems.length;
+        let isClosable = this.header.isClosable();
 
-        isClosable = this.header._isClosable();
-
-        for (i = 0, len = this.contentItems.length; i < len; i++) {
+        for (let i = 0; i < len; i++) {
             if (!isClosable) {
                 break;
             }
@@ -232,11 +251,12 @@ export default class Stack extends AbstractContentItem {
             isClosable = this.contentItems[i].config.isClosable;
         }
 
-        this.header._$setClosable(isClosable);
+        this.header.setClosable(isClosable);
     }
 
     _$destroy() {
-        AbstractContentItem.prototype._$destroy.call(this);
+        //AbstractContentItem.prototype._$destroy.call(this);
+        super._$destroy();
         this.header._$destroy();
         this.element.off('mouseenter mouseleave');
     }
@@ -262,7 +282,7 @@ export default class Stack extends AbstractContentItem {
      *
      * @returns {void}
      */
-    _$onDrop(contentItem) {
+    _$onDrop(contentItem: ContentItem) {
         /*
          * The item was dropped on the header area. Just add it as a child of this stack and
          * get the hell out of this logic
@@ -285,15 +305,15 @@ export default class Stack extends AbstractContentItem {
          * The item was dropped on the top-, left-, bottom- or right- part of the content. Let's
          * aggregate some conditions to make the if statements later on more readable
          */
-        var isVertical = this._dropSegment === 'top' || this._dropSegment === 'bottom',
+        let isVertical = this._dropSegment === 'top' || this._dropSegment === 'bottom',
             isHorizontal = this._dropSegment === 'left' || this._dropSegment === 'right',
             insertBefore = this._dropSegment === 'top' || this._dropSegment === 'left',
-            hasCorrectParent = (isVertical && this.parent.isColumn) || (isHorizontal && this.parent.isRow),
-            type = isVertical ? 'column' : 'row',
-            dimension = isVertical ? 'height' : 'width',
-            index,
-            stack,
-            rowOrColumn;
+            hasCorrectParent = (isVertical && this.parent.isColumn) || (isHorizontal && this.parent.isRow);
+        let type: ContentItemType = isVertical ? 'column' : 'row',
+            dimension = isVertical ? 'height' : 'width';
+        let index: number;
+        let stack: Stack;
+        let rowOrColumn: RowOrColumn;
 
         /*
          * The content item can be either a component or a stack. If it is a component, wrap it into a stack
@@ -302,7 +322,7 @@ export default class Stack extends AbstractContentItem {
             stack = this.layoutManager.createContentItem({
                 type: 'stack',
                 header: contentItem.config.header || {}
-            }, this);
+            }, this) as Stack;
             stack._$init();
             stack.addChild(contentItem);
             contentItem = stack;
@@ -317,7 +337,7 @@ export default class Stack extends AbstractContentItem {
         if (contentItem.config.type === 'row' || contentItem.config.type === 'column') {
             stack = this.layoutManager.createContentItem({
                 type: 'stack'
-            }, this)
+            }, this) as Stack;
             stack.addChild(contentItem)
             contentItem = stack
         }
@@ -328,7 +348,7 @@ export default class Stack extends AbstractContentItem {
          */
         if (hasCorrectParent) {
             index = indexOf(this, this.parent.contentItems);
-            this.parent.addChild(contentItem, insertBefore ? index : index + 1, true);
+            this.parent.addChild(contentItem, insertBefore ? index : index + 1);
             this.config[dimension] *= 0.5;
             contentItem.config[dimension] = this.config[dimension];
             this.parent.callDownwards('setSize');
@@ -340,7 +360,7 @@ export default class Stack extends AbstractContentItem {
             type = isVertical ? 'column' : 'row';
             rowOrColumn = this.layoutManager.createContentItem({
                 type: type
-            }, this);
+            }, this) as RowOrColumn;
             this.parent.replaceChild(this, rowOrColumn);
 
             rowOrColumn.addChild(contentItem, insertBefore ? 0 : undefined, true);
@@ -350,20 +370,23 @@ export default class Stack extends AbstractContentItem {
             contentItem.config[dimension] = 50;
             rowOrColumn.callDownwards('setSize');
         }
-        this.parent._validateDocking();
+
+        if (this.parent instanceof RowOrColumn) {
+            this.parent._validateDocking();
+        }
     }
 
     /**
      * If the user hovers above the header part of the stack, indicate drop positions for tabs.
      * otherwise indicate which segment of the body the dragged item would be dropped on
      *
-     * @param    {Int} x Absolute Screen X
-     * @param    {Int} y Absolute Screen Y
+     * @param    {number} x Absolute Screen X
+     * @param    {number} y Absolute Screen Y
      *
      * @returns {void}
      */
-    _$highlightDropZone(x, y) {
-        var segment, area;
+    _$highlightDropZone(x: number, y: number): void {
+        let segment, area;
 
         for (segment in this._contentAreaDimensions) {
             area = this._contentAreaDimensions[segment].hoverArea;
@@ -388,8 +411,8 @@ export default class Stack extends AbstractContentItem {
             return null;
         }
 
-        var getArea = AbstractContentItem.prototype._$getArea,
-            headerArea = getArea.call(this, this.header.element),
+        let getArea = super._$getArea;//AbstractContentItem.prototype._$getArea,
+        let headerArea = getArea.call(this, this.header.element),
             contentArea = getArea.call(this, this.childElementContainer),
             contentWidth = contentArea.x2 - contentArea.x1,
             contentHeight = contentArea.y2 - contentArea.y1;
@@ -506,7 +529,7 @@ export default class Stack extends AbstractContentItem {
     }
 
     private _highlightHeaderDropZone(x) {
-        var i,
+        let i,
             tabElement,
             tabsLength = this.header.tabs.length,
             isAboveTab = false,
@@ -567,7 +590,7 @@ export default class Stack extends AbstractContentItem {
 
 
         if (this._sided) {
-            var placeHolderTop = this.layoutManager.tabDropPlaceholder.offset().top;
+            let placeHolderTop = this.layoutManager.tabDropPlaceholder.offset().top;
             this.layoutManager.dropTargetIndicator.highlightArea({
                 x1: tabTop,
                 x2: tabTop + tabElement.innerHeight(),
@@ -590,29 +613,45 @@ export default class Stack extends AbstractContentItem {
         this.layoutManager.tabDropPlaceholder.remove();
     }
 
-    toggleMaximise(e) {
-        if (!this.isMaximised)
+    toggleMaximize(e?: Event) {
+        if (!this.isMaximized) {
             this.dock(false);
-        AbstractContentItem.prototype.toggleMaximise.call(this, e);
+        }
+        //AbstractContentItem.prototype.toggleMaximise.call(this, e);
+        super.toggleMaximize(e);
     }
 
-    private _setupHeaderPosition() {
-        var side = ['right', 'left', 'bottom'].indexOf(this._header.show) >= 0 && this._header.show;
-        this.header.element.toggle(!!this._header.show);
-        this._side = side;
-        this._sided = ['right', 'left'].indexOf(this._side) >= 0;
+    _setupHeaderPosition() {
+        let side: boolean = ['right', 'left', 'bottom'].indexOf(this._headerConfig.oldPosition) >= 0 && this._headerConfig.show;
+
+        this.header.element.toggle(!!this._headerConfig.show);
+        this._side = (side) ? 1 : 0;
+
+        if (this._side === 1) {
+            this._sided = true;
+        } else {
+            this._sided = false;
+        }
+        //this._sided = ['right', 'left'].indexOf(this._side) >= 0;
         this.element.removeClass('lm_left lm_right lm_bottom');
         if (this._side)
             this.element.addClass('lm_' + this._side);
         if (this.element.find('.lm_header').length && this.childElementContainer) {
-            var headerPosition = ['right', 'bottom'].indexOf(this._side) >= 0 ? 'before' : 'after';
+            //let headerPosition = ['right', 'bottom'].indexOf(this._side) >= 0 ? 'before' : 'after';
+            let headerPosition: string;
+            if (this._side >= 0) {
+                headerPosition = 'before';
+            } else {
+                headerPosition = 'after';
+            }
+
             this.header.element[headerPosition](this.childElementContainer);
             this.callDownwards('setSize');
         }
     }
 
-    private _highlightBodyDropZone(segment) {
-        var highlightArea = this._contentAreaDimensions[segment].highlightArea;
+    private _highlightBodyDropZone(segment: string): void {
+        let highlightArea = this._contentAreaDimensions[segment].highlightArea;
         this.layoutManager.dropTargetIndicator.highlightArea(highlightArea);
         this._dropSegment = segment;
     }

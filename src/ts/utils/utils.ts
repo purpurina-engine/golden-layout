@@ -1,5 +1,6 @@
 import { ContentArea, Callback, BoundFunction, ContentItemConfigFunction } from '../Commons';
-import { ComponentConfig } from '../config/ItemConfigType';
+import ItemConfigType, { ComponentConfig } from '../config/ItemConfigType';
+import ContentItem from '../items/ContentItem';
 
 let vendors = [
     'ms',
@@ -253,6 +254,6 @@ export function isHTMLElement(element: Element | HTMLElement | JQuery): element 
     return (element.scroll !== undefined);
 }
 
-export function isContentItemConfig(component: ComponentConfig | ContentItemConfigFunction): component is ComponentConfig {
-    return ((<ComponentConfig>component).type !== undefined || (<ComponentConfig>component).componentName !== undefined)
+export function isContentItemConfig(component: ContentItem | ItemConfigType): component is ItemConfigType {
+    return ((<ItemConfigType>component).type !== undefined)
 }

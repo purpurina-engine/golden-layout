@@ -1,15 +1,16 @@
-import ItemContainer from "../container/ItemContainer";
+import Container from "../container/Container";
 import * as ReactDOM from 'react-dom';
 import * as React from 'react';
+import { ReactComponentConfig } from "../config/ItemConfigType";
 
 /**
- * A specialised GoldenLayout component that binds GoldenLayout container
+ * A specialized GoldenLayout component that binds GoldenLayout container
  * lifecycle events to react components
  *
  * @constructor
  *
- * @param {ItemContainer} container
- * @param {Object} state state is not required for react components
+ * @param {Container} container
+ * @param {any} state state is not required for react components
  */
 
 
@@ -17,13 +18,13 @@ export default class ReactComponentHandler {
 
     private _reactComponent: React.Component;
     private _originalComponentWillUpdate: any;
-    private _container: ItemContainer;
-    private _initialState: Object;
+    private _container: Container;
+    private _initialState: any;
     private _reactClass: any;
 
 
 
-    constructor(container: ItemContainer, state?: Object) {
+    constructor(container: Container, state?: any) {
         this._reactComponent = null;
         this._originalComponentWillUpdate = null;
         this._container = container;
@@ -84,7 +85,7 @@ export default class ReactComponentHandler {
      * @returns {React.Class}
      */
     private _getReactClass() {
-        let componentName = this._container._config.component;
+        const componentName = (<ReactComponentConfig>this._container.config).component;
         let reactClass;
 
         if (!componentName) {
@@ -112,7 +113,7 @@ export default class ReactComponentHandler {
             glEventHub: this._container.layoutManager.eventHub,
             glContainer: this._container,
         };
-        let props = $.extend(defaultProps, this._container._config.props);
+        let props = $.extend(defaultProps, (<ReactComponentConfig>this._container.config).props);
         return React.createElement(this._reactClass, props);
     }
 }

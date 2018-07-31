@@ -95,7 +95,7 @@ export default class ConfigMinifier {
      *
      * @returns {Object} the original configuration
      */
-    unminifyConfig(minifiedConfig: Object): Config {
+    unminifyConfig(minifiedConfig: any): Config {
         var orig = {};
         this._nextLevel(minifiedConfig, orig, '_max');
         return orig;

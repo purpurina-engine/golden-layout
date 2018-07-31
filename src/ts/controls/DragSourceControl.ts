@@ -5,8 +5,10 @@ export default class DragSourceControl {
 
     private area: ContentArea;
     private header: ContentArea;
-    private fullArea: ContentArea;
+    fullArea: ContentArea;
     private _hasArea: boolean = false;
+
+
 
     get hasArea(): boolean {
         return this._hasArea;

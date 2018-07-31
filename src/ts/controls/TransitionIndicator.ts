@@ -29,18 +29,18 @@ export default class TransitionIndicator {
         this._element.remove();
     }
 
-    // transitionElements(fromElement, toElement) {
-    //     /**
-    //      * TODO - This is not quite as cool as expected. Review.
-    //      */
-    //     return;
-    //     // this._toElement = toElement;
-    //     // this._animationStartTime = now();
-    //     // this._fromDimensions = this._measure(fromElement);
-    //     // this._fromDimensions.opacity = 0.8;
-    //     // this._element.show().css(this._fromDimensions);
-    //     // animFrame(fnBind(this._nextAnimationFrame, this));
-    // }
+    transitionElements(fromElement, toElement) {
+        /**
+         * TODO - This is not quite as cool as expected. Review.
+         */
+        return;
+        // this._toElement = toElement;
+        // this._animationStartTime = now();
+        // this._fromDimensions = this._measure(fromElement);
+        // this._fromDimensions.opacity = 0.8;
+        // this._element.show().css(this._fromDimensions);
+        // animFrame(fnBind(this._nextAnimationFrame, this));
+    }
 
     _nextAnimationFrame(): void {
         let toDimensions = TransitionIndicator.measure(this._toElement),
