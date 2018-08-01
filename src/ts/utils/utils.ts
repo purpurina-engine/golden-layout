@@ -1,8 +1,8 @@
-import { ContentArea, Callback, BoundFunction, ContentItemConfigFunction } from '../Commons';
-import ItemConfigType, { ComponentConfig } from '../config/ItemConfigType';
+import { ContentArea, Callback, BoundFunction } from '../Commons';
+import ItemConfigType from '../config/ItemConfigType';
 import ContentItem from '../items/ContentItem';
 
-let vendors = [
+let vendors: string[] = [
     'ms',
     'moz',
     'webkit',
@@ -16,22 +16,27 @@ for (let x = 0; x < vendors.length && !window.requestAnimationFrame; x++) {
 
 
 
-export function F() { }
+function F(): void { }
 
-export function getTouchEvent(event) {
+export function getTouchEvent(event: JQuery.Event): JQuery.Event {
     // if($.zepto){
     //     return event.touches ? event.targetTouches[0] : event;
     // } else {
-    return event.originalEvent && event.originalEvent.touches ? event.originalEvent.touches[0] : event;
+    if (event.originalEvent && event.originalEvent['touches']) {
+        return event.originalEvent['touches'][0];
+    }
+
+
+    return event;
     // }
 }
 
-export function extend(subClass, superClass) {
+export function extend(subClass: any, superClass: any) {
     subClass.prototype = createObject(superClass.prototype);
     subClass.prototype.constructor = subClass;
 }
 
-export function createObject(prototype) {
+export function createObject(prototype: any) {
     if (typeof Object.create === 'function') {
         return Object.create(prototype);
     } else {
@@ -40,7 +45,7 @@ export function createObject(prototype) {
     }
 }
 
-export function objectKeys(object: Object): Array<string> {
+export function objectKeys(object: Object): string[] {
     let keys;
 
     if (typeof Object.keys === 'function') {
@@ -66,12 +71,11 @@ export function getQueryStringParam(param: string): string {
         return null;
     }
 
-    let keyValuePairs = window.location.search.substr(1).split('&'),
-        params = {},
-        pair,
-        i;
+    let keyValuePairs = window.location.search.substr(1).split('&');
+    let params: object = {};
+    let pair: string[];
 
-    for (i = 0; i < keyValuePairs.length; i++) {
+    for (let i = 0; i < keyValuePairs.length; i++) {
         pair = keyValuePairs[i].split('=');
         params[pair[0]] = pair[1];
     }
@@ -79,7 +83,7 @@ export function getQueryStringParam(param: string): string {
     return params[param] || null;
 }
 
-export function copy(target: Object, source: Object): Object {
+export function copy(target: object, source: object): object {
 
     if (target === undefined)
         target = {};
@@ -96,18 +100,18 @@ export function copy(target: Object, source: Object): Object {
  * a) it shouldn't affect the global requestAnimationFrame function
  * b) it shouldn't pass on the time that has passed
  *
- * @param   {Function} fn
+ * @param   {Callback} fn
  *
  * @returns {void}
  */
-export function animFrame(fn) {
+export function animFrame(fn: Callback) {
     return (window.requestAnimationFrame ||
         function (callback) {
             window.setTimeout(callback, 1000 / 60);
         })(fn);
 }
 
-export function indexOf(needle: any, haystack: Array<any>): number {
+export function indexOf(needle: any, haystack: any[]): number {
     if (!(haystack instanceof Array)) {
         throw new Error('Haystack is not an Array');
     }
@@ -144,13 +148,13 @@ export function isFunction(obj: any | Callback): boolean {
 
 
 
-export function fnBind(fn: Callback|any, context?: Object, ...boundArgs): BoundFunction {
+export function fnBind(fn: Callback | any, context?: object, ...boundArgs: any[]): BoundFunction | any {
 
     if (Function.prototype.bind !== undefined) {
         return Function.prototype.bind.apply(fn, [context].concat(boundArgs || []));
     }
 
-    let bound = function () {
+    let bound = function (this: any) {
 
         // Join the already applied arguments to the now called ones (after converting to an array again).
         let args = (boundArgs || []).concat(Array.prototype.slice.call(arguments, 0));
@@ -169,7 +173,7 @@ export function fnBind(fn: Callback|any, context?: Object, ...boundArgs): BoundF
     return bound;
 }
 
-export function removeFromArray(item, array) {
+export function removeFromArray(item: any, array: any[]) {
     let index = indexOf(item, array);
 
     if (index === -1) {
@@ -198,10 +202,10 @@ export function getUniqueId(): string {
  * implementing developer to make sure their particular
  * applications and usecases are save from cross site scripting attacks
  *
- * @param   {String} input
- * @param    {Boolean} keepTags
+ * @param   {string} input
+ * @param    {boolean} keepTags
  *
- * @returns {String} filtered input
+ * @returns {string} filtered input
  */
 export function filterXss(input: string, keepTags?: boolean): string {
 
@@ -224,9 +228,9 @@ export function filterXss(input: string, keepTags?: boolean): string {
 /**
  * Removes html tags from a string
  *
- * @param   {String} input
+ * @param   {string} input
  *
- * @returns {String} input without tags
+ * @returns {string} input without tags
  */
 export function stripTags(input: string): string {
     return $.trim(input.replace(/(<([^>]+)>)/ig, ''));

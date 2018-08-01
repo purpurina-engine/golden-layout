@@ -88,10 +88,10 @@ export default class Root extends ContentItem {
                 contentItem = stack
             }
 
-            let type: ContentItemType = area.side[0] == 'x' ? 'row' : 'column';
-            let dimension = area.side[0] == 'x' ? 'width' : 'height';
-            let insertBefore = area.side[1] == '2';
-            let column = this.contentItems[0];
+            const type: ContentItemType = area.side[0] == 'x' ? 'row' : 'column';
+            const dimension = area.side[0] == 'x' ? 'width' : 'height';
+            const insertBefore = area.side[1] == '2';
+            const column = this.contentItems[0];
 
             if (!(column instanceof RowOrColumn) || column.type != type) {
                 let rowOrColumn = this.layoutManager.createContentItem({
@@ -104,7 +104,7 @@ export default class Root extends ContentItem {
                 contentItem.config[dimension] = 50;
                 rowOrColumn.callDownwards('setSize');
             } else {
-                let sibling = column.contentItems[insertBefore ? 0 : column.contentItems.length - 1]
+                const sibling = column.contentItems[insertBefore ? 0 : column.contentItems.length - 1]
                 column.addChild(contentItem, insertBefore ? 0 : undefined, true);
                 sibling.config[dimension] *= 0.5;
                 contentItem.config[dimension] = sibling.config[dimension];

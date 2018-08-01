@@ -1,6 +1,7 @@
 import Settings from './Settings'
 import Dimensions from './Dimensions';
 import Labels from './Labels';
+import DragDropSettings from './DragDropSettings';
 
 class DefaultLayoutConfig {
     openPopouts: Array<any>;
@@ -39,6 +40,12 @@ class DefaultLayoutConfig {
         popout: 'open in new window',
         popin: 'pop in',
         tabDropdown: 'additional tabs'
+    };
+
+    dragDrop: DragDropSettings = {
+        detachDragSource: true,
+        showDragPreview: true,
+        allowDropItself: false,
     }
 }
 

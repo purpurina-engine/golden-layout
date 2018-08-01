@@ -31,24 +31,39 @@ export default class Header extends EventEmitter {
     private _tabControlOffset: number;
     private _canDestroy: boolean;
     private layoutManager: GoldenLayout;
+    private hideAdditionalTabsDropdown: any;
 
+    private tabsContainer: JQuery;
+    private tabDropdownContainer: JQuery;
+    private _controlsContainer: JQuery;
+    private _tabs: Tab[];
+
+    private tabsMarkedForRemoval: Tab[];
+    private _activeContentItem: ContentItem = null;
+
+    private closeButton: HeaderButton = null;
+    private dockButton: HeaderButton = null;
+    private tabDropdownButton: HeaderButton = null;
+
+    parent: Stack;
     element: JQuery;
 
-    tabsContainer: JQuery;
-    tabDropdownContainer: JQuery;
-    controlsContainer: JQuery;
-    parent: Stack;
-    tabs: Array<any>;
-    tabsMarkedForRemoval: Array<any>;
-    activeContentItem = null;
-    closeButton = null;
-    dockButton = null;
-    tabDropdownButton = null;
-    hideAdditionalTabsDropdown: any;
+    public get tabs(): Tab[] {
+        return this._tabs;
+    }
 
-    get canDestroy(): boolean {
+    public get activeContentItem(): ContentItem {
+        return this._activeContentItem;
+    }
+
+    public get canDestroy(): boolean {
         return this._canDestroy;
     }
+
+    public get controlsContainer(): JQuery {
+        return this._controlsContainer;
+    }
+
 
     constructor(layoutManager: GoldenLayout, parent: Stack) {
 
@@ -65,12 +80,12 @@ export default class Header extends EventEmitter {
         this.tabsContainer = this.element.find('.lm_tabs');
         this.tabDropdownContainer = this.element.find('.lm_tabdropdown_list');
         this.tabDropdownContainer.hide();
-        this.controlsContainer = this.element.find('.lm_controls');
+        this._controlsContainer = this.element.find('.lm_controls');
         this.parent = parent;
         this.parent.on('resize', this._updateTabSizes, this);
-        this.tabs = [];
+        this._tabs = [];
         this.tabsMarkedForRemoval = [];
-        this.activeContentItem = null;
+        this._activeContentItem = null;
         this.closeButton = null;
         this.dockButton = null;
         this.tabDropdownButton = null;
@@ -188,7 +203,7 @@ export default class Header extends EventEmitter {
             isActive = this.tabs[i].contentItem === contentItem;
             this.tabs[i].setActive(isActive);
             if (isActive === true) {
-                this.activeContentItem = contentItem;
+                this._activeContentItem = contentItem;
                 this.parent.config.activeItemIndex = i;
             }
         }
@@ -292,10 +307,16 @@ export default class Header extends EventEmitter {
      *
      * @returns {string} when exists
      */
-    private _getHeaderSetting(name): string {
+    private _getHeaderSetting(name: string): string {
         if (name in this.parent.headerConfig) {
-            return this.parent.headerConfig[name];
+            let value = this.parent.headerConfig[name];
+            if (typeof value === 'boolean') {
+                return (value) ? 'true' : 'false';
+            } else {
+                return value;
+            }
         }
+        return undefined;
     }
 
     /**
@@ -304,21 +325,17 @@ export default class Header extends EventEmitter {
      * @returns {void}
      */
     private _createControls(): void {
-        let closeStack,
-            popout,
-            label,
-            maximiseLabel,
-            minimiseLabel,
-            maximise,
-            maximiseButton,
-            tabDropdownLabel,
-            showTabDropdown;
+
+        let label: string;
+        let maximiseLabel: string;
+        let minimiseLabel: string;
+        let maximiseButton: HeaderButton;
 
         /**
          * Dropdown to show additional tabs.
          */
-        showTabDropdown = fnBind(this._showAdditionalTabsDropdown, this);
-        tabDropdownLabel = this.layoutManager.config.labels.tabDropdown;
+        const showTabDropdown = fnBind(this._showAdditionalTabsDropdown, this);
+        const tabDropdownLabel = this.layoutManager.config.labels.tabDropdown;
         this.tabDropdownButton = new HeaderButton(this, tabDropdownLabel, 'lm_tabdropdown', showTabDropdown);
         this.tabDropdownButton.element.hide();
 
@@ -332,7 +349,7 @@ export default class Header extends EventEmitter {
          * Popout control to launch component in new window.
          */
         if (this._getHeaderSetting('popout')) {
-            popout = fnBind(this._onPopoutClick, this);
+            const popout = fnBind(this._onPopoutClick, this);
             label = this._getHeaderSetting('popout');
             new HeaderButton(this, label, 'lm_popout', popout);
         }
@@ -341,7 +358,7 @@ export default class Header extends EventEmitter {
          * Maximise control - set the component to the full size of the layout
          */
         if (this._getHeaderSetting('maximise')) {
-            maximise = fnBind(this.parent.toggleMaximize, this.parent);
+            const maximise = fnBind(this.parent.toggleMaximize, this.parent);
             maximiseLabel = this._getHeaderSetting('maximise');
             minimiseLabel = this._getHeaderSetting('minimise');
             maximiseButton = new HeaderButton(this, maximiseLabel, 'lm_maximise', maximise);
@@ -359,7 +376,7 @@ export default class Header extends EventEmitter {
          * Close button
          */
         if (this.isClosable()) {
-            closeStack = fnBind(this.parent.remove, this.parent);
+            const closeStack = fnBind(this.parent.remove, this.parent);
             label = this._getHeaderSetting('close');
             this.closeButton = new HeaderButton(this, label, 'lm_close', closeStack);
         }
@@ -427,7 +444,7 @@ export default class Header extends EventEmitter {
         //Show the menu based on function argument
         this.tabDropdownButton.element.toggle(showTabMenu === true);
 
-        let size = function (val) {
+        let size = function (val: boolean) {
             return val ? 'width' : 'height';
         };
 

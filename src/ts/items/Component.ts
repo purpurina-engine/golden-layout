@@ -1,6 +1,5 @@
 import Container from '../container/Container';
-import ItemConfigType, { ComponentConfig } from '../config/ItemConfigType';
-import { isContentItemConfig } from '../utils/utils';
+import { ComponentConfig } from '../config/ItemConfigType';
 import ContentItem from './ContentItem';
 import GoldenLayout from '../GoldenLayout';
 
@@ -15,6 +14,9 @@ export default class Component extends ContentItem {
         return this._instance;
     }
 
+    /**
+     * The component name
+     */
     public get componentName(): string {
         return this._componentName;
     }
@@ -46,44 +48,44 @@ export default class Component extends ContentItem {
         this._element = this.container.element;
     }
 
-    close() {
+    close(): void {
         this.parent.removeChild(this);
     }
 
-    setSize() {
+    setSize(): void {
         if (this.element.css('display') !== 'none') {
             // Do not update size of hidden components to prevent unwanted reflows
             this.container._$setSize(this.element.width(), this.element.height());
         }
     }
 
-    _$init() {
+    _$init() : void {
         //AbstractContentItem.prototype._$init.call(this);
         super._$init();
         this.container.emit('open');
         
     }
 
-    _$hide() {
+    _$hide(): void {
         this.container.hide();
         super._$hide();
         //AbstractContentItem.prototype._$hide.call(this);
     }
 
-    _$show() {
+    _$show(): void {
         this.container.show();
         
         //AbstractContentItem.prototype._$show.call(this);
         super._$show();
     }
 
-    _$shown() {
+    _$shown(): void {
         // TODO
         // this.container.shown();
         // AbstractContentItem.prototype._$shown.call(this);
     }
 
-    _$destroy() {
+    _$destroy(): void {
         this.container.emit('destroy', this);
         //AbstractContentItem.prototype._$destroy.call(this);
         super._$destroy();
@@ -94,7 +96,7 @@ export default class Component extends ContentItem {
      *
      * @returns null
      */
-    _$getArea() {
+    _$getArea(): null {
         return null;
     }
 }

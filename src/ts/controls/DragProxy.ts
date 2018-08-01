@@ -5,6 +5,9 @@ import {
     getTouchEvent
 } from '../utils/utils';
 import GoldenLayout from '../GoldenLayout';
+import ContentItem from '../items/ContentItem';
+import Stack from '../items/Stack';
+import { ContentArea } from '../Commons';
 
 
 /**
@@ -33,16 +36,6 @@ import GoldenLayout from '../GoldenLayout';
 //     '<div class="lm_content"></div>' +
 //     '</div>'
 
-const _template = '<div class="lm_dragProxy">' +
-    '<div class="lm_header">' +
-    '<ul class="lm_tabs">' +
-    '<li class="lm_tab lm_active"><i class="lm_left"></i>' +
-    '<span class="lm_title"></span>' +
-    '<i class="lm_right"></i></li>' +
-    '</ul>' +
-    '</div>' +
-    '</div>'
-
 function buildTemplate(showPreview: boolean = true): string {
     let _template = '<div class="lm_dragProxy">' +
         '<div class="lm_header">' +
@@ -66,24 +59,26 @@ export default class DragProxy extends EventEmitter {
 
     private _dragListener: DragListener;
     private _layoutManager: GoldenLayout;
-    private _contentItem;
-    private _originalParent;
+    private _contentItem: ContentItem;
+    private _originalParent: ContentItem;
 
-    private _area = null;
-    private _lastValidArea = null;
-    private _sided;
+    private _area: ContentArea = null;
+    private _lastValidArea: ContentArea = null;
+    private _sided: boolean;
 
     private _minX: number;
     private _minY: number;
     private _maxX: number;
     private _maxY: number;
-    private _width: number;
-    private _height: number;
+    //private _width: number;
+    //private _height: number;
+
+    private showPreview: boolean;
 
     element: JQuery;
     childElementContainer: JQuery;
 
-    constructor(x: number, y: number, dragListener: DragListener, layoutManager: GoldenLayout, contentItem, originalParent) {
+    constructor(x: number, y: number, dragListener: DragListener, layoutManager: GoldenLayout, contentItem: ContentItem, originalParent: ContentItem) {
 
         super();
 
@@ -92,19 +87,25 @@ export default class DragProxy extends EventEmitter {
         this._contentItem = contentItem;
         this._originalParent = originalParent;
 
+        // Setup settings
+        const showPreview = layoutManager.config.dragDrop.showDragPreview || true;
+        const detach = layoutManager.config.dragDrop.detachDragSource || true;
+
         this._area = null;
         this._lastValidArea = null;
 
         this._dragListener.on('drag', this._onDrag, this);
         this._dragListener.on('dragStop', this._onDrop, this);
 
-        this.element = $(buildTemplate());
+        this.element = $(buildTemplate(this.showPreview));
 
-        if (originalParent && originalParent._side) {
-            this._sided = originalParent._sided;
-            this.element.addClass('lm_' + originalParent._side);
-            if (['right', 'bottom'].indexOf(originalParent._side) >= 0)
-                this.element.find('.lm_content').after(this.element.find('.lm_header'));
+        if (originalParent && originalParent instanceof Stack) {
+            if (originalParent.side) {
+                this._sided = originalParent.isSided;
+                this.element.addClass('lm_' + originalParent.side);
+                if (['right', 'bottom'].indexOf(originalParent.side) >= 0)
+                    this.element.find('.lm_content').after(this.element.find('.lm_header'));
+            }
         }
         this.element.css({
             left: x,
@@ -112,23 +113,39 @@ export default class DragProxy extends EventEmitter {
         });
         this.element.find('.lm_tab').attr('title', stripTags(this._contentItem.config.title));
         this.element.find('.lm_title').html(this._contentItem.config.title);
-        this.childElementContainer = this.element.find('.lm_content');
-        // this.childElementContainer.append(contentItem.element);
 
-        this._undisplayTree();
+        this.childElementContainer = this.element.find('.lm_content');
+
+        /**
+         * Should show preview? Attach to drag proxy preview.
+         */
+        if (showPreview) {
+            this.childElementContainer.append(contentItem.element);
+        }
+
+        /**
+         * Should detach child element from tree?
+         */
+        if (detach) {
+            this._undisplayTree();
+        }
+
         this._layoutManager._$calculateItemAreas(this._contentItem.parent);
-        this._setDimensions();
+
+        if (detach) {
+            this._setDimensions();
+        }
 
         $(document.body).append(this.element);
 
-        var offset = this._layoutManager.container.offset();
+        const offset = this._layoutManager.container.offset();
 
         this._minX = offset.left;
         this._minY = offset.top;
         this._maxX = this._layoutManager.container.width() + this._minX;
         this._maxY = this._layoutManager.container.height() + this._minY;
-        this._width = this.element.width();
-        this._height = this.element.height();
+        //this._width = this.element.width();
+        //this._height = this.element.height();
 
         this._setDropPosition(x, y);
     }
@@ -138,18 +155,18 @@ export default class DragProxy extends EventEmitter {
      * still within the valid drag area and calls the layoutManager to highlight the
      * current drop area
      *
-     * @param   {Number} offsetX The difference from the original x position in px
-     * @param   {Number} offsetY The difference from the original y position in px
-     * @param   {jQuery DOM event} event
+     * @param   {number} offsetX The difference from the original x position in px
+     * @param   {number} offsetY The difference from the original y position in px
+     * @param   {JQuery.Event} event
      *
      * @private
      *
      * @returns {void}
      */
-    private _onDrag(offsetX: number, offsetY: number, event): void {
+    private _onDrag(offsetX: number, offsetY: number, event: JQuery.Event): void {
         event = getTouchEvent(event)
 
-        var x = event.pageX,
+        const x = event.pageX,
             y = event.pageY,
             isWithinContainer = x > this._minX && x < this._maxX && y > this._minY && y < this._maxY;
 
@@ -163,8 +180,8 @@ export default class DragProxy extends EventEmitter {
     /**
      * Sets the target position, highlighting the appropriate area
      *
-     * @param   {Number} x The x position in px
-     * @param   {Number} y The y position in px
+     * @param   {number} x The x position in px
+     * @param   {number} y The y position in px
      *
      * @private
      *
@@ -191,7 +208,7 @@ export default class DragProxy extends EventEmitter {
      *
      * @returns {void}
      */
-    private _onDrop() {
+    private _onDrop(): void {
         this._updateTree();
         this._layoutManager.dropTargetIndicator.hide();
 
@@ -237,14 +254,14 @@ export default class DragProxy extends EventEmitter {
      *
      * @returns {void}
      */
-    private _undisplayTree() {
+    private _undisplayTree(): void {
 
         /**
          * parent is null if the drag had been initiated by a external drag source
          */
-        // if (this._contentItem.parent) {
-        //     this._contentItem.parent.undisplayChild(this._contentItem);
-        // }
+        if (this._contentItem.parent) {
+            this._contentItem.parent.undisplayChild(this._contentItem);
+        }
     }
 
     /**
@@ -254,7 +271,7 @@ export default class DragProxy extends EventEmitter {
      *
      * @returns {void}
      */
-    private _updateTree() {
+    private _updateTree(): void {
 
         /**
          * parent is null if the drag had been initiated by a external drag source
@@ -263,7 +280,8 @@ export default class DragProxy extends EventEmitter {
             this._contentItem.parent.removeChild(this._contentItem, true);
         }
 
-        this._contentItem._$setParent(this);
+        // REVIEW
+        //this._contentItem._$setParent(this);
     }
 
     /**
@@ -273,8 +291,8 @@ export default class DragProxy extends EventEmitter {
      *
      * @returns {void}
      */
-    private _setDimensions() {
-        var dimensions = this._layoutManager.config.dimensions,
+    private _setDimensions(): void {
+        let dimensions = this._layoutManager.config.dimensions,
             width = dimensions.dragProxyWidth,
             height = dimensions.dragProxyHeight;
 

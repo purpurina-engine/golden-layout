@@ -7,8 +7,20 @@ import '../less/goldenlayout-dark-theme.less';
 
 //
 // Layout
-export { default }  from './GoldenLayout';
+export { default } from './GoldenLayout';
 //
+export {
+    default as Config,
+    Labels,
+    ItemConfig, 
+    ComponentConfig, 
+    ReactComponentConfig, 
+    ItemConfigType, 
+    Dimensions, 
+    Settings
+} from './config';
+
+
 // container
 export { default as Container } from './container/Container';
 //

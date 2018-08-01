@@ -18,15 +18,11 @@ export default class Container extends EventEmitter  {
     private _layoutManager: GoldenLayout;
     private _isHidden: boolean;
 
-    /**
-     * The current width of the container in pixel
-     */
-    width: number;
+    private _height: number;
+    private _width: number;
 
-    /**
-     * The current height of the container in pixel
-     */
-    height: number;
+    private _parent: ContentItem;
+
 
     /**
      * A reference to the tab that controls this container. Will initially be null
@@ -42,8 +38,9 @@ export default class Container extends EventEmitter  {
     /**
      * A reference to the component-item that controls this container
      */
-    parent: ContentItem;
-
+    public get parent(): ContentItem {
+        return this._parent;
+    }
 
     get element(): JQuery {
         return this._element;
@@ -58,6 +55,20 @@ export default class Container extends EventEmitter  {
     }
 
     /**
+     * The current width of the container in pixel
+     */    
+    public get width(): number {
+        return this._width;
+    }
+
+    /**
+     * The current height of the container in pixel
+     */    
+    public get height(): number {
+        return this._height;
+    }
+
+    /**
      * True if the item is currently hidden
      */
     get isHidden(): boolean {
@@ -68,10 +79,10 @@ export default class Container extends EventEmitter  {
 
         super();
 
-        this.width = null;
-        this.height = null;
+        this._width = null;
+        this._height = null;
         this.title = config.componentName;
-        this.parent = parent;
+        this._parent = parent;
         this._layoutManager = layoutManager;
         this._isHidden = false;
 
@@ -89,7 +100,7 @@ export default class Container extends EventEmitter  {
      * Get the inner DOM element the container's content
      * is intended to live in
      *
-     * @returns {DOM element}
+     * @returns {JQuery<HTMLElement>}
      */
     getElement(): JQuery<HTMLElement> {
         return this._contentElement;
@@ -127,7 +138,7 @@ export default class Container extends EventEmitter  {
      * This is similar to setState, but merges the provided state into the current one, rather than overwriting it.
      * @param state A serialisable object
      */
-    extendState(state: Object): void {
+    extendState(state: any): void {
         this.setState($.extend(true, this.getState(), state));
     }
 
@@ -141,7 +152,7 @@ export default class Container extends EventEmitter  {
     /**
      * Set's the components title
      *
-     * @param {String} title
+     * @param {string} title
      */
     setTitle(title: string): void {
         this.parent.setTitle(title);
@@ -247,8 +258,8 @@ export default class Container extends EventEmitter  {
      */
     _$setSize(width: number, height: number): void {
         if (width !== this.width || height !== this.height) {
-            this.width = width;
-            this.height = height;
+            this._width = width;
+            this._height = height;
             // $.zepto ? this._contentElement.width(width) : this._contentElement.outerWidth(width);
             // $.zepto ? this._contentElement.height(height) : this._contentElement.outerHeight(height);
             this._contentElement.outerWidth(width);

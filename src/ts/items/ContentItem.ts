@@ -21,6 +21,8 @@ import {
     indexOf
 } from '../utils/utils'
 import Tab from '../controls/Tab';
+import BrowserPopout from '../controls/BrowserPopout';
+import Component from './Component';
 
 
 
@@ -49,6 +51,7 @@ import Tab from '../controls/Tab';
 
 export default abstract class ContentItem extends EventEmitter {
 
+    [indexer: string]: any;
 
     protected _config: ItemConfigType;
 
@@ -176,14 +179,15 @@ export default abstract class ContentItem extends EventEmitter {
     }
 
 
+
     header: Header;
 
     docker: Docker;
 
     tab: Tab;
 
-    private _pendingEventPropagations: Object;
-    private _throttledEvents: Array<string>;
+    private _pendingEventPropagations: { [indexer: string]: any };
+    private _throttledEvents: string[];
 
 
     constructor(layoutManager: GoldenLayout, config: ItemConfigType, parent: ContentItem) {
@@ -237,6 +241,8 @@ export default abstract class ContentItem extends EventEmitter {
      * @returns {void}
      */
     callDownwards(functionName: string, functionArguments?: any[], bottomUp?: boolean, skipSelf?: boolean): void {
+
+
         if (bottomUp !== true && skipSelf !== true) {
             this[functionName].apply(this, functionArguments || []);
         }
@@ -334,7 +340,7 @@ export default abstract class ContentItem extends EventEmitter {
      * @param itemOrItemConfig A content item (or tree of content items) or an ItemConfiguration to create the item from
      * @param index last index  An optional index that determines at which position the new item should be added. Default: last index.
      */
-    addChild(itemOrItemConfig: ContentItem, index?: number) {
+    addChild(itemOrItemConfig: ContentItem, index?: number): void {
         if (index === undefined) {
             index = this.contentItems.length;
         }
@@ -364,7 +370,7 @@ export default abstract class ContentItem extends EventEmitter {
      * some reason removes all event listeners, so isn't really an option.
      *
      * @param   {ContentItem} oldChild
-     * @param   {ContentItem} newChild
+     * @param   {ContentItem|ItemConfigType} newChild
      *
      * @returns {void}
      */
@@ -399,7 +405,7 @@ export default abstract class ContentItem extends EventEmitter {
          * Update tab reference
          */
         if (this._isStack) {
-            this.header.tabs[index].contentItem = newChild;
+            this.header.tabs[index].contentItem = newChildToPush;
         }
 
         //TODO This doesn't update the config... refactor to leave item nodes untouched after creation
@@ -416,7 +422,7 @@ export default abstract class ContentItem extends EventEmitter {
      *
      * @returns {void}
      */
-    remove() {
+    remove(): void {
         this.parent.removeChild(this);
     }
 
@@ -426,7 +432,7 @@ export default abstract class ContentItem extends EventEmitter {
      *
      * @returns {BrowserPopout}
      */
-    popout() {
+    popout(): BrowserPopout {
         let browserPopout = this.layoutManager.createPopout(this);
         this.emitBubblingEvent('stateChanged');
         return browserPopout;
@@ -437,7 +443,7 @@ export default abstract class ContentItem extends EventEmitter {
      *
      * @returns {void}
      */
-    toggleMaximize(e?: Event): void {
+    toggleMaximize(e?: JQuery.Event): void {
         e && e.preventDefault();
         if (this._isMaximized === true) {
             this.layoutManager._$minimiseItem(this);
@@ -473,7 +479,7 @@ export default abstract class ContentItem extends EventEmitter {
      * Set this component's title
      *
      * @public
-     * @param {String} title
+     * @param {string} title
      *
      * @returns {void}
      */
@@ -486,7 +492,7 @@ export default abstract class ContentItem extends EventEmitter {
     /**
       * Returns true if the item has the specified id or false if not
       * @param id An id to check for
-      * @return {boolena}
+      * @return {boolean}
       */
     hasId(id: string): boolean {
         if (!this.config.id) {
@@ -496,6 +502,7 @@ export default abstract class ContentItem extends EventEmitter {
         } else if (this.config.id instanceof Array) {
             return indexOf(id, this.config.id) !== -1;
         }
+        return true;
     }
 
     /**
@@ -503,7 +510,7 @@ export default abstract class ContentItem extends EventEmitter {
      * have an id yet or creates/uses an array
      *
      * @public
-     * @param {String} id
+     * @param {string} id
      *
      * @returns {void}
      */
@@ -526,7 +533,7 @@ export default abstract class ContentItem extends EventEmitter {
      * if the id is not present
      *
      * @public
-     * @param   {String} id
+     * @param   {string} id
      *
      * @returns {void}
      */
@@ -551,19 +558,18 @@ export default abstract class ContentItem extends EventEmitter {
      * Calls filterFunction recursively for every item in the tree. If the function returns true the item is added to the resulting array
      * @param filterFunction A function that determines whether an item matches certain criteria
      */
-    getItemsByFilter(filterFunction: (contentItem: ContentItem) => boolean) {
-        let result = [],
-            next = function (contentItem) {
-                for (let i = 0; i < contentItem.contentItems.length; i++) {
-
-                    if (filterFunction(contentItem.contentItems[i]) === true) {
-                        result.push(contentItem.contentItems[i]);
+    getItemsByFilter(filterFunction: (contentItem: ContentItem) => boolean): ContentItem[] {
+        let result: ContentItem[] = [],
+            next = function (contentItem: ContentItem) {
+                for (const iterator of contentItem.contentItems) {
+                    if (filterFunction(iterator) === true) {
+                        result.push(iterator);
                     }
-
-                    next(contentItem.contentItems[i]);
+                    next(iterator);
                 }
+                // for (let i = 0; i < contentItem.contentItems.length; i++) {  
+                // }
             };
-
         next(this);
         return result;
     }
@@ -595,8 +601,8 @@ export default abstract class ContentItem extends EventEmitter {
     * Returns all instances of the component with the specified componentName
     * @param componentName a componentName as specified in the itemConfig
     */
-    getComponentsByName(componentName: string) {
-        let components = this._$getItemsByProperty('componentName', componentName),
+    getComponentsByName(componentName: string): Component[] {
+        let components: Component[] = this._$getItemsByProperty('componentName', componentName) as Component[],
             instances = [];
 
         for (let i = 0; i < components.length; i++) {
@@ -610,12 +616,12 @@ export default abstract class ContentItem extends EventEmitter {
      * PACKAGE PRIVATE
      ****************************************/
     private _$getItemsByProperty(key: string, value: string) {
-        return this.getItemsByFilter(function (item) {
+        return this.getItemsByFilter(function (item: ContentItem) {
             return item[key] === value;
         });
     }
 
-    protected _$setParent(parent) {
+    _$setParent(parent: ContentItem): void {
         this._parent = parent;
     }
 
@@ -623,7 +629,7 @@ export default abstract class ContentItem extends EventEmitter {
         this.layoutManager.dropTargetIndicator.highlightArea(area);
     }
 
-    protected _$onDrop(contentItem, _area?: ContentArea): void {
+    protected _$onDrop(contentItem: ContentItem, _area?: ContentArea): void {
         this.addChild(contentItem);
     }
 
@@ -633,15 +639,15 @@ export default abstract class ContentItem extends EventEmitter {
         this.layoutManager.updateSize();
     }
 
-    protected _$show(): void {
+    _$show(): void {
         this._callOnActiveComponents('show');
         this.element.show();
         this.layoutManager.updateSize();
     }
 
     private _callOnActiveComponents(methodName: string): void {
-        let stacks = this.getItemsByType('stack') as Stack[],
-            activeContentItem;
+        let stacks = this.getItemsByType('stack') as Stack[];
+        let activeContentItem: ContentItem;
 
         for (let i = 0; i < stacks.length; i++) {
             activeContentItem = stacks[i].getActiveContentItem();
@@ -657,7 +663,7 @@ export default abstract class ContentItem extends EventEmitter {
      *
      * @returns {void}
      */
-    protected _$destroy(): void {
+    _$destroy(): void {
         this.emitBubblingEvent('beforeItemDestroyed');
         this.callDownwards('_$destroy', [], true, true);
         this.element.remove();
@@ -727,7 +733,7 @@ export default abstract class ContentItem extends EventEmitter {
         this.emit(name, event);
     }
 
-    destroy(): any {
+    destroy(): void {
         this._contentItems = [];
     }
 
@@ -735,7 +741,7 @@ export default abstract class ContentItem extends EventEmitter {
      * Private method, creates all content items for this node at initialisation time
      * PLEASE NOTE, please see addChild for adding contentItems add runtime
      * @private
-     * @param   {configuration item node} config
+     * @param   {ItemConfigType} config
      *
      * @returns {void}
      */
@@ -755,11 +761,11 @@ export default abstract class ContentItem extends EventEmitter {
     /**
      * Extends an item configuration node with default settings
      * @private
-     * @param   {configuration item node} config
+     * @param   {ItemConfigType} config
      *
-     * @returns {configuration item node} extended config
+     * @returns {any} extended config
      */
-    private _extendItemNode(config: ItemConfigType): ItemConfigType {
+    private _extendItemNode(config: ItemConfigType | any): ItemConfigType {
         for (let key in itemDefaultConfig) {
             if (config[key] === undefined) {
                 config[key] = itemDefaultConfig[key];
@@ -772,7 +778,7 @@ export default abstract class ContentItem extends EventEmitter {
      * Called for every event on the item tree. Decides whether the event is a bubbling
      * event and propagates it to its parent
      *
-     * @param    {String} name the name of the event
+     * @param   {string} name the name of the event
      * @param   {BubblingEvent} event
      *
      * @returns {void}
@@ -801,12 +807,13 @@ export default abstract class ContentItem extends EventEmitter {
      * are propagated to - and emitted by - the layoutManager however are
      * only string-based, batched and sanitized to make them more usable
      *
-     * @param {String} name the name of the event
+     * @param {string} name the name of the event
      *
      * @private
      * @returns {void}
      */
-    private _scheduleEventPropagationToLayoutManager(name: string, event): void {
+    private _scheduleEventPropagationToLayoutManager(name: string, event: BubblingEvent): void {
+
         if (indexOf(name, this._throttledEvents) === -1) {
             this.layoutManager.emit(name, event.origin);
         } else {
@@ -826,7 +833,7 @@ export default abstract class ContentItem extends EventEmitter {
      * @private
      * @returns {void}
      */
-    private _propagateEventToLayoutManager(name: string, event): void {
+    private _propagateEventToLayoutManager(name: string, event: BubblingEvent): void {
         this._pendingEventPropagations[name] = false;
         this.layoutManager.emit(name, event);
     }

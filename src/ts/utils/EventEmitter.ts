@@ -19,9 +19,18 @@ import { Callback } from '../Commons';
 
 export const ALL_EVENT = '__all'
 
+interface EventSubscribed {
+    fn: Callback;
+    ctx: any;
+}
+
+interface Subscriptions {
+    [indexer: string]: EventSubscribed[];
+}
+
 export default class EventEmitter {
 
-    private _mSubscriptions: Object = {};
+    private _mSubscriptions: Subscriptions = {};
 
     /**
      * The name of the event that's triggered for every other event
@@ -87,14 +96,14 @@ export default class EventEmitter {
         });
     };
 
-     /**
-     * Unsubscribes either all listeners if just an eventName is provided, just a specific callback if invoked with
-     * eventName and callback or just a specific callback with a specific context if invoked with all three
-     * arguments.
-     * @param eventName The name of the event to unsubscribe from
-     * @param callback The function that should be invoked when the event occurs
-     * @param context The value of the this pointer in the callback function
-     */
+    /**
+    * Unsubscribes either all listeners if just an eventName is provided, just a specific callback if invoked with
+    * eventName and callback or just a specific callback with a specific context if invoked with all three
+    * arguments.
+    * @param eventName The name of the event to unsubscribe from
+    * @param callback The function that should be invoked when the event occurs
+    * @param context The value of the this pointer in the callback function
+    */
     unbind(eventName: string, callback?: Callback, context?: any): void {
         if (!this._mSubscriptions[eventName]) {
             throw new Error('No subscriptions to unsubscribe for event ' + eventName);
@@ -122,9 +131,9 @@ export default class EventEmitter {
     */
     off = this.unbind;
 
-     /**
-     * Alias for emit
-     */
+    /**
+    * Alias for emit
+    */
     trigger = this.emit;
 }
 

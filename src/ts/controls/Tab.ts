@@ -30,16 +30,26 @@ export default class Tab {
     private _onTabClickFn: any;
     private _onCloseClickFn: any;
 
-    header: Header;
-    contentItem: ContentItem;
+    private header: Header;
+    private _contentItem: ContentItem;
+
+    private titleElement: JQuery;
+    private closeElement: JQuery;
+    private isActive: boolean;
+
     element: JQuery;
-    titleElement: JQuery;
-    closeElement: JQuery;
-    isActive: boolean;
+
+    public get contentItem(): ContentItem {
+        return this._contentItem;
+    }
+
+    public set contentItem(value: ContentItem) {
+        this._contentItem = value;
+    }
 
     constructor(header: Header, contentItem: ContentItem) {
         this.header = header;
-        this.contentItem = contentItem;
+        this._contentItem = contentItem;
         this.element = $(_template);
         this.titleElement = this.element.find('.lm_title');
         this.closeElement = this.element.find('.lm_close_tab');
@@ -47,7 +57,7 @@ export default class Tab {
         this.isActive = false;
 
         this.setTitle(contentItem.config.title);
-        this.contentItem.on('titleChanged', this.setTitle, this);
+        this._contentItem.on('titleChanged', this.setTitle, this);
 
         this._layoutManager = this.contentItem.layoutManager;
 
@@ -162,12 +172,12 @@ export default class Tab {
     /**
      * Callback when the tab is clicked
      *
-     * @param {jQuery DOM event} event
+     * @param {JQuery.Event} event
      *
      * @private
      * @returns {void}
      */
-    private _onTabClick(event) {
+    private _onTabClick(event: JQuery.Event): void {
         // left mouse button or tap
         if (event.button === 0 || event.type === 'touchstart') {
             this.header.parent.setActiveContentItem(this.contentItem);
@@ -182,12 +192,12 @@ export default class Tab {
      * Callback when the tab's close button is
      * clicked
      *
-     * @param   {jQuery DOM event} event
+     * @param   {JQuery.Event} event
      *
      * @private
      * @returns {void}
      */
-    private _onCloseClick(event) {
+    private _onCloseClick(event: JQuery.Event): void {
         event.stopPropagation();
         if (!this.header.canDestroy)
             return;
@@ -198,12 +208,12 @@ export default class Tab {
      * Callback to capture tab close button mousedown
      * to prevent tab from activating.
      *
-     * @param (jQuery DOM event) event
+     * @param {JQuery.Event} event
      *
      * @private
      * @returns {void}
      */
-    private _onCloseMousedown(event) {
+    private _onCloseMousedown(event: JQuery.Event): void {
         event.stopPropagation();
     }
 }

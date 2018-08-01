@@ -19,22 +19,18 @@ export default class ReactComponentHandler {
     private _reactComponent: React.Component;
     private _originalComponentWillUpdate: any;
     private _container: Container;
-    private _initialState: any;
+    //private _initialState: any;
     private _reactClass: any;
-
-
 
     constructor(container: Container, state?: any) {
         this._reactComponent = null;
         this._originalComponentWillUpdate = null;
         this._container = container;
-        this._initialState = state;
+        //this._initialState = state;
         this._reactClass = this._getReactClass();
         this._container.on('open', this._render, this);
         this._container.on('destroy', this._destroy, this);
     }
-
-
 
     /**
      * Creates the react class and component and hydrates it with
@@ -60,7 +56,7 @@ export default class ReactComponentHandler {
      * @private
      * @returns {void}
      */
-    private _destroy() {
+    private _destroy(): void {
         ReactDOM.unmountComponentAtNode(this._container.getElement()[0]);
         this._container.off('open', this._render, this);
         this._container.off('destroy', this._destroy, this);
@@ -73,7 +69,7 @@ export default class ReactComponentHandler {
      * @private
      * @returns {void}
      */
-    private _onUpdate(nextProps, nextState) {
+    private _onUpdate(nextProps: object, nextState: object): void {
         this._container.setState(nextState);
         this._originalComponentWillUpdate.call(this._reactComponent, nextProps, nextState);
     }

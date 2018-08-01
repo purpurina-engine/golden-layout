@@ -1,21 +1,26 @@
 {
-  "compilerOptions": {
-    "target": "es5",
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "declaration": true,
-    "sourceMap": true,
-    "lib":["es2015", "dom"],
-    "outDir": "build/ts",
-  },
-  "include": [
-    "src/ts/typings/**/*.ts",
-    "src/ts/**/*.ts",
-    //"node_modules/@types/**/*.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "typings/browser",
-    "typings/browser.d.ts"
-  ]
+    "compilerOptions": {
+        "target": "es5",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "declaration": true,
+        "sourceMap": true,
+        "lib": ["es2015", "dom"],
+        "outDir": "build/ts",
+        "noImplicitAny": true,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
+        "noUnusedLocals": true,
+        "strictNullChecks": false,
+    },
+    "include": [
+        "src/ts/typings/**/*.ts",
+        "src/ts/**/*.ts",
+        //"node_modules/@types/**/*.d.ts"
+    ],
+    "exclude": [
+        "node_modules",
+        "typings/browser",
+        "typings/browser.d.ts"
+    ]
 }

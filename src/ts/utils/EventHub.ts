@@ -33,10 +33,9 @@ import * as $ from 'jquery';
 export default class EventHub extends EventEmitter {
 
     private _layoutManager: LayoutManager;
-    private _dontPropagateToParent = null;
-    private _childEventSource = null;
+    private _dontPropagateToParent: boolean = null;
+    private _childEventSource: any = null;
     private _boundOnEventFromChild: any;
-
 
     constructor(layoutManager: LayoutManager) {
 
@@ -60,7 +59,7 @@ export default class EventHub extends EventEmitter {
      *
      * @returns {void}
      */
-    private _onEventFromThis() {
+    private _onEventFromThis(): void {
         var args = Array.prototype.slice.call(arguments);
 
         if (this._layoutManager.isSubWindow && args[0] !== this._dontPropagateToParent) {
@@ -80,7 +79,7 @@ export default class EventHub extends EventEmitter {
      *
      * @returns {void}
      */
-    _$onEventFromParent(...args) {
+    _$onEventFromParent(...args: any[]) {
         this._dontPropagateToParent = args[0];
         this.emit.apply(this, args);
     }
@@ -88,13 +87,13 @@ export default class EventHub extends EventEmitter {
     /**
      * Callback for child events raised on the window
      *
-     * @param   {DOMEvent} event
+     * @param   {JQuery.Event} event
      * @private
      *
      * @returns {void}
      */
     private _onEventFromChild(event: JQuery.Event) {
-        
+
         this._childEventSource = event.originalEvent.__gl;
         this.emit.apply(this, event.originalEvent.__glArgs);
     }
@@ -103,12 +102,12 @@ export default class EventHub extends EventEmitter {
      * Propagates the event to the parent by emitting
      * it on the parent's DOM window
      *
-     * @param   {Array} args Event name + arguments
+     * @param   {any[]} args Event name + arguments
      * @private
      *
      * @returns {void}
      */
-    private _propagateToParent(...args) {
+    private _propagateToParent(...args: any[]) {
         var event,
             eventName = 'gl_child_event';
 
@@ -134,12 +133,12 @@ export default class EventHub extends EventEmitter {
     /**
      * Propagate events to children
      *
-     * @param   {Array} args Event name + arguments
+     * @param   {any[]} args Event name + arguments
      * @private
      *
      * @returns {void}
      */
-    private _propagateToChildren(...args) {
+    private _propagateToChildren(...args: any[]) {
         var childGl, i;
 
         for (i = 0; i < this._layoutManager.openPopouts.length; i++) {

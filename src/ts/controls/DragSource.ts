@@ -6,6 +6,7 @@ import {
 import GoldenLayout from '../GoldenLayout';
 import { Callback } from '../Commons';
 import ContentItem from '../items/ContentItem';
+import { ItemConfigType } from '../config';
 
 /**
  * Allows for any DOM item to create a component on drag
@@ -13,20 +14,18 @@ import ContentItem from '../items/ContentItem';
  *
  * @param {JQuery} element
  * @param {Object | Callback} itemConfig the configuration for the contentItem that will be created
- * @param {LayoutManager} layoutManager
+ * @param {GoldenLayout} layoutManager
  *
- * @constructor
+ * @class
  */
-
-
 export default class DragSource {
 
     private _element: JQuery;
-    private _itemConfig: Object | Callback;
+    private _itemConfig: ItemConfigType | Callback;
     private _layoutManager: GoldenLayout;
     private _dragListener: DragListener;
 
-    constructor(element: JQuery, itemConfig: Object | Callback, layoutManager: GoldenLayout) {
+    constructor(element: JQuery, itemConfig: ItemConfigType | Callback, layoutManager: GoldenLayout) {
         this._element = element;
         this._itemConfig = itemConfig;
         this._layoutManager = layoutManager;
@@ -60,13 +59,14 @@ export default class DragSource {
      * @returns {void}
      */
     private _onDragStart(x: number, y: number): void {
-        let itemConfig:ContentItem;
+        let itemConfig: ContentItem;
+
         if (isFunction(this._itemConfig)) {
             itemConfig = (<Callback>this._itemConfig)();
         }
 
-        let contentItem = this._layoutManager._$normalizeContentItem($.extend(true, {}, itemConfig)),
-            dragProxy = new DragProxy(x, y, this._dragListener, this._layoutManager, contentItem, null);
+        const contentItem = this._layoutManager._$normalizeContentItem($.extend(true, {}, itemConfig));
+        const dragProxy = new DragProxy(x, y, this._dragListener, this._layoutManager, contentItem, null);
 
         this._layoutManager.transitionIndicator.transitionElements(this._element, dragProxy.element);
     }

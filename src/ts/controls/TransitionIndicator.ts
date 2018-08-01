@@ -25,11 +25,11 @@ export default class TransitionIndicator {
         this._animationStartTime = null;
     }
 
-    destroy() {
+    destroy(): void {
         this._element.remove();
     }
 
-    transitionElements(fromElement, toElement) {
+    transitionElements(_fromElement: any, _toElement: any): void {
         /**
          * TODO - This is not quite as cool as expected. Review.
          */
@@ -43,9 +43,9 @@ export default class TransitionIndicator {
     }
 
     _nextAnimationFrame(): void {
-        let toDimensions = TransitionIndicator.measure(this._toElement),
-            animationProgress = (now() - this._animationStartTime) / this._totalAnimationDuration,
-            currentFrameStyles = {};
+        const toDimensions = TransitionIndicator.measure(this._toElement);
+        const animationProgress = (now() - this._animationStartTime) / this._totalAnimationDuration;
+        let currentFrameStyles: any = {};
 
         if (animationProgress >= 1) {
             this._element.hide();
@@ -65,7 +65,7 @@ export default class TransitionIndicator {
     }
 
     static measure(element: JQuery): TransitionIndicatorElement {
-        let offset = element.offset();
+        const offset = element.offset();
 
         return {
             left: offset.left,

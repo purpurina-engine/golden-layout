@@ -5,7 +5,7 @@ export default class BubblingEvent {
     origin: any;
     isPropagationStopped: boolean;
 
-    constructor(name: string, origin) {
+    constructor(name: string, origin: any) {
         this.name = name;
         this.origin = origin;
         this.isPropagationStopped = false;

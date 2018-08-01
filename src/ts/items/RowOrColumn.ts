@@ -1,3 +1,5 @@
+import GoldenLayout from '../GoldenLayout';
+import { ItemConfig } from '../config';
 import ContentItem from './ContentItem';
 import Stack from './Stack'
 import Splitter from '../controls/Splitter';
@@ -8,8 +10,6 @@ import {
     animFrame,
     indexOf
 } from '../utils/utils';
-import GoldenLayout from '../GoldenLayout';
-
 
 
 
@@ -19,16 +19,16 @@ export default class RowOrColumn extends ContentItem {
     private _splitterGrabSize: number;
     private _dimension: Dimension;
     private _splitter: Array<any>
-    private _splitterPosition;
-    private _splitterMinPosition;
-    private _splitterMaxPosition;
+    private _splitterPosition: number;
+    private _splitterMinPosition: number;
+    private _splitterMaxPosition: number;
     private __isColumn: boolean;
 
     // isRow: boolean;
     // isColumn: boolean;
     // element: JQuery;
 
-    constructor(isColumn: boolean, layoutManager: GoldenLayout, config, parent) {
+    constructor(isColumn: boolean, layoutManager: GoldenLayout, config: ItemConfig, parent: ContentItem) {
 
         super(layoutManager, config, parent);
 
@@ -52,9 +52,9 @@ export default class RowOrColumn extends ContentItem {
      * Add a new contentItem to the Row or Column
      *
      * @param {ContentItem} contentItem
-     * @param {[int]} index The position of the new item within the Row or Column.
+     * @param {number} index The position of the new item within the Row or Column.
      *                      If no index is provided the item will be added to the end
-     * @param {[bool]} _$suspendResize If true the items won't be resized. This will leave the item in
+     * @param {boolean} _$suspendResize If true the items won't be resized. This will leave the item in
      *                                 an inconsistent state and is only intended to be used if multiple
      *                                 children need to be added in one go and resize is called afterwards
      *
@@ -174,14 +174,15 @@ export default class RowOrColumn extends ContentItem {
      * @returns {void}
      */
     removeChild(contentItem: ContentItem, keepChild: boolean): void {
-        let removedItemSize = contentItem.config[this._dimension],
-            index = indexOf(contentItem, this.contentItems),
-            splitterIndex = Math.max(index - 1, 0),
-            i,
-            childItem;
+        let removedItemSize = contentItem.config[this._dimension];
+        const index = indexOf(contentItem, this.contentItems);
+
         if (index === -1) {
             throw new Error('Can\'t remove child. ContentItem is not child of this Row or Column');
         }
+
+        const splitterIndex = Math.max(index - 1, 0);
+        let childItem: ContentItem;
 
         /**
          * Remove the splitter before the item or after if the item happens
@@ -257,8 +258,8 @@ export default class RowOrColumn extends ContentItem {
      * Dock or undock a child if it posiible
      *
      * @param   {ContentItem} contentItem
-     * @param   {Boolean} mode or toggle if undefined
-     * @param   {Boolean} collapsed after docking
+     * @param   {boolean} mode or toggle if undefined
+     * @param   {boolean} collapsed after docking
      *
      * @returns {void}
      */
@@ -299,7 +300,7 @@ export default class RowOrColumn extends ContentItem {
         } else { // dock
             if (this.contentItems.length - this._isDocked() < 2)
                 throw new Error('Can\'t dock child when it is last in ' + this.config.type);
-            let autoside = {
+            let autoside: any = {
                 column: {
                     first: 'top',
                     last: 'bottom'
@@ -352,7 +353,7 @@ export default class RowOrColumn extends ContentItem {
      * @returns {void}
      */
     _$init() {
-        if (this._isInitialized === true) 
+        if (this._isInitialized === true)
             return;
 
         //ContentItem.prototype._$init.call(this);
@@ -411,8 +412,8 @@ export default class RowOrColumn extends ContentItem {
             totalHeight = this.element.height(),
             totalAssigned = 0;
         let additionalPixel: number,
-            itemSize: number,
-            itemSizes = [];
+            itemSize: number;
+        let itemSizes: number[] = [];
 
         if (this.__isColumn) {
             totalHeight -= totalSplitterSize;
@@ -475,7 +476,7 @@ export default class RowOrColumn extends ContentItem {
     private _calculateRelativeSizes(): void {
 
         let total = 0,
-            itemsWithoutSetDimension = [],
+            itemsWithoutSetDimension: ContentItem[] = [],
             dimension = this.__isColumn ? 'height' : 'width';
 
         for (let i = 0; i < this.contentItems.length; i++) {
@@ -540,7 +541,7 @@ export default class RowOrColumn extends ContentItem {
             totalUnderMin = 0,
             remainingWidth = 0,
             itemSize = 0,
-            contentItem = null,
+            //contentItem = null,
             reducePercent,
             reducedWidth,
             allEntries = [],
@@ -557,7 +558,7 @@ export default class RowOrColumn extends ContentItem {
          */
         for (let i = 0; i < this.contentItems.length; i++) {
 
-            contentItem = this.contentItems[i];
+            //contentItem = this.contentItems[i];
             itemSize = sizeData.itemSizes[i];
 
             if (itemSize < minItemWidth) {
@@ -617,7 +618,7 @@ export default class RowOrColumn extends ContentItem {
      *
      * What it doesn't do though is append the splitter to the DOM
      *
-     * @param   {Int} index The position of the splitter
+     * @param   {number} index The position of the splitter
      *
      * @returns {Splitter}
      */
@@ -639,7 +640,7 @@ export default class RowOrColumn extends ContentItem {
      *
      * @param   {Splitter} splitter
      *
-     * @returns {Object} A map of contentItems that the splitter affects
+     * @returns {any} A map of contentItems that the splitter affects
      */
     private _getItemsForSplitter(splitter: Splitter) {
         let index = indexOf(splitter, this._splitter);
@@ -669,13 +670,14 @@ export default class RowOrColumn extends ContentItem {
                 return 0;
             }
         }
+        return 0;
     }
 
     /**
      * Validate if row or column has ability to dock
      * @private
      */
-    _validateDocking(that?: ContentItem) {
+    _validateDocking(that?: ContentItem): void {
         that = that || this;
         const isDocked = ((<RowOrColumn>that)._isDocked() > 1) ? 1 : 0;
         let can = (that.contentItems.length - isDocked > 0);
@@ -693,9 +695,9 @@ export default class RowOrColumn extends ContentItem {
      * @param item
      * @private
      */
-    private _getMinimumDimensions(arr) {
-        let minWidth = 0,
-            minHeight = 0;
+    private _getMinimumDimensions(arr: any[]) {
+        let minWidth = 0;
+        let minHeight = 0;
 
         for (let i = 0; i < arr.length; ++i) {
             minWidth = Math.max(arr[i].minWidth || 0, minWidth);
@@ -716,7 +718,7 @@ export default class RowOrColumn extends ContentItem {
      *
      * @returns {void}
      */
-    private _onSplitterDragStart(splitter) {
+    private _onSplitterDragStart(splitter: Splitter): void {
         let items = this._getItemsForSplitter(splitter),
             minSize = this.layoutManager.config.dimensions[this.__isColumn ? 'minItemHeight' : 'minItemWidth'];
 
@@ -736,8 +738,8 @@ export default class RowOrColumn extends ContentItem {
      * but not the sizes of the elements the splitter controls in order to minimize resize events
      *
      * @param   {Splitter} splitter
-     * @param   {Int} offsetX  Relative pixel values to the splitters original position. Can be negative
-     * @param   {Int} offsetY  Relative pixel values to the splitters original position. Can be negative
+     * @param   {number} offsetX  Relative pixel values to the splitters original position. Can be negative
+     * @param   {number} offsetY  Relative pixel values to the splitters original position. Can be negative
      *
      * @returns {void}
      */

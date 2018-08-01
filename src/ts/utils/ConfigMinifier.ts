@@ -15,8 +15,8 @@ import Config from '../config';
 
 export default class ConfigMinifier {
 
-    private _keys: Array<string>;
-    private _values: Array<any>;
+    private _keys: string[];
+    private _values: any[];
 
     constructor() {
         this._keys = [
@@ -77,11 +77,11 @@ export default class ConfigMinifier {
      * replaces its keys and values recursively with
      * one letter counterparts
      *
-     * @param   {Object} config A GoldenLayout config object
+     * @param   {object} config A GoldenLayout config object
      *
-     * @returns {Object} minified config
+     * @returns {object} minified config
      */
-    minifyConfig(config: Object): Object {
+    minifyConfig(config: object): object {
         var min = {};
         this._nextLevel(config, min, '_min');
         return min;
@@ -91,9 +91,9 @@ export default class ConfigMinifier {
      * Takes a configuration Object that was previously minified
      * using minifyConfig and returns its original version
      *
-     * @param   {Object} minifiedConfig
+     * @param   {object} minifiedConfig
      *
-     * @returns {Object} the original configuration
+     * @returns {object} the original configuration
      */
     unminifyConfig(minifiedConfig: any): Config {
         var orig = {};
@@ -111,7 +111,7 @@ export default class ConfigMinifier {
      * @returns {void}
      */
     private _nextLevel(from: Object | Array<any>, to: Object | Array<any>, translationFn: string): void {
-        let minKey;
+        let minKey: string;
         let key;
 
         for (key in from) {
@@ -155,10 +155,10 @@ export default class ConfigMinifier {
     /**
      * Minifies value based on a dictionary
      *
-     * @param   {String|Boolean} value
-     * @param   {Array<String|Boolean>} dictionary
+     * @param   {string|boolean} value
+     * @param   {Array<string|boolean>} dictionary
      *
-     * @returns {String} The minified version
+     * @returns {string} The minified version
      */
     static _min(value: string | boolean, dictionary: Array<string | boolean>): string | boolean {
         /**
@@ -185,7 +185,7 @@ export default class ConfigMinifier {
         }
     }
 
-    static _max(value: any, dictionary: Object) {
+    static _max(value: string, dictionary: object) {
         /**
          * value is a single character. Assume that it's a translation
          * and return the original value from the dictionary

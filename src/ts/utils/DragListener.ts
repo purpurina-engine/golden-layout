@@ -4,17 +4,20 @@ import {
     getTouchEvent
 } from './utils';
 
+interface Vector {
+    x: number;
+    y: number;
+}
+
 
 export default class DragListener extends EventEmitter {
 
-
     private _timeout: any;
-
 
     private _eElement: JQuery<HTMLElement>;
     private _oDocument: JQuery<Document>;
     private _eBody: JQuery<HTMLElement>;
-    private _nButtonCode: number;
+    //private _nButtonCode: number;
 
     /**
      * The delay after which to start the drag in milliseconds
@@ -48,7 +51,7 @@ export default class DragListener extends EventEmitter {
         this._eElement = $(eElement);
         this._oDocument = $(document);
         this._eBody = $(document.body);
-        this._nButtonCode = nButtonCode || 0;
+        //this._nButtonCode = nButtonCode || 0;
 
         this._nDelay = 200;
         this._nDistance = 10;
@@ -69,7 +72,7 @@ export default class DragListener extends EventEmitter {
         this._eElement.on('mousedown touchstart', this._fDown);
     }
 
-    destroy() {
+    destroy(): void {
         this._eElement.unbind('mousedown touchstart', this._fDown);
         this._oDocument.unbind('mouseup touchend', this._fUp);
         this._eElement = null;
@@ -77,7 +80,7 @@ export default class DragListener extends EventEmitter {
         this._eBody = null;
     }
 
-    private onMouseDown(oEvent: JQuery.Event) {
+    private onMouseDown(oEvent: JQuery.Event): void {
         oEvent.preventDefault();
 
         if (oEvent.button == 0 || oEvent.type === "touchstart") {
@@ -93,7 +96,7 @@ export default class DragListener extends EventEmitter {
         }
     }
 
-    private onMouseMove(oEvent: JQuery.Event) {
+    private onMouseMove(oEvent: JQuery.Event): void {
         if (this._timeout != null) {
             oEvent.preventDefault();
 
@@ -118,7 +121,7 @@ export default class DragListener extends EventEmitter {
         }
     }
 
-    private onMouseUp(oEvent: JQuery.Event) {
+    private onMouseUp(oEvent: JQuery.Event): void {
         if (this._timeout != null) {
             clearTimeout(this._timeout);
             this._eBody.removeClass('lm_dragging');
@@ -134,7 +137,7 @@ export default class DragListener extends EventEmitter {
         }
     }
 
-    private _startDrag() {
+    private _startDrag(): void {
         this._bDragging = true;
         this._eBody.addClass('lm_dragging');
         this._eElement.addClass('lm_dragging');
@@ -142,7 +145,7 @@ export default class DragListener extends EventEmitter {
         this.emit('dragStart', this._nOriginalX, this._nOriginalY);
     }
 
-    private _getCoordinates(event) {
+    private _getCoordinates(event?: JQuery.Event): Vector {
         event = getTouchEvent(event)
         return {
             x: event.pageX,

@@ -4,8 +4,10 @@ export type Dimension = 'height' | 'width';
 export type HeaderPosition = 'top' | 'bottom' | 'left' | 'right';
 export type ContentItemType = 'row' | 'column' | 'stack' | 'component' | 'root' | 'react-component';
 
-export type Callback = (...args) => any;
-export type BoundFunction = (...args) => any;
+export type Callback = (...args: any[]) => any;
+export interface BoundFunction extends Function {
+    (...args: any[]): any;
+} 
 export type ContentItemConfigFunction = () => ComponentConfig;
 
 export interface Area {
@@ -29,6 +31,7 @@ export interface ElementDimensions {
 }
 
 export interface TransitionIndicatorElement extends ElementDimensions {
+    [key: string]: number;
     opacity?: number;
 }
 
@@ -38,15 +41,17 @@ interface HightlightZone {
 }
 
 export interface HightlightAreas {
-  header?: HightlightZone;
-  body?: HightlightZone;
-  top?: HightlightZone;
-  left?: HightlightZone;
-  right?: HightlightZone;
-  bottom?: HightlightZone;
+    [key: string]: HightlightZone;
+    header?: HightlightZone;
+    body?: HightlightZone;
+    top?: HightlightZone;
+    left?: HightlightZone;
+    right?: HightlightZone;
+    bottom?: HightlightZone;
 }
 
 export interface HeaderConfig {
+    [key: string]: string | boolean | HeaderPosition;
     show?: boolean,
     popout?: string,
     maximise?: string,

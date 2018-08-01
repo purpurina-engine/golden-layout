@@ -1,6 +1,7 @@
 import { ContentItemType, HeaderConfig } from "../Commons";
 
- export interface ItemConfig {
+export interface ItemConfig {
+    [indexer: string]: any;
     /**
      * The type of the item. Possible values are 'row', 'column', 'stack', 'component' and 'react-component'.
      */
@@ -41,7 +42,7 @@ import { ContentItemType, HeaderConfig } from "../Commons";
 
     header?: HeaderConfig;
 
-    reorderEnabled ?: boolean;
+    reorderEnabled?: boolean;
 }
 
 export interface ComponentConfig extends ItemConfig {
@@ -72,11 +73,7 @@ export interface ReactComponentConfig extends ItemConfig {
 
 type ItemConfigType = ItemConfig | ComponentConfig | ReactComponentConfig;
 
-export interface StackConfig extends ItemConfig {
-    activeItemIndex: number;
-}
 
 
-
- export default ItemConfigType;
+export default ItemConfigType;
 

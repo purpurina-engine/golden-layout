@@ -1,16 +1,17 @@
 import DragListener from '../utils/DragListener'
+import { Callback } from '../Commons';
 
 
 
 export default class Splitter {
 
-    private _isVertical;
-    private _size;
-    private _grabSize;
+    private _isVertical: boolean;
+    private _size: number;
+    private _grabSize: number;
     private _dragListener: DragListener;
     element: JQuery<HTMLElement>;
 
-    constructor(isVertical, size, grabSize) {
+    constructor(isVertical: boolean, size: number, grabSize: number) {
         this._isVertical = isVertical;
         this._size = size;
         this._grabSize = grabSize < size ? size : grabSize;
@@ -19,21 +20,22 @@ export default class Splitter {
         this._dragListener = new DragListener(this.element);
     }
 
-    on(event: string, callback, context) {
+    on(event: string, callback: Callback, context: any) {
         this._dragListener.on(event, callback, context);
     }
 
-    _$destroy() {
+    _$destroy(): void {
         this.element.remove();
     }
 
-    private _createElement() {
-        var dragHandle = $('<div class="lm_drag_handle"></div>');
-        var element = $('<div class="lm_splitter"></div>');
+    private _createElement(): JQuery<HTMLElement> {
+        const dragHandle = $('<div class="lm_drag_handle"></div>');
+        const element = $('<div class="lm_splitter"></div>');
+
         element.append(dragHandle);
 
-        var handleExcessSize = this._grabSize - this._size;
-        var handleExcessPos = handleExcessSize / 2;
+        const handleExcessSize = this._grabSize - this._size;
+        const handleExcessPos = handleExcessSize / 2;
 
         if (this._isVertical) {
             dragHandle.css('top', -handleExcessPos);

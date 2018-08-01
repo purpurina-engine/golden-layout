@@ -1,8 +1,8 @@
 
-const itemDefaultConfig = {
+const itemDefaultConfig: any = {
     isClosable: true,
     reorderEnabled: true,
     title: ''
 }
 
-export default itemDefaultConfig
+export default itemDefaultConfig;
