@@ -60,6 +60,7 @@ export default class Root extends ContentItem {
     }
 
     _$onDrop(contentItem: ContentItem, area?: ContentArea) {
+        console.log('12345678')
         let stack: Stack;
 
         if (contentItem.isComponent) {

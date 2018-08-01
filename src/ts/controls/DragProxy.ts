@@ -126,11 +126,12 @@ export default class DragProxy extends EventEmitter {
 
         this.element = $(buildTemplate(this.showPreview));
 
-        if (originalParent && originalParent instanceof Stack) {
-            if (originalParent.side) {
-                this._sided = originalParent.isSided;
-                this.element.addClass('lm_' + originalParent.side);
-                if (['right', 'bottom'].indexOf(originalParent.side) >= 0)
+        if (originalParent) {
+            const stack = originalParent as Stack;
+            if (stack.side) {
+                this._sided = stack.isSided;
+                this.element.addClass('lm_' + stack.side);
+                if (['right', 'bottom'].indexOf(stack.side) >= 0)
                     this.element.find('.lm_content').after(this.element.find('.lm_header'));
             }
         }
@@ -149,8 +150,6 @@ export default class DragProxy extends EventEmitter {
         if (showPreview) {
             this.childElementContainer.append(contentItem.element);
         }
-
-
 
         /**
         * Should detach child element from tree?
@@ -242,7 +241,6 @@ export default class DragProxy extends EventEmitter {
          */
         if (this._area !== null) {
             this._area.contentItem._$onDrop(this._contentItem, this._area);
-            console.log(this._area.contentItem);
             /**
              * No valid drop area available at present, but one has been found before.
              * Use it
@@ -319,14 +317,16 @@ export default class DragProxy extends EventEmitter {
      * @returns {void}
      */
     private _setDimensions(): void {
-        let dimensions = this._layoutManager.config.dimensions,
-            width = dimensions.dragProxyWidth,
-            height = dimensions.dragProxyHeight;
+        const dimensions = this._layoutManager.config.dimensions;
+        let width = dimensions.dragProxyWidth;
+        let height = dimensions.dragProxyHeight;
+
+        
 
         this.element.width(width);
         this.element.height(height);
-        width -= (this._sided ? dimensions.headerHeight : 0);
-        height -= (!this._sided ? dimensions.headerHeight : 0);
+        //width -= (this._sided ? dimensions.headerHeight : 0);
+        //height -= (!this._sided ? dimensions.headerHeight : 0);
         this.childElementContainer.width(width);
         this.childElementContainer.height(height);
         this._contentItem.element.width(width);

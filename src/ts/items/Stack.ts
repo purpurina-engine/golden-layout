@@ -11,6 +11,8 @@ import {
     copy,
     indexOf
 } from '../utils/utils'
+import Docker from './Docker';
+import Tab from '../controls/Tab';
 
 interface StackConfig extends ItemConfig {
     activeItemIndex: number;
@@ -30,7 +32,20 @@ export default class Stack extends ContentItem {
     private _sided: boolean;
     private _side: number;
 
+
+
+    docker: Docker;
+
+    tab: Tab;
+
+
+    header: Header;
+
     config: StackConfig;
+
+    public get contentAreaDimensions(): HightlightAreas {
+        return this._contentAreaDimensions;
+    }
 
     // element: JQuery<HTMLElement>;
     // childElementContainer: JQuery;
@@ -73,7 +88,7 @@ export default class Stack extends ContentItem {
         if (config.content && config.content[0] && config.content[0].header) // load from component if stack omitted
             copy(this._headerConfig, config.content[0].header);
 
-        this._dropZones = {};
+        //this._dropZones = {};
         this._dropSegment = null;
         this._contentAreaDimensions = null;
         this._dropIndex = null;
@@ -202,6 +217,7 @@ export default class Stack extends ContentItem {
         this.setActiveContentItem(contentItem);
         this.callDownwards('setSize');
         this._$validateClosability();
+        
         if (this.parent instanceof RowOrColumn)
             this.parent._validateDocking();
         this.emitBubblingEvent('stateChanged');
@@ -293,6 +309,7 @@ export default class Stack extends ContentItem {
      * @returns {void}
      */
     _$onDrop(contentItem: ContentItem): void {
+        
         /*
          * The item was dropped on the header area. Just add it as a child of this stack and
          * get the hell out of this logic
@@ -310,7 +327,6 @@ export default class Stack extends ContentItem {
             this.addChild(contentItem);
             return;
         }
-
         /*
          * The item was dropped on the top-, left-, bottom- or right- part of the content. Let's
          * aggregate some conditions to make the if statements later on more readable
@@ -324,7 +340,6 @@ export default class Stack extends ContentItem {
         let index: number;
         let stack: Stack;
         let rowOrColumn: RowOrColumn;
-
         /*
          * The content item can be either a component or a stack. If it is a component, wrap it into a stack
          */

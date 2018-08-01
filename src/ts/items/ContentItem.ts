@@ -9,32 +9,26 @@ import ItemConfigType from '../config/ItemConfigType';
 import Docker from './Docker';
 import Header from '../controls/Header';
 import Stack from './Stack';
+import Tab from '../controls/Tab';
+import BrowserPopout from '../controls/BrowserPopout';
+import Component from './Component';
 
 import {
     ALL_EVENT
 } from '../utils/EventEmitter';
-
 
 import {
     fnBind,
     animFrame,
     indexOf
 } from '../utils/utils'
-import Tab from '../controls/Tab';
-import BrowserPopout from '../controls/BrowserPopout';
-import Component from './Component';
-
-
 
 /**
- * This is the baseclass that all content items inherit from.
+ * This is the base class that all content items inherit from.
  * Most methods provide a subset of what the sub-classes do.
  *
  * It also provides a number of functions for tree traversal
  *
- * @param {lm.LayoutManager} layoutManager
- * @param {item node configuration} config
- * @param {lm.item} parent
  *
  * @event stateChanged
  * @event beforeItemDestroyed
@@ -45,13 +39,11 @@ import Component from './Component';
  * @event columnCreated
  * @event stackCreated
  *
- * @constructor
+ * @class
  */
-
-
 export default abstract class ContentItem extends EventEmitter {
 
-    [indexer: string]: any;
+    //[indexer: string]: any;
 
     protected _config: ItemConfigType;
 
@@ -177,15 +169,7 @@ export default abstract class ContentItem extends EventEmitter {
     get element(): JQuery {
         return this._element;
     }
-
-
-
-    header: Header;
-
-    docker: Docker;
-
-    tab: Tab;
-
+  
     private _pendingEventPropagations: { [indexer: string]: any };
     private _throttledEvents: string[];
 
@@ -242,15 +226,14 @@ export default abstract class ContentItem extends EventEmitter {
      */
     callDownwards(functionName: string, functionArguments?: any[], bottomUp?: boolean, skipSelf?: boolean): void {
 
-
-        if (bottomUp !== true && skipSelf !== true) {
-            this[functionName].apply(this, functionArguments || []);
+         if (bottomUp !== true && skipSelf !== true) {
+            (this as any)[functionName].apply(this, Array.isArray(functionArguments) ? functionArguments : [functionArguments]);
         }
         for (let i = 0; i < this.contentItems.length; i++) {
             this.contentItems[i].callDownwards(functionName, functionArguments, bottomUp);
         }
         if (bottomUp === true && skipSelf !== true) {
-            this[functionName].apply(this, functionArguments || []);
+            (this as any).apply(this, functionArguments || []);
         }
     }
 
@@ -405,7 +388,8 @@ export default abstract class ContentItem extends EventEmitter {
          * Update tab reference
          */
         if (this._isStack) {
-            this.header.tabs[index].contentItem = newChildToPush;
+            const stack = this as any;
+            stack.header.tabs[index].contentItem = newChildToPush;
         }
 
         //TODO This doesn't update the config... refactor to leave item nodes untouched after creation
@@ -616,7 +600,7 @@ export default abstract class ContentItem extends EventEmitter {
      * PACKAGE PRIVATE
      ****************************************/
     private _$getItemsByProperty(key: string, value: string) {
-        return this.getItemsByFilter(function (item: ContentItem) {
+        return this.getItemsByFilter(function (item: ContentItem | any) {
             return item[key] === value;
         });
     }
@@ -629,8 +613,8 @@ export default abstract class ContentItem extends EventEmitter {
         this.layoutManager.dropTargetIndicator.highlightArea(area);
     }
 
-    onDrop(contentItem: ContentItem, _area?: ContentArea): void {
-        console.log('123456')
+    _$onDrop(contentItem: ContentItem, _area?: ContentArea): void {
+        console.log('content-item')
         this.addChild(contentItem);
     }
 
@@ -654,7 +638,8 @@ export default abstract class ContentItem extends EventEmitter {
             activeContentItem = stacks[i].getActiveContentItem();
 
             if (activeContentItem && activeContentItem.isComponent) {
-                activeContentItem.container[methodName]();
+                const component = (activeContentItem as Component);
+                (component.container as any)[methodName]();
             }
         }
     }
@@ -820,7 +805,7 @@ export default abstract class ContentItem extends EventEmitter {
         } else {
             if (this._pendingEventPropagations[name] !== true) {
                 this._pendingEventPropagations[name] = true;
-                animFrame(fnBind(this._propagateEventToLayoutManager, this, [name, event]));
+                animFrame(fnBind(this._propagateEventToLayoutManager, this, name, event));
             }
         }
 

@@ -459,12 +459,14 @@ export default class Header extends EventEmitter {
             overlap = 0,
             tabWidth,
             tabOverlapAllowance = this.layoutManager.config.settings.tabOverlapAllowance,
-            tabOverlapAllowanceExceeded = false,
-            activeIndex = (this.activeContentItem ? this.tabs.indexOf(this.activeContentItem.tab) : 0),
-            activeTab = this.tabs[activeIndex];
+            tabOverlapAllowanceExceeded = false;
+        
+        const activeIndex = (this.activeContentItem ? this.tabs.indexOf((this.activeContentItem as Stack).tab) : 0);
+        let activeTab = this.tabs[activeIndex];
 
-        if (this.parent.isSided)
+        if (this.parent.isSided) {
             availableWidth = this.element.outerHeight() - this.controlsContainer.outerHeight() - this._tabControlOffset;
+        }
 
         this._lastVisibleTabIndex = -1;
 

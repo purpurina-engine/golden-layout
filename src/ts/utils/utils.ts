@@ -103,6 +103,7 @@ export function copy(target: any, source: any): any {
  */
 export function animFrame(fn: Callback) {
     return (window.requestAnimationFrame ||
+        window.webkitRequestAnimationFrame ||
         function (callback) {
             window.setTimeout(callback, 1000 / 60);
         })(fn);
@@ -148,7 +149,8 @@ export function isFunction(obj: any | Callback): boolean {
 export function fnBind(fn: Callback | any, context?: object, ...boundArgs: any[]): BoundFunction | any {
 
     if (Function.prototype.bind !== undefined) {
-        return Function.prototype.bind.apply(fn, [context].concat(boundArgs || []));
+        //return fn.bind(context, boundArgs);
+        return Function.prototype.bind.apply(fn, [context].concat(boundArgs));
     }
 
     let bound = function (this: any) {

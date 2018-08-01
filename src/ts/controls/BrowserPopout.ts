@@ -324,6 +324,6 @@ _onInitialised(): void {
      * @returns {void}
      */
     private _onClose(): void {
-    setTimeout(fnBind(this.emit, this, ['closed']), 50);
+    setTimeout(fnBind(this.emit, this, 'closed'), 50);
     }
 }

@@ -625,9 +625,9 @@ export default class RowOrColumn extends ContentItem {
     private _createSplitter(index: number): Splitter {
         let splitter;
         splitter = new Splitter(this.__isColumn, this._splitterSize, this._splitterGrabSize);
-        splitter.on('drag', fnBind(this._onSplitterDrag, this, [splitter]), this);
-        splitter.on('dragStop', fnBind(this._onSplitterDragStop, this, [splitter]), this);
-        splitter.on('dragStart', fnBind(this._onSplitterDragStart, this, [splitter]), this);
+        splitter.on('drag', fnBind(this._onSplitterDrag, this, splitter), this);
+        splitter.on('dragStop', fnBind(this._onSplitterDragStop, this, splitter), this);
+        splitter.on('dragStart', fnBind(this._onSplitterDragStart, this, splitter), this);
         this._splitter.splice(index, 0, splitter);
         return splitter;
     }
@@ -777,6 +777,6 @@ export default class RowOrColumn extends ContentItem {
             'left': 0
         });
 
-        animFrame(fnBind(this.callDownwards, this, ['setSize']));
+        animFrame(fnBind(this.callDownwards, this, 'setSize'));
     }
 }

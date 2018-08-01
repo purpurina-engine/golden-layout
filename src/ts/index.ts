@@ -1,10 +1,5 @@
 // helper file for webpack build system
 // whatever is imported/exported here will be included in the build
-import '../less/test.less';
-import '../less/goldenlayout-base.less';
-import '../less/goldenlayout-dark-theme.less';
-
-
 //
 // Layout
 export { default } from './GoldenLayout';

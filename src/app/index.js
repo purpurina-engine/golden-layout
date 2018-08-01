@@ -9,6 +9,8 @@ import Peteca from './images/peteca.png';
 // console.log('ZEPTO active: ', env.ZEPTO)
 // console.log('JQUERY active: ', env.JQUERY)
 
+console.log(__dirname);
+
 const GoldenLayout = function trick_preprocessor_and_webpack_hmr (a) {
     return require('../ts/GoldenLayout.ts').default;
   // if(env.ES6){

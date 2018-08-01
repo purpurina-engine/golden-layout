@@ -1,7 +1,7 @@
 import Container from "../container/Container";
-import * as ReactDOM from 'react-dom';
-import * as React from 'react';
 import { ReactComponentConfig } from "../config/ItemConfigType";
+import * as React from 'react';
+import * as ReactDOM from 'react-dom';
 
 /**
  * A specialized GoldenLayout component that binds GoldenLayout container
@@ -16,7 +16,7 @@ import { ReactComponentConfig } from "../config/ItemConfigType";
 
 export default class ReactComponentHandler {
 
-    private _reactComponent: React.Component;
+    private _reactComponent: any;
     private _originalComponentWillUpdate: any;
     private _container: Container;
     //private _initialState: any;
@@ -41,7 +41,7 @@ export default class ReactComponentHandler {
      * @private
      * @returns {void}
      */
-    private _render() {
+    private _render(): void {
         this._reactComponent = ReactDOM.render(this._getReactComponent(), this._container.getElement()[0]);
         this._originalComponentWillUpdate = this._reactComponent.componentWillUpdate || function () { };
         this._reactComponent.componentWillUpdate = this._onUpdate.bind(this);
@@ -80,7 +80,7 @@ export default class ReactComponentHandler {
      * @private
      * @returns {React.Class}
      */
-    private _getReactClass() {
+    private _getReactClass(): any {
         const componentName = (<ReactComponentConfig>this._container.config).component;
         let reactClass;
 
@@ -104,7 +104,7 @@ export default class ReactComponentHandler {
      * @private
      * @returns {React.Element}
      */
-    private _getReactComponent() {
+    private _getReactComponent(): any {
         let defaultProps = {
             glEventHub: this._container.layoutManager.eventHub,
             glContainer: this._container,

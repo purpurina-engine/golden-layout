@@ -20,6 +20,10 @@ import defaultConfig from './config/defaultConfig';
 import DragSourceControl from './controls/DragSourceControl';
 import Config from './config';
 
+import { ElementDimensions, ContentItemConfigFunction, ContentArea, BoundFunction, } from './Commons';
+import ItemConfigType, { ComponentConfig, ItemConfig } from './config/ItemConfigType';
+
+
 import {
     fnBind,
     objectKeys,
@@ -31,8 +35,6 @@ import {
     getQueryStringParam,
     isHTMLElement,
 } from './utils/utils';
-import { ElementDimensions, ContentItemConfigFunction, ContentArea, BoundFunction, } from './Commons';
-import ItemConfigType, { ComponentConfig, ItemConfig } from './config/ItemConfigType';
 
 type NewContentItem = Stack | Component | RowOrColumn;
 
@@ -50,7 +52,7 @@ interface ComponentMap {
 export default class GoldenLayout extends EventEmitter {
 
     private _typeToItem: {
-        [key: string]: BoundFunction | typeof Component | typeof Stack;
+        [key: string]: any | typeof Component | typeof Stack;
         'column': any;
         'row': any;
         'stack': typeof Stack;
@@ -185,7 +187,7 @@ export default class GoldenLayout extends EventEmitter {
 
         super();
 
-        if (!$) {
+        if ($ === undefined || $ == null) {
             let errorMsg = 'jQuery is missing as dependency for GoldenLayout. ';
             errorMsg += 'Please either expose $ on GoldenLayout\'s scope (e.g. window) or add "jquery" to ';
             errorMsg += 'your paths when using RequireJS/AMD';
@@ -228,8 +230,8 @@ export default class GoldenLayout extends EventEmitter {
         }
 
         this._typeToItem = {
-            'column': fnBind(RowOrColumn, this, [true]),
-            'row': fnBind(RowOrColumn, this, [false]),
+            'column': fnBind(RowOrColumn, this, true),
+            'row': fnBind(RowOrColumn, this, false),
             'stack': Stack,
             'component': Component
         };
@@ -825,7 +827,7 @@ export default class GoldenLayout extends EventEmitter {
     _$computeHeaderArea(area: ContentArea): ContentArea {
         let header: ContentArea = {};
         copy(header, area);
-        copy(header, area.contentItem._contentAreaDimensions.header.highlightArea);
+        copy(header, (area.contentItem as Stack)._contentAreaDimensions.header.highlightArea);
         header.surface = (header.x2 - header.x1) * (header.y2 - header.y1);
         return header;
     }

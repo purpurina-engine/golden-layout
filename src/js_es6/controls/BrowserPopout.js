@@ -268,6 +268,6 @@ export default class BrowserPopout extends EventEmitter {
      * @returns {void}
      */
     _onClose() {
-        setTimeout(fnBind(this.emit, this, ['closed']), 50);
+        setTimeout(fnBind(this.emit, this, 'closed'), 50);
     }
 }

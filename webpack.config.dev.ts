@@ -3,7 +3,7 @@ import * as webpack from 'webpack';
 import * as path from 'path';
 
 import * as HtmlWebpackPlugin from 'html-webpack-plugin';
-const CopyWebpackPlugin = require('copy-webpack-plugin');
+//const CopyWebpackPlugin = require('copy-webpack-plugin');
 //import * as MiniCssExtractPlugin from "mini-css-extract-plugin";
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const postcssNext = require('postcss-cssnext');
@@ -30,10 +30,12 @@ const scssProcessors = [
     }),
 ];
 
-const basePath = '.' + path.sep + 'src';
-const appBasePath = basePath + path.sep + 'app';
-const sourcePath = basePath + path.sep + 'ts';
-const htmlTemplatePath = appBasePath + path.sep + 'index.html';
+const basePath = './src';
+const appBasePath = basePath + '/app';
+const sourcePath = basePath + '/ts';
+const htmlTemplatePath = appBasePath + '/index.html';//path.resolve(__dirname, 'src' + path.sep + 'app' + path.sep + 'index.html');
+
+console.log(appBasePath)
 
 export default (env: any) => {
 
@@ -51,7 +53,7 @@ export default (env: any) => {
         resolve: {
             extensions: ['.js', '.ts'],
             alias: {
-                'ts': path.join(__dirname, path.join('src', 'ts')),
+                'ts': path.join(__dirname,  path.join('src','ts')),
                 'less': path.join(__dirname, path.join('src', 'less')),
                 'css': path.join(__dirname, path.join('src', 'css')),
             }
@@ -60,16 +62,18 @@ export default (env: any) => {
         entry: {
             // non-ES6 (Prototype/concat build) needs a dummy name or it will overwrite
             //[process.env.ES6 ? 'goldenlayout' : 'dummy']: env.dev ? ('.' + path.sep + 'app.js') : ('.' + path.sep + 'index.js'),
-            'goldenlayout': env.dev ? (appBasePath + path.sep + 'index.js') : (sourcePath + path.sep + 'index.ts'),
+            'goldenlayout': env.dev ? (appBasePath + '/index.js') : (sourcePath + path.sep + 'index.ts'),
         },
 
         externals: {
             'jQuery': 'jquery',
+            'react': 'React',
+            'react-dom': 'ReactDOM'
         },
 
         output: Object.assign({
             path: path.resolve(__dirname, 'dist'),
-            publicPath: path.resolve(__dirname, 'dist'),
+            //publicPath: path.resolve(__dirname, 'dist'),
             filename: path.join('js', '[name].js'),
 
         }, process.env.dev ? {} : {
@@ -176,16 +180,16 @@ export default (env: any) => {
                 'window.jQuery': 'jquery'
             }),
 
-            new CopyWebpackPlugin((env.dev) ? [
-                { from: 'my_traces.js' },
-                { from: path.join('..', 'lib', 'tracing.js', 'tracing.js'), to: 'lib' + path.sep },
-            ] : [],
-             {
-                    ignore: [
-                        // Doesn't copy any files with a txt extension
-                        // '*.txt'
-                    ]
-                }),
+            // new CopyWebpackPlugin((env.dev) ? [
+            //     { from: './app/my_traces.js' },
+            //     { from: path.join('..', 'lib', 'tracing.js', 'tracing.js'), to: 'lib' + path.sep },
+            // ] : [],
+            //  {
+            //         ignore: [
+            //             // Doesn't copy any files with a txt extension
+            //             // '*.txt'
+            //         ]
+            //     }),
 
             new webpack.DefinePlugin({
                 env: JSON.stringify(process.env)

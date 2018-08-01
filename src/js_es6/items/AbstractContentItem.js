@@ -646,7 +646,7 @@ export default class AbstractContentItem extends EventEmitter {
         } else {
             if (this._pendingEventPropagations[name] !== true) {
                 this._pendingEventPropagations[name] = true;
-                animFrame(fnBind(this._propagateEventToLayoutManager, this, [name, event]));
+                animFrame(fnBind(this._propagateEventToLayoutManager, this, name, event));
             }
         }
 
