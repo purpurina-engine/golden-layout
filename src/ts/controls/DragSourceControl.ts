@@ -16,7 +16,7 @@ export default class DragSourceControl {
         return this._header;
     }
 
-    fullArea: ContentArea;
+    fullArea: ContentArea = {};
     private _hasArea: boolean = false;
 
     get hasArea(): boolean {
@@ -31,6 +31,9 @@ export default class DragSourceControl {
     }
 
     set(area: ContentArea, header: ContentArea, item: ContentItem) {
+        if (area === null || header === null) {
+            return;
+        }
         this._area = area;
         this._header = header;
         mergeAreas(area, header, this.fullArea);

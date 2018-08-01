@@ -22,7 +22,7 @@ import { ContentArea } from '../Commons';
 //     '<div class="lm_content"></div>' +
 //     '</div>'
 
-function buildTemplate(showPreview: boolean = true): string {
+function buildTemplate(_showPreview: boolean = true): string {
     let _template = '<div class="lm_dragProxy">' +
         '<div class="lm_header">' +
         '<ul class="lm_tabs">' +
@@ -32,11 +32,22 @@ function buildTemplate(showPreview: boolean = true): string {
         '</ul>' +
         '</div>';
 
-    if (showPreview) {
-        _template.concat('<div class="lm_content"></div>');
+    if (_showPreview) {
+        _template += '<div class="lm_content"></div>';
     }
 
-    _template.concat('</div>');
+    // const _template = '<div class="lm_dragProxy">' +
+    // '<div class="lm_header">' +
+    // '<ul class="lm_tabs">' +
+    // '<li class="lm_tab lm_active"><i class="lm_left"></i>' +
+    // '<span class="lm_title"></span>' +
+    // '<i class="lm_right"></i></li>' +
+    // '</ul>' +
+    // '</div>' +
+    // '<div class="lm_content"></div>' +
+    // '</div>'
+
+    _template += '</div>';
 
     return _template;
 }
@@ -128,18 +139,18 @@ export default class DragProxy extends EventEmitter {
             this.childElementContainer.append(contentItem.element);
         }
 
+
+
         /**
-         * Should detach child element from tree?
+        * Should detach child element from tree?
          */
-        if (detach) {
-            this._undisplayTree();
-        }
+        this._undisplayTree(detach);
 
-        this._layoutManager._$calculateItemAreas(this._contentItem.parent);
+        this._layoutManager._$calculateItemAreas();
+        
+        this._setDimensions();
 
-        if (detach) {
-            this._setDimensions();
-        }
+
 
         $(document.body).append(this.element);
 
@@ -259,8 +270,10 @@ export default class DragProxy extends EventEmitter {
      *
      * @returns {void}
      */
-    private _undisplayTree(): void {
+    private _undisplayTree(detach: boolean): void {
 
+        if (detach === false)
+            return;
         /**
          * parent is null if the drag had been initiated by a external drag source
          */

@@ -4,7 +4,8 @@ import * as path from 'path';
 
 import * as HtmlWebpackPlugin from 'html-webpack-plugin';
 //import CopyWebpackPlugin from 'copy-webpack-plugin';
-import * as MiniCssExtractPlugin from "mini-css-extract-plugin";
+//import * as MiniCssExtractPlugin from "mini-css-extract-plugin";
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const postcssNext = require('postcss-cssnext');
 const postcssImport = require('postcss-import');
 const postcssExtend = require('postcss-extend');
@@ -34,12 +35,12 @@ const appBasePath = basePath + path.sep + 'app';
 const sourcePath = basePath + path.sep + 'ts';
 const htmlTemplatePath = appBasePath + path.sep + 'index.html';
 
-export default (env) => {
+export default (env: any) => {
 
 
 
-    const stylesType = process.env.STYLES; // postcss or scss
-    const stylesExtension = stylesType === 'scss' ? '.scss' : '.css';
+    //const stylesType = process.env.STYLES; // postcss or scss
+    //const stylesExtension = stylesType === 'scss' ? '.scss' : '.css';
 
     const config: webpack.Configuration = {
 

@@ -107,11 +107,11 @@ export default class Header extends EventEmitter {
      * @returns {void}
      */
     createTab(contentItem: ContentItem, index?: number): void {
-        let tab, i;
+        let tab;
 
         //If there's already a tab relating to the
         //content item, don't do anything
-        for (i = 0; i < this.tabs.length; i++) {
+        for (let i = 0; i < this.tabs.length; i++) {
             if (this.tabs[i].contentItem === contentItem) {
                 return;
             }

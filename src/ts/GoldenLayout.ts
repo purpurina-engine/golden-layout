@@ -834,7 +834,7 @@ export default class GoldenLayout extends EventEmitter {
         return header;
     }
 
-    _$calculateItemAreas(ignoreContentItem: ContentItem): void {
+    _$calculateItemAreas(ignoreContentItem?: ContentItem): void {
 
         const allContentItems = this._getAllContentItems();
         let areas: ContentArea[] = [];
@@ -873,7 +873,7 @@ export default class GoldenLayout extends EventEmitter {
 
             countAreas++;
 
-            if (ignoreContentItem === current) {
+            if (ignoreContentItem && ignoreContentItem === current) {
                 myArea = area;
                 myHeader = this._$computeHeaderArea(area);
             } else {
@@ -889,7 +889,7 @@ export default class GoldenLayout extends EventEmitter {
 
         this._dragSourceArea.clear();
 
-        if (countAreas === 1) {
+        if (countAreas === 1 && ignoreContentItem === undefined) {
             areas.push(myArea);
             areas.push(this._$computeHeaderArea(myHeader));
         } else {
@@ -1029,7 +1029,7 @@ export default class GoldenLayout extends EventEmitter {
      * @static
      * @returns {Config} config
      */
-    private _createConfig(config: Config) {
+    private _createConfig(config: Config): any {
         let windowConfigKey = getQueryStringParam('gl-window');
 
         if (windowConfigKey) {

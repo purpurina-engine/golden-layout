@@ -621,7 +621,7 @@ export default abstract class ContentItem extends EventEmitter {
         });
     }
 
-    _$setParent(parent: ContentItem): void {
+    _$setParent(parent: ContentItem | any): void {
         this._parent = parent;
     }
 
