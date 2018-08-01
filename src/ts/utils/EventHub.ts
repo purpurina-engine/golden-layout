@@ -10,9 +10,6 @@ import LayoutManager from '../GoldenLayout';
 import * as $ from 'jquery';
 
 
-
-
-
 /**
  * An EventEmitter singleton that propagates events
  * across multiple windows. This is a little bit trickier since
@@ -28,8 +25,6 @@ import * as $ from 'jquery';
  *
  * @param {lm.LayoutManager} layoutManager
  */
-
-
 export default class EventHub extends EventEmitter {
 
     private _layoutManager: LayoutManager;

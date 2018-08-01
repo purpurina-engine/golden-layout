@@ -12,15 +12,7 @@ import GoldenLayout from '../GoldenLayout';
 import { ItemConfig } from '../config/ItemConfigType';
 import ContentItem from '../items/ContentItem';
 
-/**
-* Window configuration object from the Popout.
-*/
-export interface BrowserPopoutConfig {
-    dimensions: ElementDimensions;
-    content: Config;
-    parentId: string;
-    indexInParent: number;
-}
+
 
 /**
  * Pops a content item out into a new browser window.

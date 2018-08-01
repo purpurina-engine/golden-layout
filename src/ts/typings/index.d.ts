@@ -1,6 +1,6 @@
 import GoldenLayout from "../GoldenLayout";
-import * as ReactDOM from "../../../node_modules/@types/react-dom";
-import React = require("../../../node_modules/@types/react");
+import * as ReactDOM from "react-dom";
+import React = require("react");
 
 
 declare global {

@@ -1,5 +1,5 @@
 
-export default interface Dimensions {
+export default interface DimensionsSettings {
     /**
      * The width of the borders between the layout items in pixel. Please note: The actual draggable area is wider
      * than the visible one, making it safe to set this to small values without affecting usability.

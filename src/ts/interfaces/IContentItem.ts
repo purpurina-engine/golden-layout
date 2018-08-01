@@ -1,82 +1,84 @@
 import BrowserPopout from "../controls/BrowserPopout";
 import ItemConfigType from "../config/ItemConfigType";
-import EventEmitter from "../utils/EventEmitter";
+import { ContentItemType } from "./Commons";
+import GoldenLayout from "../GoldenLayout";
+import IEventEmitter from "./IEventEmitter";
 
-export interface IContentItem extends EventEmitter {
+export default interface IContentItem extends IEventEmitter {
     /**
      * This items configuration in its current state
      */
-    config: ItemConfigType;
+    readonly config: ItemConfigType;
 
     /**
      * The type of the item. Can be row, column, stack, component or root
      */
-    type: string;
+    readonly type: ContentItemType;
 
     /**
      * An array of items that are children of this item
      */
-    contentItems: IContentItem[];
+    readonly contentItems: IContentItem[];
 
     /**
      * The item that is this item's parent (or null if the item is root)
      */
-    parent: IContentItem;
+    readonly parent: IContentItem;
 
     /**
      * A String or array of identifiers if provided in the configuration
      */
-    id: string;
+    readonly id: string;
 
     /**
      * True if the item had been initialised
      */
-    isInitialised: boolean;
+    readonly isInitialised: boolean;
 
     /**
      * True if the item is maximised
      */
-    isMaximised: boolean;
+    readonly isMaximised: boolean;
 
     /**
      * True if the item is the layout's root item
      */
-    isRoot: boolean;
+    readonly isRoot: boolean;
 
     /**
      * True if the item is a row
      */
-    isRow: boolean;
+    readonly isRow: boolean;
 
     /**
      * True if the item is a column
      */
-    isColumn: boolean;
+    readonly isColumn: boolean;
 
     /**
      * True if the item is a stack
      */
-    isStack: boolean;
+    readonly isStack: boolean;
 
     /**
      * True if the item is a component
      */
-    isComponent: boolean;
+    readonly isComponent: boolean;
 
     /**
      * A reference to the layoutManager that controls this item
      */
-    layoutManager: any;
+    readonly layoutManager: GoldenLayout;
 
     /**
      * The item's outer element
      */
-    element: JQuery;
+    readonly element: JQuery;
 
     /**
      * The item's inner element. Can be the same as the outer element.
      */
-    childElementContainer: JQuery;
+    readonly childElementContainer: JQuery;
 
     /**
      * Adds an item as a child to this item. If the item is already a part of a layout it will be removed
@@ -98,7 +100,7 @@ export interface IContentItem extends EventEmitter {
      * @param oldChild    ContentItem The contentItem that should be removed
      * @param newChild A content item (or tree of content items) or an ItemConfiguration to create the item from
      */
-    replaceChild(oldChild: IContentItem, newChild: IContentItem | ItemConfigType): void;
+    replaceChild(oldChild: IContentItem, newChild: IContentItem | ItemConfigType, destroyOldChild?: boolean): void;
 
     /**
      * Updates the items size. To actually assign a new size from within a component, use container.setSize( width, height )
@@ -139,7 +141,7 @@ export interface IContentItem extends EventEmitter {
     /**
      * Maximises the item or minimises it if it's already maximised
      */
-    toggleMaximise(): void;
+    toggleMaximise(event?: JQuery.Event): void;
 
     /**
      * Selects the item. Only relevant if settings.selectionEnabled is set to true
@@ -196,7 +198,7 @@ export interface IContentItem extends EventEmitter {
      * Returns all items with the specified type
      * @param type 'row', 'column', 'stack', 'component' or 'root'
      */
-    getItemsByType(type: string): IContentItem[];
+    getItemsByType(type: ContentItemType): IContentItem[];
 
     /**
      * Returns all instances of the component with the specified componentName

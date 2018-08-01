@@ -1,5 +1,4 @@
-import { ComponentConfig } from "./config/ItemConfigType";
-import ContentItem from "./items/ContentItem";
+import ContentItem from "../items/ContentItem";
 
 export type Dimension = 'height' | 'width';
 export type HeaderPosition = 'top' | 'bottom' | 'left' | 'right';
@@ -9,7 +8,7 @@ export type Callback = (...args: any[]) => any;
 export interface BoundFunction extends Function {
     (...args: any[]): any;
 } 
-export type ContentItemConfigFunction = () => ComponentConfig;
+//export type ContentItemConfigFunction = () => ComponentConfig;
 
 export interface Vector {
     x: number;

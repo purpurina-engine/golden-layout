@@ -20,7 +20,7 @@ import defaultConfig from './config/defaultConfig';
 import DragSourceControl from './controls/DragSourceControl';
 import Config from './config';
 
-import { ElementDimensions, ContentItemConfigFunction, ContentArea, BoundFunction, } from './Commons';
+import { ElementDimensions, ContentArea, BoundFunction, } from './interfaces/Commons';
 import ItemConfigType, { ComponentConfig, ItemConfig } from './config/ItemConfigType';
 
 
@@ -36,7 +36,7 @@ import {
     isHTMLElement,
 } from './utils/utils';
 
-type NewContentItem = Stack | Component | RowOrColumn;
+type NewContentItem = typeof Stack | typeof Component | typeof RowOrColumn;
 
 
 interface ComponentMap {

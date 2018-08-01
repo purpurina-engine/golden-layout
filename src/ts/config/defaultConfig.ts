@@ -1,5 +1,5 @@
 import Settings from './Settings'
-import Dimensions from './Dimensions';
+import DimensionsSettings from './DimensionsSettings';
 import Labels from './Labels';
 import DragDropSettings from './DragDropSettings';
 
@@ -23,7 +23,7 @@ class DefaultLayoutConfig {
         tabControlOffset: 10
     };
 
-    dimensions: Dimensions = {
+    dimensions: DimensionsSettings = {
         borderWidth: 5,
         borderGrabWidth: 15,
         minItemHeight: 10,

@@ -1,12 +1,12 @@
 import Settings from "./Settings";
-import Dimensions from "./Dimensions";
+import DimensionsSettings from "./DimensionsSettings";
 import Labels from "./Labels";
 import ItemConfigType, { ComponentConfig, ReactComponentConfig, ItemConfig } from "./ItemConfigType";
 import DragDropSettings from "./DragDropSettings";
 
-export default interface Config {
+export default interface LayoutConfig {
     settings?: Settings;
-    dimensions?: Dimensions;
+    dimensions?: DimensionsSettings;
     labels?: Labels;
     content?: ItemConfigType[];
     dragDrop?: DragDropSettings;
@@ -22,5 +22,5 @@ export {
     ItemConfigType, 
     Labels, 
     Settings, 
-    Dimensions 
+    DimensionsSettings 
 };

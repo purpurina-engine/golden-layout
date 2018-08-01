@@ -1,8 +1,11 @@
 
+import IEventEmitter from '../interfaces/IEventEmitter';
+import { Callback } from '../interfaces/Commons';
 import {
     isFunction
 } from './utils'
-import { Callback } from '../Commons';
+
+
 
 /**
  * A generic and very fast EventEmitter
@@ -28,7 +31,7 @@ interface Subscriptions {
     [indexer: string]: EventSubscribed[];
 }
 
-export default class EventEmitter {
+export default class EventEmitter implements IEventEmitter {
 
     private _mSubscriptions: Subscriptions = {};
 
@@ -81,7 +84,7 @@ export default class EventEmitter {
      * @param callback The function that should be invoked when the event occurs
      * @param context The value of the this pointer in the callback function
      */
-    on(event: string, callback: Callback, context?: Object): void {
+    on(event: string, callback: Callback, context?: any): void {
         if (!isFunction(callback)) {
             throw new Error('Tried to listen to event ' + event + ' with non-function callback ' + callback);
         }
