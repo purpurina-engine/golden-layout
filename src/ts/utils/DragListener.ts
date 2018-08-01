@@ -3,12 +3,7 @@ import {
     fnBind,
     getTouchEvent
 } from './utils';
-
-interface Vector {
-    x: number;
-    y: number;
-}
-
+import { Vector } from '../Commons';
 
 export default class DragListener extends EventEmitter {
 
@@ -84,7 +79,7 @@ export default class DragListener extends EventEmitter {
         oEvent.preventDefault();
 
         if (oEvent.button == 0 || oEvent.type === "touchstart") {
-            var coordinates = this._getCoordinates(oEvent);
+            const coordinates = this._getCoordinates(oEvent);
 
             this._nOriginalX = coordinates.x;
             this._nOriginalY = coordinates.y;
@@ -100,7 +95,7 @@ export default class DragListener extends EventEmitter {
         if (this._timeout != null) {
             oEvent.preventDefault();
 
-            var coordinates = this._getCoordinates(oEvent);
+            const coordinates = this._getCoordinates(oEvent);
 
             this._nX = coordinates.x - this._nOriginalX;
             this._nY = coordinates.y - this._nOriginalY;
@@ -146,10 +141,11 @@ export default class DragListener extends EventEmitter {
     }
 
     private _getCoordinates(event?: JQuery.Event): Vector {
-        event = getTouchEvent(event)
-        return {
-            x: event.pageX,
-            y: event.pageY
-        };
+        return getTouchEvent(event);
+        
+        // return {
+        //     x: event.pageX,
+        //     y: event.pageY
+        // };
     }
 }

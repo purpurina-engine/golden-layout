@@ -1,49 +1,47 @@
-import { ContentArea, Callback, BoundFunction } from '../Commons';
+import { ContentArea, Callback, BoundFunction, Vector } from '../Commons';
 import ItemConfigType from '../config/ItemConfigType';
 import ContentItem from '../items/ContentItem';
 
-let vendors: string[] = [
-    'ms',
-    'moz',
-    'webkit',
-    'o'
-];
+// function F(): void { }
 
-for (let x = 0; x < vendors.length && !window.requestAnimationFrame; x++) {
-    window.requestAnimationFrame = window[vendors[x] + 'RequestAnimationFrame'];
-    window.cancelAnimationFrame = window[vendors[x] + 'CancelAnimationFrame'];
-}
-
-
-
-function F(): void { }
-
-export function getTouchEvent(event: JQuery.Event): JQuery.Event {
-    // if($.zepto){
+export function getTouchEvent(event: JQuery.Event): Vector {
+    // if($.zepto)
     //     return event.touches ? event.targetTouches[0] : event;
-    // } else {
-    if (event.originalEvent && event.originalEvent['touches']) {
-        return event.originalEvent['touches'][0];
+
+    if (event.touches && event.touches.length > 0) {
+        const value = event.touches.item(0);
+        return {
+            x: value.pageX,
+            y: value.pageY,
+        }
     }
 
+    return {
+        x: event.pageX,
+        y: event.pageY,
+    }
+    // if (event.originalEvent && event.originalEvent.type === 'touches') {
+    //     return event.originalEvent.['touches'][0];
+    // }
 
-    return event;
+
+
     // }
 }
 
-export function extend(subClass: any, superClass: any) {
-    subClass.prototype = createObject(superClass.prototype);
-    subClass.prototype.constructor = subClass;
-}
+// export function extend(subClass: any, superClass: any) {
+//     subClass.prototype = createObject(superClass.prototype);
+//     subClass.prototype.constructor = subClass;
+// }
 
-export function createObject(prototype: any) {
-    if (typeof Object.create === 'function') {
-        return Object.create(prototype);
-    } else {
-        F.prototype = prototype;
-        return new F();
-    }
-}
+// export function createObject(prototype: any) {
+//     if (typeof Object.create === 'function') {
+//         return Object.create(prototype);
+//     } else {
+//         F.prototype = prototype;
+//         return new F();
+//     }
+// }
 
 export function objectKeys(object: Object): string[] {
     let keys;
@@ -72,18 +70,17 @@ export function getQueryStringParam(param: string): string {
     }
 
     let keyValuePairs = window.location.search.substr(1).split('&');
-    let params: object = {};
-    let pair: string[];
+    let params: any = {};
 
     for (let i = 0; i < keyValuePairs.length; i++) {
-        pair = keyValuePairs[i].split('=');
+        let pair = keyValuePairs[i].split('=');
         params[pair[0]] = pair[1];
     }
 
     return params[param] || null;
 }
 
-export function copy(target: object, source: object): object {
+export function copy(target: any, source: any): any {
 
     if (target === undefined)
         target = {};
@@ -238,15 +235,15 @@ export function stripTags(input: string): string {
 
 export function mergeAreas(sourceA: ContentArea, sourceB: ContentArea, target?: ContentArea) {
 
-    // if (target === undefined) {
-    //     target = {
-    //         surface: -1,
-    //         x1: -1,
-    //         x2: -1,
-    //         y1: -1,
-    //         y2: -1,
-    //     };
-    // }
+    if (target === undefined) {
+        target = {
+            surface: -1,
+            x1: -1,
+            x2: -1,
+            y1: -1,
+            y2: -1,
+        };
+    }
 
     target.x1 = Math.min(sourceA.x1, sourceB.x1);
     target.x2 = Math.max(sourceA.x2, sourceB.x2);

@@ -625,11 +625,11 @@ export default abstract class ContentItem extends EventEmitter {
         this._parent = parent;
     }
 
-    protected _$highlightDropZone(_x: number, _y: number, area?: ContentArea): void {
+    _$highlightDropZone(_x: number, _y: number, area?: ContentArea): void {
         this.layoutManager.dropTargetIndicator.highlightArea(area);
     }
 
-    protected _$onDrop(contentItem: ContentItem, _area?: ContentArea): void {
+    _$onDrop(contentItem: ContentItem, _area?: ContentArea): void {
         this.addChild(contentItem);
     }
 

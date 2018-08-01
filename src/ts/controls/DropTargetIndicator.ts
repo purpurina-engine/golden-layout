@@ -1,4 +1,4 @@
-import { ContentArea } from "../Commons";
+import { ContentArea, Area } from "../Commons";
 
 const _template = '<div class="lm_dropTargetIndicator"><div class="lm_inner"></div></div>'
 
@@ -25,7 +25,7 @@ export default class DropTargetIndicator {
         });
     }
 
-    highlightArea(area: ContentArea) {
+    highlightArea(area: ContentArea | Area) {
         this.element.css({
             left: area.x1,
             top: area.y1,

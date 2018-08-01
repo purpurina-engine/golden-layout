@@ -104,50 +104,49 @@ export default class ConfigMinifier {
     /**
      * Recursive function, called for every level of the config structure
      *
-     * @param   {Array|Object} orig
-     * @param   {Array|Object} min
-     * @param    {String} translationFn
+     * @param   {any} from
+     * @param   {any} to
+     * @param    {string} translationFn
      *
      * @returns {void}
      */
-    private _nextLevel(from: Object | Array<any>, to: Object | Array<any>, translationFn: string): void {
-        let minKey: string;
-        let key;
+    private _nextLevel(from: any, to: any, translationFn: '_min' | '_max'): void {
 
-        for (key in from) {
+        for (let key in from) {
 
+            let current: string | number = key;
             /**
              * For in returns array indices as keys, so let's cast them to numbers
              */
             if (from instanceof Array) {
-                key = parseInt(key, 10);
+                current = parseInt(key, 10);
             }
 
             /**
              * In case something has extended Object prototypes
              */
-            if (!from.hasOwnProperty(key))
+            if (!from.hasOwnProperty(current))
                 continue;
 
             /**
              * Translate the key to a one letter substitute
              */
-            minKey = this[translationFn](key, this._keys);
+            let minKey = ConfigMinifier[translationFn](current, this._keys);
 
             /**
              * For Arrays and Objects, create a new Array/Object
              * on the minified object and recurse into it
              */
-            if (typeof from[key] === 'object') {
-                to[minKey] = from[key] instanceof Array ? [] : {};
-                this._nextLevel(from[key], to[minKey], translationFn);
+            if (typeof from[current] === 'object') {
+                to[minKey] = from[current] instanceof Array ? [] : {};
+                this._nextLevel(from[current], to[minKey], translationFn);
 
                 /**
                  * For primitive values (Strings, Numbers, Boolean etc.)
                  * minify the value
                  */
             } else {
-                to[minKey] = this[translationFn](from[key], this._values);
+                to[minKey] = ConfigMinifier[translationFn](from[key], this._values);
             }
         }
     }
@@ -160,7 +159,7 @@ export default class ConfigMinifier {
      *
      * @returns {string} The minified version
      */
-    static _min(value: string | boolean, dictionary: Array<string | boolean>): string | boolean {
+    static _min(value: string | number, dictionary: any): string | number {
         /**
          * If a value actually is a single character, prefix it
          * with ___ to avoid mistaking it for a minification code
@@ -185,7 +184,7 @@ export default class ConfigMinifier {
         }
     }
 
-    static _max(value: string, dictionary: object) {
+    static _max(value: string | number, dictionary: any): string | number {
         /**
          * value is a single character. Assume that it's a translation
          * and return the original value from the dictionary

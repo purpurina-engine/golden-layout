@@ -1,4 +1,5 @@
 import { ComponentConfig } from "./config/ItemConfigType";
+import ContentItem from "./items/ContentItem";
 
 export type Dimension = 'height' | 'width';
 export type HeaderPosition = 'top' | 'bottom' | 'left' | 'right';
@@ -10,7 +11,13 @@ export interface BoundFunction extends Function {
 } 
 export type ContentItemConfigFunction = () => ComponentConfig;
 
+export interface Vector {
+    x: number;
+    y: number;
+}
+
 export interface Area {
+    [indexer: number]: any;
     x1?: number;
     x2?: number;
     y1?: number;
@@ -18,8 +25,9 @@ export interface Area {
 }
 
 export interface ContentArea extends Area {
+    [key: string]: number | ContentItem | string;
     surface?: number;
-    contentItem?: any;
+    contentItem?: ContentItem;
     side?: string;
 }
 

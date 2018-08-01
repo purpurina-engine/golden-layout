@@ -807,7 +807,7 @@ export default class GoldenLayout extends EventEmitter {
 
     _$createRootItemAreas(rootArea: ContentArea): void {
         const areaSize = 50;
-        let sides: object = {
+        let sides: any = {
             y2: 0,
             x2: 0,
             y1: 'y2',
@@ -855,7 +855,7 @@ export default class GoldenLayout extends EventEmitter {
         }
 
         this._$createRootItemAreas(rootArea);
-        const length = allContentItems.length;
+
         let countAreas = 0;
         let myArea = null,
             myHeader = null;
@@ -887,16 +887,14 @@ export default class GoldenLayout extends EventEmitter {
         }
 
 
-        // this._dragSourceArea.clear();
+        this._dragSourceArea.clear();
 
         if (countAreas === 1) {
-
+            areas.push(myArea);
+            areas.push(this._$computeHeaderArea(myHeader));
+        } else {
+            this._dragSourceArea.set(myArea, myHeader, ignoreContentItem);
         }
-        //     areas.push(myArea);
-        //     areas.push(this._$computeHeaderArea(myHeader));
-        // } else {
-        //     this._dragSourceArea.set(myArea, myHeader, ignoreContentItem);
-        // }
 
         this._itemAreas = areas;
 
@@ -1078,7 +1076,7 @@ export default class GoldenLayout extends EventEmitter {
             '<div class="lm_bg"></div>' +
             '</div>');
 
-        popInButton.click(fnBind(function () {
+        popInButton.click(fnBind(function (this: GoldenLayout) {
             this.emit('popIn');
         }, this));
 
@@ -1095,7 +1093,7 @@ export default class GoldenLayout extends EventEmitter {
          * This seems a bit pointless, but actually causes a reflow/re-evaluation getting around
          * slickgrid's "Cannot find stylesheet." bug in chrome
          */
-        let x = document.body.offsetHeight; // jshint ignore:line
+        // let x = document.body.offsetHeight; // jshint ignore:line
 
         /*
          * Expose this instance on the window object
@@ -1135,7 +1133,7 @@ export default class GoldenLayout extends EventEmitter {
      * @returns {void}
      */
     private _setContainer() {
-        let container;
+        let container: JQuery;
 
         if (this.container) {
             container = $(this.container);
@@ -1271,20 +1269,20 @@ export default class GoldenLayout extends EventEmitter {
 
     /**
      * Adds all children of a node to another container recursively.
-     * @param {object} container - Container to add child content items to.
-     * @param {object} node - Node to search for content items.
+     * @param {ContentItem} container - Container to add child content items to.
+     * @param {ContentItem} node - Node to search for content items.
      * @returns {void}
      */
-    private _addChildContentItemsToContainer(container, node): void {
+    private _addChildContentItemsToContainer(container: ContentItem, node: ContentItem): void {
         if (node.type === 'stack') {
-            node.contentItems.forEach(function (item) {
-                container.addChild(item);
-                node.removeChild(item, true);
-            });
+            for (const iterator of node.contentItems) {
+                container.addChild(iterator);
+                node.removeChild(iterator, true);
+            }
         } else {
-            node.contentItems.forEach(fnBind(function (item) {
-                this._addChildContentItemsToContainer(container, item);
-            }, this));
+            for (const iterator of node.contentItems) {
+                this._addChildContentItemsToContainer(container, iterator);
+            }
         }
     }
 

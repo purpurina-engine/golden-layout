@@ -1,10 +1,10 @@
-import EventEmitter from '../utils/EventEmitter'
+import EventEmitter from './EventEmitter'
 import { 
   ALL_EVENT
-} from '../utils/EventEmitter'
+} from './EventEmitter'
 import {
     fnBind
-} from '../utils/utils'
+} from './utils'
 
 
 /**

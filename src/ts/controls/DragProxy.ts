@@ -10,21 +10,7 @@ import Stack from '../items/Stack';
 import { ContentArea } from '../Commons';
 
 
-/**
- * This class creates a temporary container
- * for the component whilst it is being dragged
- * and handles drag events
- *
- * @constructor
- * @private
- *
- * @param {Number} x              The initial x position
- * @param {Number} y              The initial y position
- * @param {DragListener} dragListener
- * @param {lm.LayoutManager} layoutManager
- * @param {AbstractContentItem} contentItem
- * @param {AbstractContentItem} originalParent
- */
+
 // const _template = '<div class="lm_dragProxy">' +
 //     '<div class="lm_header">' +
 //     '<ul class="lm_tabs">' +
@@ -55,6 +41,15 @@ function buildTemplate(showPreview: boolean = true): string {
     return _template;
 }
 
+/**
+ * This class creates a temporary container
+ * for the component whilst it is being dragged
+ * and handles drag events
+ *
+ * @class
+ * @private
+ *
+ */
 export default class DragProxy extends EventEmitter {
 
     private _dragListener: DragListener;
@@ -78,6 +73,16 @@ export default class DragProxy extends EventEmitter {
     element: JQuery;
     childElementContainer: JQuery;
 
+    /**
+     * 
+     * 
+     * @param x The initial x position
+     * @param y The initial y position
+     * @param dragListener 
+     * @param layoutManager 
+     * @param contentItem 
+     * @param originalParent 
+     */
     constructor(x: number, y: number, dragListener: DragListener, layoutManager: GoldenLayout, contentItem: ContentItem, originalParent: ContentItem) {
 
         super();
@@ -164,10 +169,10 @@ export default class DragProxy extends EventEmitter {
      * @returns {void}
      */
     private _onDrag(offsetX: number, offsetY: number, event: JQuery.Event): void {
-        event = getTouchEvent(event)
+        const vec = getTouchEvent(event)
 
-        const x = event.pageX,
-            y = event.pageY,
+        const x = vec.x,
+            y = vec.y,
             isWithinContainer = x > this._minX && x < this._maxX && y > this._minY && y < this._maxY;
 
         if (!isWithinContainer && this._layoutManager.config.settings.constrainDragToContainer === true) {
