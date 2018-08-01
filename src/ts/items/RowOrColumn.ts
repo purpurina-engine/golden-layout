@@ -257,13 +257,13 @@ export default class RowOrColumn extends ContentItem {
     /**
      * Dock or undock a child if it posiible
      *
-     * @param   {ContentItem} contentItem
+     * @param   {Stack} contentItem
      * @param   {boolean} mode or toggle if undefined
      * @param   {boolean} collapsed after docking
      *
      * @returns {void}
      */
-    dock(contentItem: ContentItem, mode: boolean, collapsed?: boolean): void {
+    dock(contentItem: Stack, mode: boolean, collapsed?: boolean): void {
         if (this.contentItems.length === 1)
             throw new Error('Can\'t dock child when it single');
 
@@ -365,7 +365,7 @@ export default class RowOrColumn extends ContentItem {
 
         for (const iterator of this.contentItems) {
 
-            const headerConfig = iterator['headerConfig'];
+            const headerConfig = iterator as any['headerConfig'];
 
             if (headerConfig && headerConfig.docked) {
                 this.dock(iterator, true, true);
