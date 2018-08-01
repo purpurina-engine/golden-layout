@@ -629,7 +629,8 @@ export default abstract class ContentItem extends EventEmitter {
         this.layoutManager.dropTargetIndicator.highlightArea(area);
     }
 
-    _$onDrop(contentItem: ContentItem, _area?: ContentArea): void {
+    onDrop(contentItem: ContentItem, _area?: ContentArea): void {
+        console.log('123456')
         this.addChild(contentItem);
     }
 

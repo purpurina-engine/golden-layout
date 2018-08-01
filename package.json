@@ -17,6 +17,7 @@
   "author": "deepstreamHub GmbH",
   "main": "webpack.config.dev.js",
   "typings": "./index.d.ts",
+  "types": "./dist/index.d.ts",
   "directories": {
     "test": "test"
   },

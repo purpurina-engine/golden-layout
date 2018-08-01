@@ -69,7 +69,7 @@ export default class GoldenLayout extends EventEmitter {
     };
 
     private _isInitialized: boolean = false;
-    private _isSubWindow: boolean;
+    private _isSubWindow: boolean = false;
     private _openPopouts: BrowserPopout[];
     private _eventHub: EventHub;
 
@@ -82,7 +82,7 @@ export default class GoldenLayout extends EventEmitter {
     private _maximisePlaceholder: JQuery;
     private _creationTimeoutPassed: boolean;
     private _subWindowsCreated: boolean;
-    private _dragSources: any[] = [];
+    private _dragSources: DragSource[] = [];
     private _updatingColumnsResponsive: boolean;
     private _firstLoad: boolean;
 
@@ -228,8 +228,8 @@ export default class GoldenLayout extends EventEmitter {
         }
 
         this._typeToItem = {
-            'column': fnBind(RowOrColumn, this, true),
-            'row': fnBind(RowOrColumn, this, false),
+            'column': fnBind(RowOrColumn, this, [true]),
+            'row': fnBind(RowOrColumn, this, [false]),
             'stack': Stack,
             'component': Component
         };
@@ -494,16 +494,12 @@ export default class GoldenLayout extends EventEmitter {
         this.transitionIndicator.destroy();
         this._eventHub.destroy();
 
-        this._dragSources.forEach(function (dragSource) {
-            dragSource._dragListener.destroy();
-            dragSource._element = null;
-            dragSource._itemConfig = null;
-            dragSource._dragListener = null;
-        });
+        for (const iterator of this._dragSources) {
+            iterator.destroy();
+        }
+
         this._dragSources = [];
     }
-
-
 
     /**
     * Creates a new content item or tree of content items from configuration. Usually you wouldn't call this
@@ -789,7 +785,7 @@ export default class GoldenLayout extends EventEmitter {
         let smallestSurface = Infinity,
             matchingArea = null;
 
-        if (this._dragSourceArea.hasArea) {
+        if (this._dragSourceArea.hasArea === true) {
             if (this._$intersectsArea(x, y, smallestSurface, this._dragSourceArea.fullArea)) {
                 smallestSurface = this._dragSourceArea.fullArea.surface;
                 return this._dragSourceArea.fullArea;
@@ -834,7 +830,7 @@ export default class GoldenLayout extends EventEmitter {
         return header;
     }
 
-    _$calculateItemAreas(ignoreContentItem?: ContentItem): void {
+    _$calculateItemAreas(ignoreContentItem: ContentItem = null): void {
 
         const allContentItems = this._getAllContentItems();
         let areas: ContentArea[] = [];
@@ -848,6 +844,7 @@ export default class GoldenLayout extends EventEmitter {
          * will used for every gap in the layout, e.g. splitters
          */
         const rootArea = this.root._$getArea();
+
         if (allContentItems.length === 1) {
             areas.push(rootArea);
             this._itemAreas = areas;
@@ -856,9 +853,9 @@ export default class GoldenLayout extends EventEmitter {
 
         this._$createRootItemAreas(rootArea);
 
-        let countAreas = 0;
-        let myArea = null,
-            myHeader = null;
+        // let countAreas = 0;
+        // let myArea = null,
+        //     myHeader = null;
 
         for (const current of allContentItems) {
             if (!(current.isStack)) {
@@ -871,30 +868,30 @@ export default class GoldenLayout extends EventEmitter {
                 continue;
             }
 
-            countAreas++;
+            //countAreas++;
 
-            if (ignoreContentItem && ignoreContentItem === current) {
-                myArea = area;
-                myHeader = this._$computeHeaderArea(area);
-            } else {
+            // if (ignoreContentItem === current) {
+            //     myArea = area;
+            //     myHeader = this._$computeHeaderArea(area);
+            // } else {
                 if (area instanceof Array) {
                     areas = areas.concat(area);
                 } else {
                     areas.push(area);
                     areas.push(this._$computeHeaderArea(area));
                 }
-            }
+            
         }
 
 
         this._dragSourceArea.clear();
 
-        if (countAreas === 1 && ignoreContentItem === undefined) {
-            areas.push(myArea);
-            areas.push(this._$computeHeaderArea(myHeader));
-        } else {
-            this._dragSourceArea.set(myArea, myHeader, ignoreContentItem);
-        }
+        // if (countAreas === 1 && ignoreContentItem !== null) {
+        //     areas.push(myArea);
+        //     areas.push(this._$computeHeaderArea(myHeader));
+        // } else {
+        //     this._dragSourceArea.set(myArea, myHeader, ignoreContentItem);
+        // }
 
         this._itemAreas = areas;
 
@@ -926,10 +923,11 @@ export default class GoldenLayout extends EventEmitter {
         }
 
         // if ($.isPlainObject(contentItemOrConfig)) {
-        const isConfig = (contentItemOrConfig as ItemConfigType);
-        if (isConfig) {
+        const asConfig = (contentItemOrConfig as ItemConfigType);
+        if ($.isPlainObject(asConfig) && asConfig.type) {
             //  && contentItemOrConfig.type
-            let newContentItem = this.createContentItem(isConfig, parent);
+            
+            let newContentItem = this.createContentItem(asConfig, parent);
             newContentItem.callDownwards('_$init');
             return newContentItem;
         } else {

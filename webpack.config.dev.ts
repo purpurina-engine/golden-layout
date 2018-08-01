@@ -3,7 +3,7 @@ import * as webpack from 'webpack';
 import * as path from 'path';
 
 import * as HtmlWebpackPlugin from 'html-webpack-plugin';
-//import CopyWebpackPlugin from 'copy-webpack-plugin';
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 //import * as MiniCssExtractPlugin from "mini-css-extract-plugin";
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const postcssNext = require('postcss-cssnext');
@@ -31,7 +31,7 @@ const scssProcessors = [
 ];
 
 const basePath = '.' + path.sep + 'src';
-const appBasePath = basePath + path.sep + 'app'; 
+const appBasePath = basePath + path.sep + 'app';
 const sourcePath = basePath + path.sep + 'ts';
 const htmlTemplatePath = appBasePath + path.sep + 'index.html';
 
@@ -51,7 +51,7 @@ export default (env: any) => {
         resolve: {
             extensions: ['.js', '.ts'],
             alias: {
-                //'ts': path.join(__dirname, path.join('src', 'ts')),
+                'ts': path.join(__dirname, path.join('src', 'ts')),
                 'less': path.join(__dirname, path.join('src', 'less')),
                 'css': path.join(__dirname, path.join('src', 'css')),
             }
@@ -69,8 +69,9 @@ export default (env: any) => {
 
         output: Object.assign({
             path: path.resolve(__dirname, 'dist'),
-            //publicPath: './dist/',
+            publicPath: path.resolve(__dirname, 'dist'),
             filename: path.join('js', '[name].js'),
+
         }, process.env.dev ? {} : {
             library: 'GoldenLayout',
             libraryTarget: 'umd', // should be umd for npm-package
@@ -94,12 +95,12 @@ export default (env: any) => {
                 },
                 {
                     test: /\.ts$/,
-                    include: [
-                        path.resolve(__dirname, './src/ts'),
-                        //path.join(__dirname, 'test'),
-                        //path.join(__dirname, 'test/specs')
-                    ],
-                    exclude: /node_modules/,
+                    // include: [
+                    //     path.resolve(__dirname, './src/ts'),
+                    //     //path.join(__dirname, 'test'),
+                    //     //path.join(__dirname, 'test/specs')
+                    // ],
+                    exclude: [/node_modules/, path.resolve(__dirname, './src/app/')],
                     loader: 'ts-loader',
                 },
                 {
@@ -126,26 +127,26 @@ export default (env: any) => {
                 {
                     test: /\.scss$/,
                     use: [
-                        
+
                         {
-                        loader: 'css-loader',
-                        options: {
-                            sourceMap: true,
+                            loader: 'css-loader',
+                            options: {
+                                sourceMap: true,
+                            },
                         },
-                    },
-                    {
-                        loader: 'postcss-loader',
-                        options: {
-                            sourceMap: true,
-                            plugins: scssProcessors,
+                        {
+                            loader: 'postcss-loader',
+                            options: {
+                                sourceMap: true,
+                                plugins: scssProcessors,
+                            },
                         },
-                    },
-                    {
-                        loader: 'sass-loader',
-                        options: {
-                            sourceMap: true,
-                        },
-                    }],
+                        {
+                            loader: 'sass-loader',
+                            options: {
+                                sourceMap: true,
+                            },
+                        }],
                 },
                 {
                     test: /.*\.(gif|png|jpe?g|svg)$/i,
@@ -174,6 +175,17 @@ export default (env: any) => {
                 jQuery: 'jquery',
                 'window.jQuery': 'jquery'
             }),
+
+            new CopyWebpackPlugin((env.dev) ? [
+                { from: 'my_traces.js' },
+                { from: path.join('..', 'lib', 'tracing.js', 'tracing.js'), to: 'lib' + path.sep },
+            ] : [],
+             {
+                    ignore: [
+                        // Doesn't copy any files with a txt extension
+                        // '*.txt'
+                    ]
+                }),
 
             new webpack.DefinePlugin({
                 env: JSON.stringify(process.env)

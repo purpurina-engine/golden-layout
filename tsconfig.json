@@ -3,7 +3,7 @@
         "target": "es5",
         "module": "commonjs",
         "moduleResolution": "node",
-        "declaration": true,
+        //"declaration": true,
         "sourceMap": true,
         "lib": ["es2015", "dom"],
         "outDir": "build/ts",
@@ -12,15 +12,17 @@
         "noImplicitThis": true,
         "noUnusedLocals": true,
         "strictNullChecks": false,
+        "declaration": true,
     },
     "include": [
         "src/ts/typings/**/*.ts",
         "src/ts/**/*.ts",
-        //"node_modules/@types/**/*.d.ts"
+        "node_modules/@types/**/*.d.ts"
     ],
     "exclude": [
         "node_modules",
         "typings/browser",
-        "typings/browser.d.ts"
+        "typings/browser.d.ts",
+        
     ]
 }

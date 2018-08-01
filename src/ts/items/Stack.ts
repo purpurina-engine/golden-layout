@@ -3,24 +3,27 @@ import ItemConfigType, { ItemConfig } from '../config/ItemConfigType';
 import ContentItem from './ContentItem';
 import RowOrColumn from './RowOrColumn';
 import Header from '../controls/Header';
+import { HightlightAreas, ContentItemType, HeaderConfig, ContentArea } from '../Commons';
+
 
 import {
     fnBind,
     copy,
     indexOf
 } from '../utils/utils'
-import { HightlightAreas, ContentItemType, HeaderConfig, ContentArea } from '../Commons';
-
 
 interface StackConfig extends ItemConfig {
     activeItemIndex: number;
 }
 
+type DropSegment = 'top' | 'bottom' | 'left' | 'right' | 'header' | 'body';
+
+
 export default class Stack extends ContentItem {
 
     private _activeContentItem: ContentItem;
     //private _dropZones: Object;
-    private _dropSegment: string = null;
+    private _dropSegment: DropSegment = null;
     private _contentAreaDimensions: HightlightAreas = null;
     private _dropIndex: number;
     private _headerConfig: HeaderConfig;
@@ -393,10 +396,8 @@ export default class Stack extends ContentItem {
      * @returns {void}
      */
     _$highlightDropZone(x: number, y: number): void {
-        let segment, area;
-
-        for (segment in this._contentAreaDimensions) {
-            area = this._contentAreaDimensions[segment].hoverArea;
+        for (const segment in this._contentAreaDimensions) {
+            const area = this._contentAreaDimensions[segment].hoverArea;
 
             if (area.x1 < x && area.x2 > x && area.y1 < y && area.y2 > y) {
 
@@ -405,7 +406,7 @@ export default class Stack extends ContentItem {
                     this._highlightHeaderDropZone(this._sided ? y : x);
                 } else {
                     this._resetHeaderDropZone();
-                    this._highlightBodyDropZone(segment);
+                    this._highlightBodyDropZone(segment as DropSegment);
                 }
 
                 return;
@@ -643,14 +644,16 @@ export default class Stack extends ContentItem {
         this.element.removeClass('lm_left lm_right lm_bottom');
         if (this._side)
             this.element.addClass('lm_' + this._side);
+
         if (this.element.find('.lm_header').length && this._childElementContainer) {
             //let headerPosition = ['right', 'bottom'].indexOf(this._side) >= 0 ? 'before' : 'after';
             let headerPosition: 'before' | 'after' = 'before';
-            if (this._side >= 1) {
-                headerPosition = 'before';
-            } else {
-                headerPosition = 'after';
-            }
+            headerPosition = ['right', 'bottom'].indexOf(this.side) >= 0 ? 'before' : 'after';
+            // if (this._side >= 1) {
+            //     headerPosition = 'before';
+            // } else {
+            //     headerPosition = 'after';
+            // }
 
            this.header.element[headerPosition](this._childElementContainer);
   
@@ -658,7 +661,7 @@ export default class Stack extends ContentItem {
         }
     }
 
-    private _highlightBodyDropZone(segment: string): void {
+    private _highlightBodyDropZone(segment: DropSegment): void {
         const highlightArea = this._contentAreaDimensions[segment].highlightArea;
         this.layoutManager.dropTargetIndicator.highlightArea(highlightArea);
         this._dropSegment = segment;

@@ -76,13 +76,24 @@ export default class DragProxy extends EventEmitter {
     private _minY: number;
     private _maxX: number;
     private _maxY: number;
-    //private _width: number;
-    //private _height: number;
+    private _width: number;
+
+    private _height: number;
+
 
     private showPreview: boolean;
 
     element: JQuery;
     childElementContainer: JQuery;
+
+    public get width(): number {
+        return this._width;
+    }
+
+    public get height(): number {
+        return this._height;
+    }
+
 
     /**
      * 
@@ -147,10 +158,8 @@ export default class DragProxy extends EventEmitter {
         this._undisplayTree(detach);
 
         this._layoutManager._$calculateItemAreas();
-        
+
         this._setDimensions();
-
-
 
         $(document.body).append(this.element);
 
@@ -160,8 +169,8 @@ export default class DragProxy extends EventEmitter {
         this._minY = offset.top;
         this._maxX = this._layoutManager.container.width() + this._minX;
         this._maxY = this._layoutManager.container.height() + this._minY;
-        //this._width = this.element.width();
-        //this._height = this.element.height();
+        this._width = this.element.width();
+        this._height = this.element.height();
 
         this._setDropPosition(x, y);
     }
@@ -179,7 +188,7 @@ export default class DragProxy extends EventEmitter {
      *
      * @returns {void}
      */
-    private _onDrag(offsetX: number, offsetY: number, event: JQuery.Event): void {
+    private _onDrag(_offsetX: number, _offsetY: number, event: JQuery.Event): void {
         const vec = getTouchEvent(event)
 
         const x = vec.x,
@@ -233,7 +242,7 @@ export default class DragProxy extends EventEmitter {
          */
         if (this._area !== null) {
             this._area.contentItem._$onDrop(this._contentItem, this._area);
-
+            console.log(this._area.contentItem);
             /**
              * No valid drop area available at present, but one has been found before.
              * Use it
@@ -299,7 +308,7 @@ export default class DragProxy extends EventEmitter {
         }
 
         // REVIEW
-        //this._contentItem._$setParent(this);
+        this._contentItem._$setParent(this);
     }
 
     /**
