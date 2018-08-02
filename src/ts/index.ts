@@ -2,16 +2,16 @@
 // whatever is imported/exported here will be included in the build
 //
 // Layout
-export { default } from './GoldenLayout';
+export { default } from './OLDGoldenLayout';
 //
 export {
-    default as Config,
+    LayoutConfig,
     Labels,
     ItemConfig, 
     ComponentConfig, 
     ReactComponentConfig, 
     ItemConfigType, 
-    Dimensions, 
+    DimensionsSettings, 
     Settings
 } from './config';
 
