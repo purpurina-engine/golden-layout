@@ -1,8 +1,9 @@
 import BrowserPopout from "../controls/BrowserPopout";
 import ItemConfigType from "../config/ItemConfigType";
 import { ContentItemType } from "./Commons";
-import GoldenLayout from "../GoldenLayout";
 import IEventEmitter from "./IEventEmitter";
+import LayoutManager from "./LayoutManager";
+import IBrowserPopout from "./IBrowserPopout";
 
 export default interface IContentItem extends IEventEmitter {
     /**
@@ -68,7 +69,7 @@ export default interface IContentItem extends IEventEmitter {
     /**
      * A reference to the layoutManager that controls this item
      */
-    readonly layoutManager: GoldenLayout;
+    readonly layoutManager: LayoutManager;
 
     /**
      * The item's outer element
@@ -105,7 +106,7 @@ export default interface IContentItem extends IEventEmitter {
     /**
      * Updates the items size. To actually assign a new size from within a component, use container.setSize( width, height )
      */
-    setSize(): void;
+    setSize(width?: number, height?: number): void;
 
     /**
      * Sets the item's title to the provided value. Triggers titleChanged and stateChanged events
@@ -113,20 +114,6 @@ export default interface IContentItem extends IEventEmitter {
      */
     setTitle(title: string): void;
 
-    /**
-     * A powerful, yet admittedly confusing method to recursively call methods on items in a tree. Usually you wouldn't need
-     * to use it directly, but it's used internally to setSizes, destroy parts of the item tree etc.
-     * @param functionName The name of the method to invoke
-     * @param functionArguments An array of arguments to pass to every function
-     * @param bottomUp If true, the method is invoked on the lowest parts of the tree first and then bubbles upwards. Default: false
-     * @param skipSelf If true, the method will only be invoked on the item's children, but not on the item itself. Default: false
-     */
-    callDownwards(functionName: string, functionArguments?: any[], bottomUp?: boolean, skipSelf?: boolean): void;
-
-    /**
-     * Emits an event that bubbles up the item tree until it reaches the root element (and after a delay the layout manager). Useful e.g. for indicating state changes.
-     */
-    emitBubblingEvent(name: string): void;
 
     /**
      * Convenience method for item.parent.removeChild( item )
@@ -136,7 +123,7 @@ export default interface IContentItem extends IEventEmitter {
     /**
      * Removes the item from its current position in the layout and opens it in a window
      */
-    popout(): BrowserPopout;
+    popout(): IBrowserPopout;
 
     /**
      * Maximises the item or minimises it if it's already maximised
@@ -204,6 +191,21 @@ export default interface IContentItem extends IEventEmitter {
      * Returns all instances of the component with the specified componentName
      * @param componentName a componentName as specified in the itemConfig
      */
-    getComponentsByName(componentName: string): any;
+    getComponentsByName(componentName: string): IContentItem[];
+
+    /**
+     * A powerful, yet admittedly confusing method to recursively call methods on items in a tree. Usually you wouldn't need
+     * to use it directly, but it's used internally to setSizes, destroy parts of the item tree etc.
+     * @param functionName The name of the method to invoke
+     * @param functionArguments An array of arguments to pass to every function
+     * @param bottomUp If true, the method is invoked on the lowest parts of the tree first and then bubbles upwards. Default: false
+     * @param skipSelf If true, the method will only be invoked on the item's children, but not on the item itself. Default: false
+     */
+    callDownwards(functionName: string, functionArguments?: any[], bottomUp?: boolean, skipSelf?: boolean): void;
+
+    /**
+     * Emits an event that bubbles up the item tree until it reaches the root element (and after a delay the layout manager). Useful e.g. for indicating state changes.
+     */
+    emitBubblingEvent(name: string): void;
 
 }

@@ -3,24 +3,18 @@ import DimensionsSettings from "./DimensionsSettings";
 import Labels from "./Labels";
 import ItemConfigType, { ComponentConfig, ReactComponentConfig, ItemConfig } from "./ItemConfigType";
 import DragDropSettings from "./DragDropSettings";
+import LayoutConfig from './LayoutConfig';
 
-export default interface LayoutConfig {
-    settings?: Settings;
-    dimensions?: DimensionsSettings;
-    labels?: Labels;
-    content?: ItemConfigType[];
-    dragDrop?: DragDropSettings;
-    openPopouts?: any[];
-    maximisedItemId?: any;
-    header?: any;
-}
+
 
 export { 
+    LayoutConfig,
     ItemConfig, 
     ComponentConfig, 
     ReactComponentConfig, 
     ItemConfigType, 
     Labels, 
     Settings, 
-    DimensionsSettings 
+    DimensionsSettings,
+    DragDropSettings
 };

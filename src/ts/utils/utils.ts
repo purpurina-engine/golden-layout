@@ -1,6 +1,6 @@
-import { ContentArea, Callback, BoundFunction, Vector } from '../Commons';
+import { ContentArea, Callback, BoundFunction, Vector } from '../interfaces/Commons';
 import ItemConfigType from '../config/ItemConfigType';
-import ContentItem from '../items/ContentItem';
+import ContentItem from '../items/OLDContentItem';
 
 // function F(): void { }
 

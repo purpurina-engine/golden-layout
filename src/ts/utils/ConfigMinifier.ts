@@ -1,18 +1,16 @@
-
+import LayoutConfig from '../config/LayoutConfig';
 import {
     indexOf
 } from './utils'
-import Config from '../config';
+
 
 /**
  * Minifies and unminifies configs by replacing frequent keys
  * and values with one letter substitutes. Config options must
  * retain array position/index, add new options at the end.
  *
- * @constructor
+ * @class
  */
-
-
 export default class ConfigMinifier {
 
     private _keys: string[];
@@ -77,11 +75,10 @@ export default class ConfigMinifier {
      * replaces its keys and values recursively with
      * one letter counterparts
      *
-     * @param   {object} config A GoldenLayout config object
-     *
-     * @returns {object} minified config
+     * @param   {any} config A GoldenLayout config object
+     * @returns {any} minified config
      */
-    minifyConfig(config: object): object {
+    minifyConfig(config: any): any {
         var min = {};
         this._nextLevel(config, min, '_min');
         return min;
@@ -91,11 +88,10 @@ export default class ConfigMinifier {
      * Takes a configuration Object that was previously minified
      * using minifyConfig and returns its original version
      *
-     * @param   {object} minifiedConfig
-     *
-     * @returns {object} the original configuration
+     * @param   {any} minifiedConfig
+     * @returns {any} the original configuration
      */
-    unminifyConfig(minifiedConfig: any): Config {
+    unminifyConfig(minifiedConfig: any): LayoutConfig {
         var orig = {};
         this._nextLevel(minifiedConfig, orig, '_max');
         return orig;
@@ -107,7 +103,6 @@ export default class ConfigMinifier {
      * @param   {any} from
      * @param   {any} to
      * @param    {string} translationFn
-     *
      * @returns {void}
      */
     private _nextLevel(from: any, to: any, translationFn: '_min' | '_max'): void {
@@ -156,7 +151,6 @@ export default class ConfigMinifier {
      *
      * @param   {string|boolean} value
      * @param   {Array<string|boolean>} dictionary
-     *
      * @returns {string} The minified version
      */
     static _min(value: string | number, dictionary: any): string | number {

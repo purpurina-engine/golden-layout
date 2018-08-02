@@ -1,28 +1,24 @@
-import ContentItem from '../items/ContentItem';
 import GoldenLayout from '../GoldenLayout';
 import DragListener from '../utils/DragListener';
 import DragProxy from './DragProxy';
 import Header from './Header';
+
+import ContentItem from '../items/ContentItem';
+import Component from '../items/Component';
+
 import {
     fnBind,
     stripTags
 } from '../utils/utils'
-import Component from '../items/Component';
 
-
-/**
- * Represents an individual tab within a Stack's header
- *
- * @param {Header} header
- * @param {AbstractContentItem} contentItem
- *
- * @constructor
- */
 
 const _template = '<li class="lm_tab"><i class="lm_left"></i>' +
     '<span class="lm_title"></span><div class="lm_close_tab"></div>' +
     '<i class="lm_right"></i></li>'
 
+/**
+ * Represents an individual tab within a Stack's header
+ */
 export default class Tab {
 
     private _layoutManager: GoldenLayout;
@@ -47,6 +43,11 @@ export default class Tab {
         this._contentItem = value;
     }
 
+    /**
+     * Constructor
+     * @param header Header reference
+     * @param contentItem Content item
+     */
     constructor(header: Header, contentItem: ContentItem) {
         this.header = header;
         this._contentItem = contentItem;
@@ -59,7 +60,7 @@ export default class Tab {
         this.setTitle(contentItem.config.title);
         this._contentItem.on('titleChanged', this.setTitle, this);
 
-        this._layoutManager = this.contentItem.layoutManager;
+        this._layoutManager = this.contentItem.layoutManager as GoldenLayout;
 
         if (
             this._layoutManager.config.settings.reorderEnabled === true &&
@@ -156,8 +157,8 @@ export default class Tab {
         if (!this.header.canDestroy)
             return null;
 
-        if (this.contentItem.parent.isMaximized === true) {
-            this.contentItem.parent.toggleMaximize();
+        if (this.contentItem.parent.isMaximised === true) {
+            this.contentItem.parent.toggleMaximise();
         }
         new DragProxy(
             x,

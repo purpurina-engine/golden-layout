@@ -1,4 +1,4 @@
-import { Dimension } from "../Commons";
+import { Dimension } from "../interfaces/Commons";
 
 export default interface Docker {
     dimension?:Dimension,

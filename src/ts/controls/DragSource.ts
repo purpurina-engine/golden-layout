@@ -1,20 +1,20 @@
+import { Callback } from '../interfaces/Commons';
+
 import DragListener from '../utils/DragListener'
 import DragProxy from './DragProxy'
+
+import GoldenLayout from '../GoldenLayout';
+
+import ContentItem from '../items/OLDContentItem';
+import { ItemConfigType } from '../config';
+
 import {
     isFunction
 } from '../utils/utils'
-import GoldenLayout from '../GoldenLayout';
-import { Callback } from '../Commons';
-import ContentItem from '../items/ContentItem';
-import { ItemConfigType } from '../config';
 
 /**
  * Allows for any DOM item to create a component on drag
  * start tobe dragged into the Layout
- *
- * @param {JQuery} element
- * @param {Object | Callback} itemConfig the configuration for the contentItem that will be created
- * @param {GoldenLayout} layoutManager
  *
  * @class
  */
@@ -25,6 +25,12 @@ export default class DragSource {
     private _layoutManager: GoldenLayout;
     private _dragListener: DragListener;
 
+    /**
+     * Constructor
+     * @param element The JQuery element
+     * @param itemConfig The configuration for the contentItem that will be created
+     * @param layoutManager The layout manager
+     */
     constructor(element: JQuery, itemConfig: ItemConfigType | Callback, layoutManager: GoldenLayout) {
         this._element = element;
         this._itemConfig = itemConfig;

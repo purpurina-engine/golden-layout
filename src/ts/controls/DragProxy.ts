@@ -1,15 +1,15 @@
 import EventEmitter from '../utils/EventEmitter';
 import DragListener from '../utils/DragListener';
+
+import GoldenLayout from '../GoldenLayout';
+import ContentItem from '../items/ContentItem';
+import Stack from '../items/Stack';
+import { ContentArea } from '../interfaces/Commons';
+
 import {
     stripTags,
     getTouchEvent
 } from '../utils/utils';
-import GoldenLayout from '../GoldenLayout';
-import ContentItem from '../items/ContentItem';
-import Stack from '../items/Stack';
-import { ContentArea } from '../Commons';
-
-
 
 // const _template = '<div class="lm_dragProxy">' +
 //     '<div class="lm_header">' +

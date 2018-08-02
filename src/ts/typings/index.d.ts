@@ -1,11 +1,11 @@
-import GoldenLayout from "../GoldenLayout";
 import * as ReactDOM from "react-dom";
 import React = require("react");
+import LayoutManager from "../interfaces/LayoutManager";
 
 
 declare global {
     interface Window {
-        __glInstance: GoldenLayout;
+        __glInstance: LayoutManager;
     }
     interface Event {
         __gl?: any;

@@ -1,6 +1,6 @@
 import ITab from "./ITab";
 import IContentItem from "./IContentItem";
-import { LayoutManager } from "./LayoutManager";
+import LayoutManager from "./LayoutManager";
 
  export default interface IHeader {
     /**

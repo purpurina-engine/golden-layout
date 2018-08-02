@@ -1,17 +1,20 @@
+import IBrowserPopout, { BrowserPopoutConfig } from '../interfaces/IBrowserPopout';
+import LayoutManager from '../interfaces/LayoutManager';
+import { ElementDimensions } from '../interfaces/Commons';
 
 import EventEmitter from '../utils/EventEmitter';
 import ConfigMinifier from '../utils/ConfigMinifier';
-import { ElementDimensions } from '../Commons';
-import Config from '../config';
-import {
-    fnBind,
-    getUniqueId,
-} from '../utils/utils'
+
 import GoldenLayoutError from '../errors/GoldenLayoutError';
 import GoldenLayout from '../GoldenLayout';
 import { ItemConfig } from '../config/ItemConfigType';
 import ContentItem from '../items/ContentItem';
 
+import {
+    fnBind,
+    getUniqueId,
+} from '../utils/utils'
+import { closeWindow } from '../utils/LayoutFunctions';
 
 
 /**
@@ -24,10 +27,9 @@ import ContentItem from '../items/ContentItem';
  *    - GoldenLayout when opened in the new window will look for the GET parameter
  *      and use it instead of the provided configuration
  */
-export default class BrowserPopout extends EventEmitter {
+export default class BrowserPopout extends EventEmitter implements IBrowserPopout {
 
-
-    private _isInitialized: boolean;
+    private _isInitialised: boolean;
 
     private _config: ItemConfig;
     private _dimensions: ElementDimensions;
@@ -41,12 +43,8 @@ export default class BrowserPopout extends EventEmitter {
         return this._id;
     }
 
-
-    /**
-    * True if the window has been opened and its GoldenLayout instance initialised.
-    */
-    get isInitialized(): boolean {
-        return this._isInitialized;
+    public get isInitialised(): boolean {
+        return this._isInitialised;
     }
 
     /**
@@ -62,7 +60,7 @@ export default class BrowserPopout extends EventEmitter {
 
         super();
 
-        this._isInitialized = false;
+        this._isInitialised = false;
 
         this._config = config;
         this._dimensions = dimensions;
@@ -74,12 +72,11 @@ export default class BrowserPopout extends EventEmitter {
         this._createWindow();
     }
 
-
     /**
      * Creates a window configuration object from the Popout.
      */
     toConfig(): BrowserPopoutConfig {
-        if (this._isInitialized === false) {
+        if (this._isInitialised === false) {
             throw new Error('Can\'t create config, layout not yet initialized');
         }
         const config: BrowserPopoutConfig = {
@@ -99,7 +96,7 @@ export default class BrowserPopout extends EventEmitter {
     /**
      * Returns the GoldenLayout instance from the child window
      */
-    getGlInstance(): GoldenLayout {
+    getGlInstance(): LayoutManager {
         return this._popoutWindow.__glInstance;
     }
 
@@ -115,7 +112,7 @@ export default class BrowserPopout extends EventEmitter {
      */
     close(): void {
         if (this.getGlInstance()) {
-            this.getGlInstance()._$closeWindow();
+            closeWindow();
         } else {
             try {
                 this.getWindow().close();
@@ -168,9 +165,7 @@ export default class BrowserPopout extends EventEmitter {
     /**
      * Creates the URL and window parameter
      * and opens a new window
-     *
      * @private
-     *
      * @returns {void}
      */
     private _createWindow(): void {
@@ -226,7 +221,7 @@ export default class BrowserPopout extends EventEmitter {
 
         const checkReadyInterval = setInterval(
             fnBind(function (this: BrowserPopout) {
-                if (this._popoutWindow.__glInstance && this._popoutWindow.__glInstance.isInitialized) {
+                if (this._popoutWindow.__glInstance && this._popoutWindow.__glInstance.isInitialised) {
                     this._onInitialised();
                     clearInterval(checkReadyInterval);
                 }
@@ -235,87 +230,81 @@ export default class BrowserPopout extends EventEmitter {
 
     /**
      * Serialises a map of key:values to a window options string
-     *
      * @param   {any} windowOptions
-     *
      * @returns {string} Serialized window options
      */
     private _serializeWindowOptions(windowOptions: any): string {
-    let windowOptionsString = [];
+        let windowOptionsString = [];
 
-    for (const key in windowOptions) {
-        windowOptionsString.push(key + '=' + windowOptions[key]);
+        for (const key in windowOptions) {
+            windowOptionsString.push(key + '=' + windowOptions[key]);
+        }
+
+        return windowOptionsString.join(',');
     }
-
-    return windowOptionsString.join(',');
-}
 
     /**
      * Creates the URL for the new window, including the
      * config GET parameter
-     *
      * @returns {string} URL
      */
     private _createUrl(): string {
-    let input = {
-        content: this._config
-    },
-        storageKey = 'gl-window-config-' + getUniqueId(),
-        urlParts;
+        let input = {
+            content: this._config
+        },
+            storageKey = 'gl-window-config-' + getUniqueId(),
+            urlParts;
 
-    let config = (new ConfigMinifier()).minifyConfig(input);
+        let config = (new ConfigMinifier()).minifyConfig(input);
 
-    try {
-        localStorage.setItem(storageKey, JSON.stringify(config));
-    } catch (e) {
-        throw new Error('Error while writing to localStorage ' + e.toString());
+        try {
+            localStorage.setItem(storageKey, JSON.stringify(config));
+        } catch (e) {
+            throw new Error('Error while writing to localStorage ' + e.toString());
+        }
+
+        urlParts = document.location.href.split('?');
+
+        // URL doesn't contain GET-parameters
+        if (urlParts.length === 1) {
+            return urlParts[0] + '?gl-window=' + storageKey;
+
+            // URL contains GET-parameters
+        } else {
+            return document.location.href + '&gl-window=' + storageKey;
+        }
     }
-
-    urlParts = document.location.href.split('?');
-
-    // URL doesn't contain GET-parameters
-    if (urlParts.length === 1) {
-        return urlParts[0] + '?gl-window=' + storageKey;
-
-        // URL contains GET-parameters
-    } else {
-        return document.location.href + '&gl-window=' + storageKey;
-    }
-}
 
     /**
      * Move the newly created window roughly to
      * where the component used to be.
      *
      * @private
-     *
      * @returns {void}
      */
     private _positionWindow(): void {
-    this._popoutWindow.moveTo(this._dimensions.left, this._dimensions.top);
-    this._popoutWindow.focus();
-}
+        this._popoutWindow.moveTo(this._dimensions.left, this._dimensions.top);
+        this._popoutWindow.focus();
+    }
 
-/**
- * Callback when the new window is opened and the GoldenLayout instance
- * within it is initialised
- *
- * @returns {void}
- */
-_onInitialised(): void {
-    this._isInitialized = true;
-    this.getGlInstance().on('popIn', this.popIn, this);
-    this.emit('initialised');
-}
+    /**
+     * Callback when the new window is opened and the GoldenLayout instance
+     * within it is initialised
+     * @returns {void}
+     */
+    _onInitialised(): void {
+        this._isInitialised = true;
+        this.getGlInstance().on('popIn', this.popIn, this);
+        this.emit('initialised');
+    }
 
     /**
      * Invoked 50ms after the window unload event
      *
      * @private
-     *
      * @returns {void}
      */
     private _onClose(): void {
-    setTimeout(fnBind(this.emit, this, 'closed'), 50);
+        setTimeout(fnBind(this.emit, this, 'closed'), 50);
     }
 }

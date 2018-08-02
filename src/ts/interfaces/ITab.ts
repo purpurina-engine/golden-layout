@@ -6,32 +6,32 @@ import IHeader from "./IHeader";
     /**
      * True if this tab is the selected tab
      */
-    isActive: boolean;
+    readonly isActive: boolean;
 
     /**
      * A reference to the header this tab is a child of
      */
-    header: IHeader;
+    readonly header: IHeader;
 
     /**
      * A reference to the content item this tab relates to
      */
-    contentItem: IContentItem;
+    readonly contentItem: IContentItem;
 
     /**
      * The tabs outer (jQuery) DOM element
      */
-    element: JQuery;
+    readonly element: JQuery;
 
     /**
      * The (jQuery) DOM element containing the title
      */
-    titleElement: JQuery;
+    readonly titleElement: JQuery;
 
     /**
      * The (jQuery) DOM element that closes the tab
      */
-    closeElement: JQuery;
+    readonly closeElement: JQuery;
 
     /**
      * Sets the tab's title. Does not affect the contentItem's title!

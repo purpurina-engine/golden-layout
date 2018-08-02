@@ -1,14 +1,14 @@
-
 import EventEmitter from './EventEmitter';
+import GoldenLayout from '../GoldenLayout';
+
+
 import {
     ALL_EVENT
 } from './EventEmitter';
+
 import {
     fnBind
 } from './utils';
-import LayoutManager from '../GoldenLayout';
-import * as $ from 'jquery';
-
 
 /**
  * An EventEmitter singleton that propagates events
@@ -21,18 +21,19 @@ import * as $ from 'jquery';
  * - Propagate events from parent to this and children
  * - Propagate events from children to the other children (but not the emitting one) and the parent
  *
- * @constructor
- *
- * @param {lm.LayoutManager} layoutManager
  */
 export default class EventHub extends EventEmitter {
 
-    private _layoutManager: LayoutManager;
+    private _layoutManager: GoldenLayout;
     private _dontPropagateToParent: boolean = null;
     private _childEventSource: any = null;
     private _boundOnEventFromChild: any;
 
-    constructor(layoutManager: LayoutManager) {
+    /**
+     * Constructor
+     * @param layoutManager The Golden Layout Manager
+     */
+    constructor(layoutManager: GoldenLayout) {
 
         super();
 
@@ -47,15 +48,12 @@ export default class EventHub extends EventEmitter {
 
     /**
      * Called on every event emitted on this eventHub, regardles of origin.
-     *
      * @private
-     *
      * @param {Mixed}
-     *
      * @returns {void}
      */
-    private _onEventFromThis(): void {
-        var args = Array.prototype.slice.call(arguments);
+    private _onEventFromThis(...args:any[]): void {
+        //let args = Array.prototype.slice.call(arguments);
 
         if (this._layoutManager.isSubWindow && args[0] !== this._dontPropagateToParent) {
             this._propagateToParent(args);
@@ -69,9 +67,7 @@ export default class EventHub extends EventEmitter {
 
     /**
      * Called by the parent layout.
-     *
      * @param   {Array} args Event name + arguments
-     *
      * @returns {void}
      */
     _$onEventFromParent(...args: any[]) {
@@ -81,10 +77,8 @@ export default class EventHub extends EventEmitter {
 
     /**
      * Callback for child events raised on the window
-     *
      * @param   {JQuery.Event} event
      * @private
-     *
      * @returns {void}
      */
     private _onEventFromChild(event: JQuery.Event) {
@@ -96,14 +90,12 @@ export default class EventHub extends EventEmitter {
     /**
      * Propagates the event to the parent by emitting
      * it on the parent's DOM window
-     *
      * @param   {any[]} args Event name + arguments
      * @private
-     *
      * @returns {void}
      */
     private _propagateToParent(...args: any[]) {
-        var event,
+        let event,
             eventName = 'gl_child_event';
 
         if (document.createEvent) {
@@ -127,18 +119,13 @@ export default class EventHub extends EventEmitter {
 
     /**
      * Propagate events to children
-     *
      * @param   {any[]} args Event name + arguments
      * @private
-     *
      * @returns {void}
      */
     private _propagateToChildren(...args: any[]) {
-        var childGl, i;
-
-        for (i = 0; i < this._layoutManager.openPopouts.length; i++) {
-            childGl = this._layoutManager.openPopouts[i].getGlInstance();
-
+        for (const iterator of this._layoutManager.openPopouts) {
+            const childGl = iterator.getGlInstance() as GoldenLayout;
             if (childGl && childGl !== this._childEventSource) {
                 childGl.eventHub._$onEventFromParent(args);
             }
@@ -147,11 +134,9 @@ export default class EventHub extends EventEmitter {
 
     /**
      * Destroys the EventHub
-     *
      * @public
      * @returns {void}
      */
-
     destroy(): void {
         $(window).off('gl_child_event', this._boundOnEventFromChild);
     }

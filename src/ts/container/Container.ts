@@ -1,9 +1,10 @@
+import { Dimension } from '../interfaces/Commons';
 
-import EventEmitter from '../utils/EventEmitter';
 import { ComponentConfig, ReactComponentConfig } from '../config/ItemConfigType';
 import Tab from '../controls/Tab';
+
 import ContentItem from '../items/ContentItem';
-import { Dimension } from '../Commons';
+import EventEmitter from '../utils/EventEmitter';
 import GoldenLayout from '../GoldenLayout';
 
 
@@ -12,15 +13,10 @@ export default class Container extends EventEmitter  {
     private _config: ComponentConfig | ReactComponentConfig;
     private _element: JQuery;
     private _contentElement: JQuery<HTMLElement>;
-    /**
-     * A reference to the GoldenLayout instance this container belongs to
-     */
     private _layoutManager: GoldenLayout;
     private _isHidden: boolean;
-
     private _height: number;
     private _width: number;
-
     private _parent: ContentItem;
 
 

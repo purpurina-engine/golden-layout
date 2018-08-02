@@ -1,3 +1,5 @@
+import { HeaderPosition } from '../interfaces/Commons';
+
 import GoldenLayout from '../GoldenLayout';
 import EventEmitter from '../utils/EventEmitter';
 import Tab from './Tab'
@@ -8,7 +10,7 @@ import Stack from '../items/Stack';
 import {
     fnBind
 } from '../utils/utils'
-import { HeaderPosition } from '../Commons';
+
 
 
 const _template = [

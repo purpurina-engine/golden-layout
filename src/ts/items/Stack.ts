@@ -1,9 +1,13 @@
-import GoldenLayout from '../GoldenLayout';
+import { HightlightAreas, ContentItemType, HeaderConfig, ContentArea } from '../interfaces/Commons';
 import ItemConfigType, { ItemConfig } from '../config/ItemConfigType';
+
+import GoldenLayout from '../GoldenLayout';
 import ContentItem from './ContentItem';
 import RowOrColumn from './RowOrColumn';
+import Docker from './Docker';
+
 import Header from '../controls/Header';
-import { HightlightAreas, ContentItemType, HeaderConfig, ContentArea } from '../Commons';
+import Tab from '../controls/Tab';
 
 
 import {
@@ -11,8 +15,8 @@ import {
     copy,
     indexOf
 } from '../utils/utils'
-import Docker from './Docker';
-import Tab from '../controls/Tab';
+
+
 
 interface StackConfig extends ItemConfig {
     activeItemIndex: number;
@@ -32,12 +36,9 @@ export default class Stack extends ContentItem {
     private _sided: boolean;
     private _side: number;
 
-
-
     docker: Docker;
 
     tab: Tab;
-
 
     header: Header;
 
@@ -154,7 +155,7 @@ export default class Stack extends ContentItem {
     _$init(): void {
         let initialItem;
 
-        if (this._isInitialized === true) return;
+        if (this._isInitialised === true) return;
 
         //AbstractContentItem.prototype._$init.call(this);
         super._$init();
@@ -209,7 +210,7 @@ export default class Stack extends ContentItem {
              */
             index -= 1
         }
-        contentItem = this.layoutManager._$normalizeContentItem(contentItem, this);
+        contentItem = this._layoutManager._$normalizeContentItem(contentItem, this);
         //AbstractContentItem.prototype.addChild.call(this, contentItem, index);
         super.addChild(contentItem, index);
         this.childElementContainer.append(contentItem.element);
@@ -383,7 +384,7 @@ export default class Stack extends ContentItem {
              */
         } else {
             type = isVertical ? 'column' : 'row';
-            rowOrColumn = this.layoutManager.createContentItem({
+            rowOrColumn = this._layoutManager.createContentItem({
                 type: type
             }, this) as RowOrColumn;
             this.parent.replaceChild(this, rowOrColumn);
@@ -434,11 +435,11 @@ export default class Stack extends ContentItem {
             return null;
         }
 
-        let getArea = super._$getArea;//AbstractContentItem.prototype._$getArea,
-        let headerArea = getArea.call(this, this.header.element),
-            contentArea = getArea.call(this, this.childElementContainer),
-            contentWidth = contentArea.x2 - contentArea.x1,
-            contentHeight = contentArea.y2 - contentArea.y1;
+        const getArea = super._$getArea;//AbstractContentItem.prototype._$getArea,
+        const headerArea = getArea.call(this, this.header.element);
+        const contentArea = getArea.call(this, this.childElementContainer);
+        const contentWidth = contentArea.x2 - contentArea.x1;
+        const contentHeight = contentArea.y2 - contentArea.y1;
 
         this._contentAreaDimensions = {
             header: {
@@ -568,7 +569,7 @@ export default class Stack extends ContentItem {
         if (tabsLength === 0) {
             headerOffset = this.header.element.offset();
 
-            this.layoutManager.dropTargetIndicator.highlightArea({
+            this._layoutManager.dropTargetIndicator.highlightArea({
                 x1: headerOffset.left,
                 x2: headerOffset.left + 100,
                 y1: headerOffset.top + this.header.element.height() - 20,
@@ -605,43 +606,43 @@ export default class Stack extends ContentItem {
 
         if (x < halfX) {
             this._dropIndex = i;
-            tabElement.before(this.layoutManager.tabDropPlaceholder);
+            tabElement.before(this._layoutManager.tabDropPlaceholder);
         } else {
             this._dropIndex = Math.min(i + 1, tabsLength);
-            tabElement.after(this.layoutManager.tabDropPlaceholder);
+            tabElement.after(this._layoutManager.tabDropPlaceholder);
         }
 
 
         if (this._sided) {
-            const placeHolderTop = this.layoutManager.tabDropPlaceholder.offset().top;
-            this.layoutManager.dropTargetIndicator.highlightArea({
+            const placeHolderTop = this._layoutManager.tabDropPlaceholder.offset().top;
+            this._layoutManager.dropTargetIndicator.highlightArea({
                 x1: tabTop,
                 x2: tabTop + tabElement.innerHeight(),
                 y1: placeHolderTop,
-                y2: placeHolderTop + this.layoutManager.tabDropPlaceholder.width()
+                y2: placeHolderTop + this._layoutManager.tabDropPlaceholder.width()
             });
             return;
         }
-        placeHolderLeft = this.layoutManager.tabDropPlaceholder.offset().left;
+        placeHolderLeft = this._layoutManager.tabDropPlaceholder.offset().left;
 
-        this.layoutManager.dropTargetIndicator.highlightArea({
+        this._layoutManager.dropTargetIndicator.highlightArea({
             x1: placeHolderLeft,
-            x2: placeHolderLeft + this.layoutManager.tabDropPlaceholder.width(),
+            x2: placeHolderLeft + this._layoutManager.tabDropPlaceholder.width(),
             y1: tabTop,
             y2: tabTop + tabElement.innerHeight()
         });
     }
 
     private _resetHeaderDropZone(): void {
-        this.layoutManager.tabDropPlaceholder.remove();
+        this._layoutManager.tabDropPlaceholder.remove();
     }
 
     toggleMaximize(e?: JQuery.Event) {
-        if (!this.isMaximized) {
+        if (!this._isMaximised) {
             this.dock(false);
         }
         //AbstractContentItem.prototype.toggleMaximise.call(this, e);
-        super.toggleMaximize(e);
+        super.toggleMaximise(e);
     }
 
     _setupHeaderPosition(): void {
@@ -678,7 +679,7 @@ export default class Stack extends ContentItem {
 
     private _highlightBodyDropZone(segment: DropSegment): void {
         const highlightArea = this._contentAreaDimensions[segment].highlightArea;
-        this.layoutManager.dropTargetIndicator.highlightArea(highlightArea);
+        this._layoutManager.dropTargetIndicator.highlightArea(highlightArea);
         this._dropSegment = segment;
     }
 }

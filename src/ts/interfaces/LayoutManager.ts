@@ -1,10 +1,12 @@
 import IEventEmitter from "./IEventEmitter";
 import IContentItem from "./IContentItem";
-import LayoutConfig, { ItemConfigType } from "../config";
+import LayoutConfig from "../config/LayoutConfig";
+import ItemConfigType from "../config/ItemConfigType";
 import IBrowserPopout from "./IBrowserPopout";
 import { ElementDimensions } from "./Commons";
+import DragSource from "../controls/DragSource";
 
-export interface LayoutManager extends IEventEmitter {
+export default interface LayoutManager extends IEventEmitter {
     /**
      * The topmost item in the layout item tree. In browser terms: Think of the GoldenLayout instance as window
      * object and of goldenLayout.root as the document.
@@ -59,11 +61,6 @@ export interface LayoutManager extends IEventEmitter {
      */
     readonly eventHub: IEventEmitter;
 
-    /**
-     * @param config A GoldenLayout configuration object
-     * @param container The DOM element the layout will be initialised in. Default: document.body
-     */
-    new(configuration: LayoutConfig, container?: Element | HTMLElement | JQuery): LayoutManager;
 
     /*
      * @param name 	The name of the component, as referred to by componentName in the component configuration.
@@ -80,8 +77,9 @@ export interface LayoutManager extends IEventEmitter {
 
     /**
      * Returns the current state of the layout and its components as a serialisable object.
+     * @param rootItem Optional start point to serialise configuration
      */
-    toConfig(): any;
+    toConfig(rootItem?: IContentItem): any;
 
     /**
      * Returns a component that was previously registered with layout.registerComponent().
@@ -109,7 +107,7 @@ export interface LayoutManager extends IEventEmitter {
      * @param itemConfiguration An item configuration (can be an entire tree of items)
      * @param parent A parent item
      */
-    createContentItem(itemConfiguration?: ItemConfigType, parent?: IContentItem): void;
+    createContentItem(itemConfiguration?: ItemConfigType, parent?: IContentItem): IContentItem;
 
     /**
      * Creates a new popout window with configOrContentItem as contents at the position specified in dimensions
@@ -132,26 +130,28 @@ export interface LayoutManager extends IEventEmitter {
      * @param element The DOM element that will be turned into a dragSource
      * @param itemConfiguration An item configuration (can be an entire tree of items)
      */
-    createDragSource(element: HTMLElement | JQuery, itemConfiguration: ItemConfigType): void;
+    createDragSource(element: HTMLElement | JQuery, itemConfiguration: ItemConfigType): DragSource;
 
     /**
      * If settings.selectionEnabled is set to true, this allows to select items programmatically.
      * @param contentItem A ContentItem instance
+     * @param silent Wheather to notify the item of its selection
+     * @event selectionChanged
      */
-    selectItem(contentItem: IContentItem): void;
+    selectItem(contentItem: IContentItem, silent?: boolean): void;
 
     /**
      * Static method on the GoldenLayout constructor! This method will iterate through a GoldenLayout config object
      * and replace frequent keys and values with single letter substitutes.
      * @param config A GoldenLayout configuration object
      */
-    minifyConfig(config: any): any;
+    minifyConfig(config: LayoutConfig): any;
 
     /**
      * Static method on the GoldenLayout constructor! This method will reverse the minifications of GoldenLayout.minifyConfig.
      * @param minifiedConfig A minified GoldenLayout configuration object
      */
-    unminifyConfig(minifiedConfig: any): any;
+    unminifyConfig(minifiedConfig: any): LayoutConfig;
 
     // /**
     //  * Subscribe to an event
@@ -187,3 +187,4 @@ export interface LayoutManager extends IEventEmitter {
     //  */
     // off(eventName: string, callback?: Function, context?: any): void;
 }
+

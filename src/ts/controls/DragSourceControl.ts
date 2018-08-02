@@ -1,6 +1,6 @@
-import { ContentArea } from "../Commons";
-import { mergeAreas } from "../utils/utils";
+import { ContentArea } from "../interfaces/Commons";
 import ContentItem from "../items/ContentItem";
+import { mergeAreas } from "../utils/utils";
 
 export default class DragSourceControl {
 

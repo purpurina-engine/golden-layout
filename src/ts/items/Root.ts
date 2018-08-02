@@ -1,8 +1,9 @@
+import { ContentArea, ContentItemType } from '../interfaces/Commons';
+import { ItemConfig } from '../config/ItemConfigType';
+
 import ContentItem from './ContentItem';
 import RowOrColumn from './RowOrColumn';
-import { ItemConfig } from '../config/ItemConfigType';
 import GoldenLayout from '../GoldenLayout';
-import { ContentArea, ContentItemType } from '../Commons';
 import Stack from './Stack';
 
 
@@ -28,7 +29,7 @@ export default class Root extends ContentItem {
             throw new Error('Root node can only have a single child');
         }
 
-        contentItem = this.layoutManager._$normalizeContentItem(contentItem, this);
+        contentItem = this._layoutManager._$normalizeContentItem(contentItem, this);
         this.childElementContainer.append(contentItem.element);
         //AbstractContentItem.prototype.addChild.call(this, contentItem);
         super.addChild(contentItem);
@@ -54,17 +55,16 @@ export default class Root extends ContentItem {
     }
 
     _$highlightDropZone(x: number, y: number, area: ContentArea) {
-        this.layoutManager.tabDropPlaceholder.remove();
+        this._layoutManager.tabDropPlaceholder.remove();
         //AbstractContentItem.prototype._$highlightDropZone.apply(this, arguments);
         super._$highlightDropZone(x, y, area);
     }
 
     _$onDrop(contentItem: ContentItem, area?: ContentArea) {
-        console.log('12345678')
         let stack: Stack;
 
         if (contentItem.isComponent) {
-            stack = this.layoutManager.createContentItem({
+            stack = this._layoutManager.createContentItem({
                 type: 'stack',
                 header: contentItem.config.header || {}
             }, this) as Stack;
@@ -82,7 +82,7 @@ export default class Root extends ContentItem {
              * If it is, we need to re-wrap it in a Stack like it was when it was dragged by its Tab (it was dragged!).
              */
             if (contentItem.config.type === 'row' || contentItem.config.type === 'column') {
-                stack = this.layoutManager.createContentItem({
+                stack = this._layoutManager.createContentItem({
                     type: 'stack'
                 }, this) as Stack;
                 stack.addChild(contentItem)

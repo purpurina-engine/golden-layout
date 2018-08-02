@@ -1,6 +1,7 @@
-import GoldenLayout from "../GoldenLayout";
+import LayoutManager from "./LayoutManager";
 import { ElementDimensions } from "./Commons";
 import { Config } from "html-webpack-plugin";
+
 
 /**
 * Window configuration object from the Popout.
@@ -27,7 +28,7 @@ export default interface IBrowserPopout {
     /**
      * Returns the GoldenLayout instance from the child window
      */
-    getGlInstance(): GoldenLayout;
+    getGlInstance(): LayoutManager;
 
     /**
      * Returns the native Window object

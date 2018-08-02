@@ -7,7 +7,7 @@ export default class GoldenLayoutError extends Error {
     constructor(message: string, type?: string) {
         super();
 
-        this.name = 'Configuration Error';
+        this.name = 'GoldenLayout Error';
         this.message = message;
         this.type = type || '';
     }

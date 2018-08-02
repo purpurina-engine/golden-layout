@@ -1,5 +1,6 @@
-import Container from '../container/Container';
+
 import { ComponentConfig } from '../config/ItemConfigType';
+import Container from '../container/Container';
 import ContentItem from './ContentItem';
 import GoldenLayout from '../GoldenLayout';
 
@@ -32,7 +33,7 @@ export default class Component extends ContentItem {
 
         super(layoutManager, config, parent);
 
-        let ComponentConstructor = layoutManager.getComponent(config.componentName),
+        const ComponentConstructor = layoutManager.getComponent(config.componentName),
             componentConfig = $.extend(true, {}, config.componentState || {});
 
         componentConfig.componentName = config.componentName;

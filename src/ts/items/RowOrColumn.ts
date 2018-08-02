@@ -1,9 +1,11 @@
+import { Dimension } from '../interfaces/Commons';
+import { ItemConfig } from '../config/ItemConfigType';
+
 import GoldenLayout from '../GoldenLayout';
-import { ItemConfig } from '../config';
 import ContentItem from './ContentItem';
 import Stack from './Stack'
 import Splitter from '../controls/Splitter';
-import { Dimension } from '../Commons';
+
 
 import {
     fnBind,
@@ -64,7 +66,7 @@ export default class RowOrColumn extends ContentItem {
 
         let newItemSize, itemSize, splitterElement;
 
-        contentItem = this.layoutManager._$normalizeContentItem(contentItem, this);
+        contentItem = this._layoutManager._$normalizeContentItem(contentItem, this);
 
         if (index === undefined) {
             index = this.contentItems.length;
@@ -353,7 +355,7 @@ export default class RowOrColumn extends ContentItem {
      * @returns {void}
      */
     _$init() {
-        if (this._isInitialized === true)
+        if (this._isInitialised === true)
             return;
 
         //ContentItem.prototype._$init.call(this);
