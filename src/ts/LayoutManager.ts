@@ -1,4 +1,4 @@
-import LayoutManager from "./interfaces/LayoutManager";
+import ILayoutManager from "./interfaces/ILayoutManager";
 import ContentItem from "./items/ContentItem";
 import { ContentArea, BoundFunction, ElementDimensions } from "./interfaces/Commons";
 import IContentItem from "./interfaces/IContentItem";
@@ -33,7 +33,8 @@ import {
 import {
     findAllStackContainers,
     addChildContentItemsToContainer,
-    setLayoutContainer
+    setLayoutContainer,
+    createContentItem
 } from "./utils/layoutFunctions";
 import Root from "./items/Root";
 import Stack from "./items/Stack";
@@ -54,15 +55,7 @@ interface ComponentMap {
  * @public
  * @class
  */
-export default class GoldenLayout extends EventEmitter implements LayoutManager {
-
-    private _typeToItem: {
-        [key: string]: any | typeof Component | typeof Stack;
-        'column': any;
-        'row': any;
-        'stack': typeof Stack;
-        'component': typeof Component;
-    };
+export default class LayoutManager extends EventEmitter implements ILayoutManager {
 
     private _config: LayoutConfig;
     private _width: number;
@@ -194,15 +187,6 @@ export default class GoldenLayout extends EventEmitter implements LayoutManager 
         if (this._isSubWindow) {
             $('body').css('visibility', 'hidden');
         }
-
-        this._typeToItem = {
-            'column': fnBind(RowOrColumn, this, true),
-            'row': fnBind(RowOrColumn, this, false),
-            'stack': Stack,
-            'component': Component
-        };
-
-
     }
 
     init(): void {
@@ -313,51 +297,7 @@ export default class GoldenLayout extends EventEmitter implements LayoutManager 
         this.emit('selectionChanged', contentItem);
     }
 
-    createContentItem(itemConfiguration?: ItemConfigType, parent?: ContentItem): ContentItem {
-        let typeErrorMsg;
-
-        if (typeof itemConfiguration.type !== 'string') {
-            throw new ConfigurationError('Missing parameter \'type\'', itemConfiguration);
-        }
-
-        if (itemConfiguration.type === 'react-component') {
-            itemConfiguration.type = 'component';
-            (itemConfiguration as ComponentConfig).componentName = 'lm-react-component';
-        }
-
-        if (!this._typeToItem[itemConfiguration.type]) {
-            typeErrorMsg = 'Unknown type \'' + itemConfiguration.type + '\'. ' +
-                'Valid types are ' + objectKeys(this._typeToItem).join(',');
-
-            throw new ConfigurationError(typeErrorMsg);
-        }
-
-        /**
-         * We add an additional stack around every component that's not within a stack anyways.
-         */
-        if (
-            // If this is a component
-            itemConfiguration.type === 'component' &&
-            // and it's not already within a stack
-            !(parent instanceof Stack) &&
-            // and we have a parent
-            !!parent &&
-            // and it's not the topmost item in a new window
-            !(this._isSubWindow === true && parent instanceof Root)
-        ) {
-            const itemConfig: ItemConfig = {
-                type: 'stack',
-                width: itemConfiguration.width,
-                height: itemConfiguration.height,
-                content: [itemConfiguration]
-            };
-
-            itemConfiguration = itemConfig;
-        }
-
-        const itemConstructor = this._typeToItem[itemConfiguration.type];
-        return new itemConstructor(this, itemConfiguration, parent);
-    }
+    createContentItem = createContentItem.bind(this);
 
     createPopout(configOrContentItem: ItemConfigType | IContentItem,
         dimensions: ElementDimensions, parentId?: string,
@@ -466,6 +406,40 @@ export default class GoldenLayout extends EventEmitter implements LayoutManager 
     /* **************************
      * PRIVATE and PROTECTED
      ************************** */
+
+    _$maximiseItem(contentItem: ContentItem): void {
+        if (this._maximisedItem !== null) {
+            this._$minimiseItem(this._maximisedItem);
+        }
+        this._maximisedItem = contentItem;
+
+        this._maximisedItem.addId('__glMaximised');
+        contentItem.element.addClass('lm_maximised');
+        contentItem.element.after(this._maximisePlaceholder);
+        this.root.element.prepend(contentItem.element);
+
+        contentItem.element.width(this.container.width());
+        contentItem.element.height(this.container.height());
+
+        contentItem.callDownwards('setSize');
+        this._maximisedItem.emit('maximised');
+
+        this.emit('stateChanged');
+    }
+
+    _$minimiseItem(contentItem: ContentItem): void {
+        contentItem.element.removeClass('lm_maximised');
+        contentItem.removeId('__glMaximised');
+
+        this._maximisePlaceholder.after(contentItem.element);
+        this._maximisePlaceholder.remove();
+
+        contentItem.parent.callDownwards('setSize');
+
+        this._maximisedItem = null;
+        contentItem.emit('minimised');
+        this.emit('stateChanged');
+    }
 
     /**
     * Iterates through the array of open popout windows and removes the ones
@@ -632,7 +606,7 @@ export default class GoldenLayout extends EventEmitter implements LayoutManager 
             '<div class="lm_bg"></div>' +
             '</div>');
 
-        popInButton.click(fnBind(function (this: GoldenLayout) {
+        popInButton.click(fnBind(function (this: LayoutManager) {
             this.emit('popIn');
         }, this));
 
@@ -746,11 +720,5 @@ export default class GoldenLayout extends EventEmitter implements LayoutManager 
 
 }
 
-export interface GoldenLayoutConstructor {
-    /**
-     * @param config A GoldenLayout configuration object
-     * @param container The DOM element the layout will be initialised in. Default: document.body
-     */
-    new(configuration: LayoutConfig, container?: HTMLElement | JQuery): GoldenLayout;
 
-}
+

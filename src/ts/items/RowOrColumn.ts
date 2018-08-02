@@ -1,19 +1,17 @@
 import { Dimension } from '../interfaces/Commons';
+import IContentItem from '../interfaces/IContentItem';
 import { ItemConfig } from '../config/ItemConfigType';
 
-import GoldenLayout from '../GoldenLayout';
+import LayoutManager from '../LayoutManager';
 import ContentItem from './ContentItem';
 import Stack from './Stack'
 import Splitter from '../controls/Splitter';
-
 
 import {
     fnBind,
     animFrame,
     indexOf
 } from '../utils/utils';
-
-
 
 export default class RowOrColumn extends ContentItem {
 
@@ -30,7 +28,7 @@ export default class RowOrColumn extends ContentItem {
     // isColumn: boolean;
     // element: JQuery;
 
-    constructor(isColumn: boolean, layoutManager: GoldenLayout, config: ItemConfig, parent: ContentItem) {
+    constructor(isColumn: boolean, layoutManager: LayoutManager, config: ItemConfig, parent: ContentItem) {
 
         super(layoutManager, config, parent);
 
@@ -59,7 +57,6 @@ export default class RowOrColumn extends ContentItem {
      * @param {boolean} _$suspendResize If true the items won't be resized. This will leave the item in
      *                                 an inconsistent state and is only intended to be used if multiple
      *                                 children need to be added in one go and resize is called afterwards
-     *
      * @returns {void}
      */
     addChild(contentItem: ContentItem, index?: number, _$suspendResize?: boolean): void {
@@ -117,9 +114,7 @@ export default class RowOrColumn extends ContentItem {
 
     /**
      * Undisplays a child of this element
-     *
      * @param   {ContentItem} contentItem
-     *
      * @returns {void}
      */
     undisplayChild(contentItem: ContentItem): void {
@@ -228,10 +223,8 @@ export default class RowOrColumn extends ContentItem {
 
     /**
      * Replaces a child of this Row or Column with another contentItem
-     *
      * @param   {ContentItem} oldChild
      * @param   {ContentItem} newChild
-     *
      * @returns {void}
      */
     replaceChild(oldChild: ContentItem, newChild: ContentItem): void {
@@ -244,7 +237,6 @@ export default class RowOrColumn extends ContentItem {
 
     /**
      * Called whenever the dimensions of this item or one of its parents change
-     *
      * @returns {void}
      */
     setSize(): void {
@@ -258,11 +250,9 @@ export default class RowOrColumn extends ContentItem {
 
     /**
      * Dock or undock a child if it posiible
-     *
      * @param   {Stack} contentItem
      * @param   {boolean} mode or toggle if undefined
      * @param   {boolean} collapsed after docking
-     *
      * @returns {void}
      */
     dock(contentItem: Stack, mode: boolean, collapsed?: boolean): void {
@@ -361,11 +351,11 @@ export default class RowOrColumn extends ContentItem {
         //ContentItem.prototype._$init.call(this);
         super._$init();
 
-        for (let i = 0; i < this.contentItems.length - 1; i++) {
-            this.contentItems[i].element.after(this._createSplitter(i).element);
+        for (let i = 0; i < this._contentItems.length - 1; i++) {
+            this._contentItems[i].element.after(this._createSplitter(i).element);
         }
 
-        for (const iterator of this.contentItems) {
+        for (const iterator of this._contentItems) {
 
             const headerConfig = iterator as any['headerConfig'];
 
@@ -781,4 +771,7 @@ export default class RowOrColumn extends ContentItem {
 
         animFrame(fnBind(this.callDownwards, this, 'setSize'));
     }
+
+    setActiveContentItem(_contentItem: IContentItem): void {}
+    getActiveContentItem():IContentItem {return undefined;}
 }

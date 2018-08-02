@@ -1,10 +1,86 @@
 import ContentItem from "../items/ContentItem";
 import Stack from "../items/Stack";
+import Component from "../items/Component";
+import RowOrColumn from "../items/RowOrColumn";
+import { Callback } from "../interfaces/Commons";
+
+import LayoutManager from "../LayoutManager";
+import ConfigurationError from "../errors/ConfigurationError";
+
+import { ItemConfigType, ComponentConfig, ItemConfig } from "../config";
+
+import { 
+    fnBind,
+    objectKeys 
+} from "./utils";
+import Root from "../items/Root";
 
 interface ContainerCreation {
     jqueryContainer: JQuery;
     isFullPage: boolean;
 };
+
+interface TypeToItem {
+    [key: string]: any | typeof Component | typeof Stack;
+    'column': any;
+    'row': any;
+    'stack': typeof Stack;
+    'component': typeof Component;
+};
+
+
+const typeToItem: TypeToItem = {
+    'column': fnBind(RowOrColumn, undefined, true),
+    'row': fnBind(RowOrColumn, undefined, false),
+    'stack': Stack,
+    'component': Component
+}
+
+export function createContentItem(this: LayoutManager, itemConfiguration?: ItemConfigType, parent?: ContentItem): ContentItem {
+    let typeErrorMsg;
+
+    if (typeof itemConfiguration.type !== 'string') {
+        throw new ConfigurationError('Missing parameter \'type\'', itemConfiguration);
+    }
+
+    if (itemConfiguration.type === 'react-component') {
+        itemConfiguration.type = 'component';
+        (itemConfiguration as ComponentConfig).componentName = 'lm-react-component';
+    }
+
+    if (!typeToItem[itemConfiguration.type]) {
+        typeErrorMsg = 'Unknown type \'' + itemConfiguration.type + '\'. ' +
+            'Valid types are ' + objectKeys(typeToItem).join(',');
+
+        throw new ConfigurationError(typeErrorMsg);
+    }
+
+    /**
+     * We add an additional stack around every component that's not within a stack anyways.
+     */
+    if (
+        // If this is a component
+        itemConfiguration.type === 'component' &&
+        // and it's not already within a stack
+        !(parent instanceof Stack) &&
+        // and we have a parent
+        !!parent &&
+        // and it's not the topmost item in a new window
+        !(this.isSubWindow === true && parent instanceof Root)
+    ) {
+        const itemConfig: ItemConfig = {
+            type: 'stack',
+            width: itemConfiguration.width,
+            height: itemConfiguration.height,
+            content: [itemConfiguration]
+        };
+
+        itemConfiguration = itemConfig;
+    }
+
+    const itemConstructor = typeToItem[itemConfiguration.type];
+    return new itemConstructor(this, itemConfiguration, parent);
+}
 
 /**
  * Determines what element the layout will be created in
@@ -46,26 +122,6 @@ export function setLayoutContainer(container: any): ContainerCreation {
         isFullPage
     };
 }
-
-/**
- * This method is used to get around sandboxed iframe restrictions.
- * If 'allow-top-navigation' is not specified in the iframe's 'sandbox' attribute
- * (as is the case with codepens) the parent window is forbidden from calling certain
- * methods on the child, such as window.close() or setting document.location.href.
- *
- * This prevented GoldenLayout popouts from popping in in codepens. The fix is to call
- * _$closeWindow on the child window's gl instance which (after a timeout to disconnect
- * the invoking method from the close call) closes itself.
- * @package
- * @returns {void}
- */
-export function closeWindow(): void {
-    window.setTimeout(function () {
-        window.close();
-    }, 1);
-}
-
-
 
 /**
  * Adds all children of a node to another container recursively.

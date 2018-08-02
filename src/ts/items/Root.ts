@@ -3,15 +3,14 @@ import { ItemConfig } from '../config/ItemConfigType';
 
 import ContentItem from './ContentItem';
 import RowOrColumn from './RowOrColumn';
-import GoldenLayout from '../GoldenLayout';
+import GoldenLayout from '../LayoutManager';
 import Stack from './Stack';
-
-
+import IContentItem from '../interfaces/IContentItem';
 
 export default class Root extends ContentItem {
 
     private _containerElement: JQuery;
-    
+
     constructor(layoutManager: GoldenLayout, config: ItemConfig, containerElement: JQuery) {
 
         super(layoutManager, config, null);
@@ -113,4 +112,9 @@ export default class Root extends ContentItem {
             }
         }
     }
+
+    setActiveContentItem(_contentItem: IContentItem): void {}
+    getActiveContentItem():IContentItem {return undefined;}
+
+    
 }

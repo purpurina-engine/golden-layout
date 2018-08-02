@@ -1,4 +1,4 @@
-import { ContentArea, Area } from "../Commons";
+import { ContentArea, Area } from "../interfaces/Commons";
 
 const _template = '<div class="lm_dropTargetIndicator"><div class="lm_inner"></div></div>'
 

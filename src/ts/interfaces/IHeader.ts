@@ -1,12 +1,12 @@
 import ITab from "./ITab";
 import IContentItem from "./IContentItem";
-import LayoutManager from "./LayoutManager";
+import ILayoutManager from "./ILayoutManager";
 
  export default interface IHeader {
     /**
      * A reference to the LayoutManager instance
      */
-    readonly layoutManager: LayoutManager;
+    readonly layoutManager: ILayoutManager;
 
     /**
      * A reference to the Stack this Header belongs to

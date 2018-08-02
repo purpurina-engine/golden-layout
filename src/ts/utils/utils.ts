@@ -2,7 +2,9 @@ import { ContentArea, Callback, BoundFunction, Vector } from '../interfaces/Comm
 import ItemConfigType from '../config/ItemConfigType';
 import ContentItem from '../items/OLDContentItem';
 
-// function F(): void { }
+export function NOOP(): void {
+    
+}
 
 export function getTouchEvent(event: JQuery.Event): Vector {
     // if($.zepto)

@@ -1,20 +1,18 @@
 import IBrowserPopout, { BrowserPopoutConfig } from '../interfaces/IBrowserPopout';
-import LayoutManager from '../interfaces/LayoutManager';
 import { ElementDimensions } from '../interfaces/Commons';
 
 import EventEmitter from '../utils/EventEmitter';
-import ConfigMinifier from '../utils/ConfigMinifier';
 
 import GoldenLayoutError from '../errors/GoldenLayoutError';
-import GoldenLayout from '../GoldenLayout';
+import LayoutManager from '../LayoutManager';
 import { ItemConfig } from '../config/ItemConfigType';
 import ContentItem from '../items/ContentItem';
 
 import {
     fnBind,
-    getUniqueId,
 } from '../utils/utils'
-import { closeWindow } from '../utils/LayoutFunctions';
+
+import { createUrl, closeWindow } from '../utils/itemFunctions';
 
 
 /**
@@ -35,7 +33,7 @@ export default class BrowserPopout extends EventEmitter implements IBrowserPopou
     private _dimensions: ElementDimensions;
     private _parentId: string;
     private _indexInParent: number;
-    private _layoutManager: GoldenLayout;
+    private _layoutManager: LayoutManager;
     private _popoutWindow: Window;
     private _id: number;
 
@@ -56,7 +54,7 @@ export default class BrowserPopout extends EventEmitter implements IBrowserPopou
      * @param indexInParent The position of this element within its parent
      * @param layoutManager Reference ti LayoutManager
      */
-    constructor(config: ItemConfig, dimensions: ElementDimensions, parentId: string, indexInParent: number, layoutManager: GoldenLayout) {
+    constructor(config: ItemConfig, dimensions: ElementDimensions, parentId: string, indexInParent: number, layoutManager: LayoutManager) {
 
         super();
 
@@ -97,7 +95,7 @@ export default class BrowserPopout extends EventEmitter implements IBrowserPopou
      * Returns the GoldenLayout instance from the child window
      */
     getGlInstance(): LayoutManager {
-        return this._popoutWindow.__glInstance;
+        return this._popoutWindow.__glInstance as LayoutManager;
     }
 
     /**
@@ -127,7 +125,7 @@ export default class BrowserPopout extends EventEmitter implements IBrowserPopou
      * parent isn't available anymore it falls back to the layout's topmost element
      */
     popIn(): void {
-        let childConfig: ContentItem,
+        let childConfig: ItemConfig,
             parentItem: ContentItem;
         //index = this._indexInParent;
 
@@ -151,9 +149,9 @@ export default class BrowserPopout extends EventEmitter implements IBrowserPopou
              */
             if (!parentItem) {
                 if (this._layoutManager.root.contentItems.length > 0) {
-                    parentItem = this._layoutManager.root.contentItems[0];
+                    parentItem = this._layoutManager.root.contentItems[0] as ContentItem;
                 } else {
-                    parentItem = this._layoutManager.root;
+                    parentItem = this._layoutManager.root as ContentItem;
                 }
             }
         }
@@ -170,7 +168,7 @@ export default class BrowserPopout extends EventEmitter implements IBrowserPopou
      */
     private _createWindow(): void {
 
-        const url = this._createUrl();
+        const url = createUrl(this._config);
 
         /**
          * Bogus title to prevent re-usage of existing window with the
@@ -193,7 +191,7 @@ export default class BrowserPopout extends EventEmitter implements IBrowserPopou
             personalbar: 'no',
             resizable: 'yes',
             scrollbars: 'no',
-            status: 'no'
+            status: 'no', 
         });
 
         this._popoutWindow = window.open(url, title, options);
@@ -218,7 +216,6 @@ export default class BrowserPopout extends EventEmitter implements IBrowserPopou
          * window or raising an event on the window object - both would introduce knowledge
          * about the parent to the child window which we'd rather avoid
          */
-
         const checkReadyInterval = setInterval(
             fnBind(function (this: BrowserPopout) {
                 if (this._popoutWindow.__glInstance && this._popoutWindow.__glInstance.isInitialised) {
@@ -244,41 +241,8 @@ export default class BrowserPopout extends EventEmitter implements IBrowserPopou
     }
 
     /**
-     * Creates the URL for the new window, including the
-     * config GET parameter
-     * @returns {string} URL
-     */
-    private _createUrl(): string {
-        let input = {
-            content: this._config
-        },
-            storageKey = 'gl-window-config-' + getUniqueId(),
-            urlParts;
-
-        let config = (new ConfigMinifier()).minifyConfig(input);
-
-        try {
-            localStorage.setItem(storageKey, JSON.stringify(config));
-        } catch (e) {
-            throw new Error('Error while writing to localStorage ' + e.toString());
-        }
-
-        urlParts = document.location.href.split('?');
-
-        // URL doesn't contain GET-parameters
-        if (urlParts.length === 1) {
-            return urlParts[0] + '?gl-window=' + storageKey;
-
-            // URL contains GET-parameters
-        } else {
-            return document.location.href + '&gl-window=' + storageKey;
-        }
-    }
-
-    /**
      * Move the newly created window roughly to
      * where the component used to be.
-     *
      * @private
      * @returns {void}
      */
@@ -300,7 +264,6 @@ export default class BrowserPopout extends EventEmitter implements IBrowserPopou
 
     /**
      * Invoked 50ms after the window unload event
-     *
      * @private
      * @returns {void}
      */

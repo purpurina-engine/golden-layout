@@ -5,7 +5,7 @@ import Tab from '../controls/Tab';
 
 import ContentItem from '../items/ContentItem';
 import EventEmitter from '../utils/EventEmitter';
-import GoldenLayout from '../GoldenLayout';
+import GoldenLayout from '../LayoutManager';
 
 
 export default class Container extends EventEmitter  {

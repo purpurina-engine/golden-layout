@@ -1,7 +1,7 @@
 import { HightlightAreas, ContentItemType, HeaderConfig, ContentArea } from '../interfaces/Commons';
 import ItemConfigType, { ItemConfig } from '../config/ItemConfigType';
 
-import GoldenLayout from '../GoldenLayout';
+import GoldenLayout from '../LayoutManager';
 import ContentItem from './ContentItem';
 import RowOrColumn from './RowOrColumn';
 import Docker from './Docker';
@@ -306,7 +306,6 @@ export default class Stack extends ContentItem {
      * (left, top, right, bottom) * is child of the right parent (row, column) + header drop
      *
      * @param    {ContentItem} contentItem
-     *
      * @returns {void}
      */
     _$onDrop(contentItem: ContentItem): void {
@@ -637,7 +636,7 @@ export default class Stack extends ContentItem {
         this._layoutManager.tabDropPlaceholder.remove();
     }
 
-    toggleMaximize(e?: JQuery.Event) {
+    toggleMaximise(e?: JQuery.Event) {
         if (!this._isMaximised) {
             this.dock(false);
         }

@@ -1,8 +1,7 @@
-import BrowserPopout from "../controls/BrowserPopout";
 import ItemConfigType from "../config/ItemConfigType";
 import { ContentItemType } from "./Commons";
 import IEventEmitter from "./IEventEmitter";
-import LayoutManager from "./LayoutManager";
+import ILayoutManager from "./ILayoutManager";
 import IBrowserPopout from "./IBrowserPopout";
 
 export default interface IContentItem extends IEventEmitter {
@@ -69,7 +68,7 @@ export default interface IContentItem extends IEventEmitter {
     /**
      * A reference to the layoutManager that controls this item
      */
-    readonly layoutManager: LayoutManager;
+    readonly layoutManager: ILayoutManager;
 
     /**
      * The item's outer element
@@ -147,13 +146,15 @@ export default interface IContentItem extends IEventEmitter {
     hasId(id: string): boolean;
 
     /**
-     * Only Stacks have this method! It's the programmatical equivalent of clicking a tab.
+     * Only Stacks have this method! 
+     * It's the programmatical equivalent of clicking a tab.
      * @param contentItem The new active content item
      */
     setActiveContentItem(contentItem: IContentItem): void;
 
     /**
-     * Only Stacks have this method! Returns the currently selected contentItem.
+     * Only Stacks have this method! 
+     * Returns the currently selected contentItem.
      */
     getActiveContentItem(): IContentItem;
 

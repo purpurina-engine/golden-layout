@@ -1,10 +1,10 @@
+
+import { TransitionIndicatorElement } from '../interfaces/Commons';
 import {
     now,
     animFrame,
     fnBind
 } from '../utils/utils'
-import { TransitionIndicatorElement } from '../Commons';
-
 
 
 export default class TransitionIndicator {

@@ -6,7 +6,7 @@ import IBrowserPopout from "./IBrowserPopout";
 import { ElementDimensions } from "./Commons";
 import DragSource from "../controls/DragSource";
 
-export default interface LayoutManager extends IEventEmitter {
+export default interface ILayoutManager extends IEventEmitter {
     /**
      * The topmost item in the layout item tree. In browser terms: Think of the GoldenLayout instance as window
      * object and of goldenLayout.root as the document.

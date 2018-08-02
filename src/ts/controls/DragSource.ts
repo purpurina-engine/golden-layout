@@ -3,7 +3,7 @@ import { Callback } from '../interfaces/Commons';
 import DragListener from '../utils/DragListener'
 import DragProxy from './DragProxy'
 
-import GoldenLayout from '../GoldenLayout';
+import LayoutManager from '../LayoutManager';
 
 import ContentItem from '../items/OLDContentItem';
 import { ItemConfigType } from '../config';
@@ -22,7 +22,7 @@ export default class DragSource {
 
     private _element: JQuery;
     private _itemConfig: ItemConfigType | Callback;
-    private _layoutManager: GoldenLayout;
+    private _layoutManager: LayoutManager;
     private _dragListener: DragListener;
 
     /**
@@ -31,7 +31,7 @@ export default class DragSource {
      * @param itemConfig The configuration for the contentItem that will be created
      * @param layoutManager The layout manager
      */
-    constructor(element: JQuery, itemConfig: ItemConfigType | Callback, layoutManager: GoldenLayout) {
+    constructor(element: JQuery, itemConfig: ItemConfigType | Callback, layoutManager: LayoutManager) {
         this._element = element;
         this._itemConfig = itemConfig;
         this._layoutManager = layoutManager;

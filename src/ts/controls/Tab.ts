@@ -1,4 +1,4 @@
-import GoldenLayout from '../GoldenLayout';
+import LayoutManager from '../LayoutManager';
 import DragListener from '../utils/DragListener';
 import DragProxy from './DragProxy';
 import Header from './Header';
@@ -21,7 +21,7 @@ const _template = '<li class="lm_tab"><i class="lm_left"></i>' +
  */
 export default class Tab {
 
-    private _layoutManager: GoldenLayout;
+    private _layoutManager: LayoutManager;
     private _dragListener: DragListener;
     private _onTabClickFn: any;
     private _onCloseClickFn: any;
@@ -60,7 +60,7 @@ export default class Tab {
         this.setTitle(contentItem.config.title);
         this._contentItem.on('titleChanged', this.setTitle, this);
 
-        this._layoutManager = this.contentItem.layoutManager as GoldenLayout;
+        this._layoutManager = this.contentItem.layoutManager as LayoutManager;
 
         if (
             this._layoutManager.config.settings.reorderEnabled === true &&

@@ -1,13 +1,12 @@
 import IContentItem from "../interfaces/IContentItem";
-import LayoutManager from "../interfaces/LayoutManager";
-import ItemConfigType from "../config/ItemConfigType";
-import { ContentItemType } from "../interfaces/Commons";
+import ILayoutManager from "../interfaces/ILayoutManager";
 import IBrowserPopout from "../interfaces/IBrowserPopout";
+import { ContentItemType, ContentArea } from "../interfaces/Commons";
+import ItemConfigType from "../config/ItemConfigType";
 
 import EventEmitter, { ALL_EVENT } from "../utils/EventEmitter";
-import ConfigurationError from "../errors/ConfigurationError";
 import BubblingEvent from "../utils/BubblingEvent";
-import GoldenLayout from "../GoldenLayout";
+import GoldenLayout from "../LayoutManager";
 
 import Root from "./Root";
 import Component from "./Component";
@@ -18,7 +17,8 @@ import {
     indexOf
 } from "../utils/utils";
 
-import { extendItemNode } from "../utils/itemFunctions";
+import { extendItemNode, createContentItems, callOnActiveComponents } from "../utils/itemFunctions";
+import Stack from "./Stack";
 
 
 type ContentItemEvent = 'stateChanged' | 'beforeItemDestroyed' | 'itemDestroyed' | 'itemCreated' | 'componentCreated' | 'rowCreated' | 'columnCreated' | 'stackCreated';
@@ -96,7 +96,7 @@ export default abstract class ContentItem extends EventEmitter implements IConte
         return this._isComponent;
     }
 
-    get layoutManager(): LayoutManager {
+    get layoutManager(): ILayoutManager {
         return this._layoutManager;
     }
 
@@ -132,7 +132,7 @@ export default abstract class ContentItem extends EventEmitter implements IConte
         this.on(ALL_EVENT, this._propagateEvent, this);
 
         if (config.content) {
-            this._createContentItems(config);
+            createContentItems(config, layoutManager);
         }
     }
 
@@ -276,7 +276,7 @@ export default abstract class ContentItem extends EventEmitter implements IConte
             this._config.id.push(id);
         }
     }
-    
+
     removeId(id: string): void {
         if (!this.hasId(id)) {
             throw new Error('Id not found');
@@ -288,17 +288,17 @@ export default abstract class ContentItem extends EventEmitter implements IConte
             this._config.id.splice(index, 1);
         }
     }
-    
+
     setTitle(title: string): void {
         this._config.title = title;
         this.emit('titleChanged', title);
         this.emit('stateChanged');
     }
-   
+
     popout(): IBrowserPopout {
         throw new Error("Method not implemented.");
     }
-    
+
     toggleMaximise(event?: JQuery.Event): void {
         event && event.preventDefault();
 
@@ -325,28 +325,24 @@ export default abstract class ContentItem extends EventEmitter implements IConte
             this.element.removeClass('lm_selected');
         }
     }
-   
-    setActiveContentItem(contentItem: IContentItem): void {
-        throw new Error("Method not implemented.");
-    }
-    getActiveContentItem(): IContentItem {
-        throw new Error("Method not implemented.");
-    }
+
+    abstract setActiveContentItem(contentItem: IContentItem): void;
+    abstract getActiveContentItem(): IContentItem;
 
     /* ***************************************
      * SELECTOR
      *************************************** */
-    
+
     getItemsByFilter(filterFunction: (contentItem: IContentItem) => boolean): ContentItem[] {
         const result: ContentItem[] = [];
         const next = function (contentItem: ContentItem) {
-                for (const iterator of contentItem.contentItems) {
-                    if (filterFunction(iterator) === true) {
-                        result.push(iterator);
-                    }
-                    next(iterator);
+            for (const iterator of contentItem.contentItems) {
+                if (filterFunction(iterator) === true) {
+                    result.push(iterator);
                 }
-            };
+                next(iterator);
+            }
+        };
         next(this);
         return result;
     }
@@ -388,8 +384,15 @@ export default abstract class ContentItem extends EventEmitter implements IConte
         }
     }
 
+
+    /**
+     * Emit an event that bubbles up the item tree.
+     * @param name The name of the event
+     * @returns {void}
+     */
     emitBubblingEvent(name: string): void {
-        throw new Error("Method not implemented.");
+        const event = new BubblingEvent(name, this);
+        this.emit(name, event);
     }
 
     destroy(): void {
@@ -399,12 +402,67 @@ export default abstract class ContentItem extends EventEmitter implements IConte
     /* ***************************************
      * PACKAGE PRIVATE or PROTECTED
      *************************************** */
+    _$getArea(element?: JQuery): ContentArea {
+        element = element || this.element;
+
+        let offset = element.offset(),
+            width = element.width(),
+            height = element.height();
+
+        return {
+            x1: offset.left,
+            y1: offset.top,
+            x2: offset.left + width,
+            y2: offset.top + height,
+            surface: width * height,
+            contentItem: this
+        };
+    }
+
+    _$hide(): void {
+        callOnActiveComponents('hide', this.getItemsByType('stack') as Stack[]);
+        this.element.hide();
+        this.layoutManager.updateSize();
+    }
+
+    _$show(): void {
+        callOnActiveComponents('show', this.getItemsByType('stack') as Stack[]);
+        this.element.show();
+        this.layoutManager.updateSize();
+    }
+
+    protected _$highlightDropZone(_x: number, _y: number, area?: ContentArea): void {
+        this._layoutManager.dropTargetIndicator.highlightArea(area);
+    }
+
     private _$getItemsByProperty(key: string, value: string) {
         return this.getItemsByFilter(function (item: ContentItem | any) {
             return item[key] === value;
         });
     }
 
+    /**
+     * Hides a child node (and its children) from the tree reclaiming its space in the layout
+     * @param   {ContentItem} contentItem
+     * @returns {void}
+     */
+    undisplayChild(contentItem: ContentItem): void {
+        /*
+         * Get the position of the item that's to be removed within all content items this node contains
+         */
+        let index = indexOf(contentItem, this.contentItems);
+
+        /*
+         * Make sure the content item to be removed is actually a child of this item
+         */
+        if (index === -1) {
+            throw new Error('Can\'t remove child item. Unknown content item');
+        }
+
+        if (!(this instanceof Root) && this.config.isClosable === true) {
+            this.parent.undisplayChild(this);
+        }
+    }
 
     /**
      * The tree of content items is created in two steps: First all content items are instantiated,
@@ -414,59 +472,37 @@ export default abstract class ContentItem extends EventEmitter implements IConte
      * Its behaviour depends on the content item
      *
      * @package private
-     *
      * @returns {void}
      */
     protected _$init(): void {
         this.setSize();
 
-        for (let i = 0; i < this.contentItems.length; i++) {
-            this.childElementContainer.append(this.contentItems[i].element);
+        for (const iterator of this._contentItems) {
+            this._childElementContainer.append(iterator.element);
         }
 
         this._isInitialised = true;
         this.emitBubblingEvent('itemCreated');
-        this.emitBubblingEvent(this.type + 'Created');
+        this.emitBubblingEvent(this._type + 'Created');
     }
 
     /**
      * Destroys this item ands its children
-     *
      * @returns {void}
      */
     _$destroy(): void {
         this.emitBubblingEvent('beforeItemDestroyed');
         this.callDownwards('_$destroy', [], true, true);
-        this.element.remove();
+        this._element.remove();
         this.emitBubblingEvent('itemDestroyed');
     }
 
-    /**
-     * Private method, creates all content items for this node at initialisation time
-     * PLEASE NOTE, please see addChild for adding contentItems add runtime
-     * @private
-     * @param   {ItemConfigType} config
-     *
-     * @returns {void}
-     */
-    private _createContentItems(config: ItemConfigType): void {
-        if (!(config.content instanceof Array)) {
-            throw new ConfigurationError('content must be an Array', config);
-        }
-
-        for (let i = 0; i < config.content.length; i++) {
-            const contentItem = this._layoutManager.createContentItem(config.content[i], this);
-            this.contentItems.push(contentItem);
-        }
-    }
 
     /**
      * Called for every event on the item tree. Decides whether the event is a bubbling
      * event and propagates it to its parent
-     *
      * @param   {string} name the name of the event
      * @param   {BubblingEvent} event
-     *
      * @returns {void}
      */
     private _propagateEvent(name: ContentItemEvent, event: BubblingEvent): void {
@@ -480,8 +516,8 @@ export default abstract class ContentItem extends EventEmitter implements IConte
              * propagate the bubbling event from the top level of the substree directly
              * to the layoutManager
              */
-            if (this._isRoot === false && this.parent) {
-                this.parent.emit.apply(this.parent, Array.prototype.slice.call(arguments, 0));
+            if (this._isRoot === false && this._parent) {
+                this._parent.emit.apply(this._parent, Array.prototype.slice.call(arguments, 0));
             } else {
                 this._scheduleEventPropagationToLayoutManager(name, event);
             }
@@ -519,7 +555,7 @@ export default abstract class ContentItem extends EventEmitter implements IConte
      */
     private _propagateEventToLayoutManager(name: ContentItemEvent, event: BubblingEvent): void {
         this._pendingEventPropagations[name] = false;
-        this.layoutManager.emit(name, event);
+        this._layoutManager.emit(name, event);
     }
 
 

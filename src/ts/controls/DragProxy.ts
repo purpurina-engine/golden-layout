@@ -1,7 +1,7 @@
 import EventEmitter from '../utils/EventEmitter';
 import DragListener from '../utils/DragListener';
 
-import GoldenLayout from '../GoldenLayout';
+import LayoutManager from '../LayoutManager';
 import ContentItem from '../items/ContentItem';
 import Stack from '../items/Stack';
 import { ContentArea } from '../interfaces/Commons';
@@ -64,7 +64,7 @@ function buildTemplate(_showPreview: boolean = true): string {
 export default class DragProxy extends EventEmitter {
 
     private _dragListener: DragListener;
-    private _layoutManager: GoldenLayout;
+    private _layoutManager: LayoutManager;
     private _contentItem: ContentItem;
     private _originalParent: ContentItem;
 
@@ -105,7 +105,7 @@ export default class DragProxy extends EventEmitter {
      * @param contentItem 
      * @param originalParent 
      */
-    constructor(x: number, y: number, dragListener: DragListener, layoutManager: GoldenLayout, contentItem: ContentItem, originalParent: ContentItem) {
+    constructor(x: number, y: number, dragListener: DragListener, layoutManager: LayoutManager, contentItem: ContentItem, originalParent: ContentItem) {
 
         super();
 

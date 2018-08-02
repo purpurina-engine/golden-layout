@@ -1,5 +1,5 @@
 import Header from "./Header";
-import { Callback } from "../Commons";
+import { Callback } from "../interfaces/Commons";
 
 export default class HeaderButton {
 

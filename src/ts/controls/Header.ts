@@ -1,6 +1,6 @@
 import { HeaderPosition } from '../interfaces/Commons';
 
-import GoldenLayout from '../GoldenLayout';
+import LayoutManager from '../LayoutManager';
 import EventEmitter from '../utils/EventEmitter';
 import Tab from './Tab'
 import HeaderButton from './HeaderButton';
@@ -32,7 +32,7 @@ export default class Header extends EventEmitter {
     private _lastVisibleTabIndex: number;
     private _tabControlOffset: number;
     private _canDestroy: boolean;
-    private layoutManager: GoldenLayout;
+    private layoutManager: LayoutManager;
     private hideAdditionalTabsDropdown: any;
 
     private tabsContainer: JQuery;
@@ -67,7 +67,7 @@ export default class Header extends EventEmitter {
     }
 
 
-    constructor(layoutManager: GoldenLayout, parent: Stack) {
+    constructor(layoutManager: LayoutManager, parent: Stack) {
 
         super();
 
@@ -360,7 +360,7 @@ export default class Header extends EventEmitter {
          * Maximise control - set the component to the full size of the layout
          */
         if (this._getHeaderSetting('maximise')) {
-            const maximise = fnBind(this.parent.toggleMaximize, this.parent);
+            const maximise = fnBind(this.parent.toggleMaximise, this.parent);
             maximiseLabel = this._getHeaderSetting('maximise');
             minimiseLabel = this._getHeaderSetting('minimise');
             maximiseButton = new HeaderButton(this, maximiseLabel, 'lm_maximise', maximise);

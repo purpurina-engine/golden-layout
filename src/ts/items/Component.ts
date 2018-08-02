@@ -2,7 +2,8 @@
 import { ComponentConfig } from '../config/ItemConfigType';
 import Container from '../container/Container';
 import ContentItem from './ContentItem';
-import GoldenLayout from '../GoldenLayout';
+import LayoutManager from '../LayoutManager';
+import IContentItem from '../interfaces/IContentItem';
 
 
 export default class Component extends ContentItem {
@@ -29,7 +30,7 @@ export default class Component extends ContentItem {
         this._container = value;
     }
 
-    constructor(layoutManager: GoldenLayout, config: ComponentConfig, parent: ContentItem) {
+    constructor(layoutManager: LayoutManager, config: ComponentConfig, parent: ContentItem) {
 
         super(layoutManager, config, parent);
 
@@ -100,4 +101,7 @@ export default class Component extends ContentItem {
     _$getArea(): null {
         return null;
     }
+
+    setActiveContentItem(_contentItem: IContentItem): void {}
+    getActiveContentItem():IContentItem {return undefined;}
 }
