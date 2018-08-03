@@ -1,19 +1,23 @@
+import IContentItem from "../interfaces/IContentItem";
 import ContentItem from "../items/ContentItem";
 import Stack from "../items/Stack";
 import Component from "../items/Component";
 import RowOrColumn from "../items/RowOrColumn";
-import { Callback } from "../interfaces/Commons";
 
 import LayoutManager from "../LayoutManager";
+import Root from "../items/Root";
 import ConfigurationError from "../errors/ConfigurationError";
 
-import { ItemConfigType, ComponentConfig, ItemConfig } from "../config";
+import { ItemConfigType, ComponentConfig, ItemConfig, LayoutConfig } from "../config";
 
-import { 
+import {
     fnBind,
-    objectKeys 
+    objectKeys,
+    isFunction
 } from "./utils";
-import Root from "../items/Root";
+
+
+export type ItemCreationFunction = () => IContentItem;
 
 interface ContainerCreation {
     jqueryContainer: JQuery;
@@ -35,9 +39,51 @@ const typeToItem: TypeToItem = {
     'component': Component
 }
 
-export function createContentItem(this: LayoutManager, itemConfiguration?: ItemConfigType, parent?: ContentItem): ContentItem {
-    let typeErrorMsg;
+/**
+ * Kicks of the initial, recursive creation chain
+ * @param   {LayoutConfig} config GoldenLayout Config
+ * @returns {void}
+ */
+export function createRootItem(config: LayoutConfig, containerElement: JQuery, layoutManager: LayoutManager): Root {
 
+    if (!(config.content instanceof Array)) {
+        let errorMsg: string;
+        if (config.content === undefined) {
+            errorMsg = 'Missing setting \'content\' on top level of configuration';
+        } else {
+            errorMsg = 'Configuration parameter \'content\' must be an array';
+        }
+
+        throw new ConfigurationError(errorMsg, config);
+    }
+
+    if (config.content.length > 1) {
+        throw new ConfigurationError('Top level content can\'t contain more then one element.', config);
+    }
+
+    const root = new Root(layoutManager,
+        {
+            type: 'root',
+            content: config.content
+        },
+        containerElement);
+
+    root.callDownwards('_$init');
+
+    if (config.maximisedItemId === '__glMaximised') {
+        root.getItemsById(config.maximisedItemId)[0].toggleMaximise();
+    }
+
+    return root;
+}
+
+/**
+ * 
+ * @param this Layout Manager
+ * @param itemConfiguration item configuration
+ * @param parent optional parent
+ */
+export function createContentItem(layoutManager: LayoutManager, itemConfiguration?: ItemConfigType, parent?: ContentItem): ContentItem {
     if (typeof itemConfiguration.type !== 'string') {
         throw new ConfigurationError('Missing parameter \'type\'', itemConfiguration);
     }
@@ -48,7 +94,7 @@ export function createContentItem(this: LayoutManager, itemConfiguration?: ItemC
     }
 
     if (!typeToItem[itemConfiguration.type]) {
-        typeErrorMsg = 'Unknown type \'' + itemConfiguration.type + '\'. ' +
+        const typeErrorMsg = 'Unknown type \'' + itemConfiguration.type + '\'. ' +
             'Valid types are ' + objectKeys(typeToItem).join(',');
 
         throw new ConfigurationError(typeErrorMsg);
@@ -65,7 +111,7 @@ export function createContentItem(this: LayoutManager, itemConfiguration?: ItemC
         // and we have a parent
         !!parent &&
         // and it's not the topmost item in a new window
-        !(this.isSubWindow === true && parent instanceof Root)
+        !(layoutManager.isSubWindow === true && parent instanceof Root)
     ) {
         const itemConfig: ItemConfig = {
             type: 'stack',
@@ -78,7 +124,43 @@ export function createContentItem(this: LayoutManager, itemConfiguration?: ItemC
     }
 
     const itemConstructor = typeToItem[itemConfiguration.type];
-    return new itemConstructor(this, itemConfiguration, parent);
+    return new itemConstructor(layoutManager, itemConfiguration, parent);
+}
+
+/**
+ * Takes a contentItem or a configuration and optionally a parent
+ * item and returns an initialised instance of the contentItem.
+ * If the contentItem is a function, it is first called
+ * @package
+ * @param layoutManager
+ * @param contentItemOrConfig
+ * @param parent Only necessary when passing in config
+ * @returns New Content Item
+ */
+export function normalizeContentItem(layoutManager: LayoutManager, contentItemOrConfig: ItemConfigType | ContentItem | ItemCreationFunction, parent?: ContentItem): ContentItem {
+    if (!contentItemOrConfig) {
+        throw new Error('No content item defined');
+    }
+
+    if (isFunction(contentItemOrConfig)) {
+        contentItemOrConfig = (<ItemCreationFunction>contentItemOrConfig)();
+    }
+
+    if (contentItemOrConfig instanceof ContentItem) {
+        return contentItemOrConfig;
+    }
+
+    // if ($.isPlainObject(contentItemOrConfig)) {
+    const asConfig = (contentItemOrConfig as ItemConfigType);
+    if ($.isPlainObject(asConfig) && asConfig.type) {
+        //  && contentItemOrConfig.type
+
+        let newContentItem = createContentItem(layoutManager, asConfig, parent);
+        newContentItem.callDownwards('_$init');
+        return newContentItem;
+    } else {
+        throw new Error('Invalid contentItem');
+    }
 }
 
 /**

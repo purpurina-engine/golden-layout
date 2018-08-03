@@ -2,7 +2,7 @@
 // whatever is imported/exported here will be included in the build
 //
 // Layout
-export { default } from './GoldenLayout';
+export { default } from './LayoutManager';
 //
 export {
     LayoutConfig,

@@ -20,31 +20,21 @@ import ConfigMinifier from "./utils/ConfigMinifier";
 import ReactComponentHandler from "./utils/ReactComponentHandler";
 
 import GoldenLayoutError from "./errors/GoldenLayoutError";
-import ConfigurationError from "./errors/ConfigurationError";
 
 import {
     fnBind,
     getQueryStringParam,
     stripTags,
-    objectKeys,
     copy,
-    isFunction
 } from "./utils/utils";
 
 import {
     findAllStackContainers,
     addChildContentItemsToContainer,
     setLayoutContainer,
-    createContentItem
+    createContentItem,
+    createRootItem
 } from "./utils/layoutFunctions";
-import Root from "./items/Root";
-import Stack from "./items/Stack";
-import RowOrColumn from "./items/RowOrColumn";
-import Component from "./items/Component";
-
-
-export type ItemCreationFunction = () => IContentItem;
-//type NewContentItem = Stack | Component | RowOrColumn;
 
 interface ComponentMap {
     [key: string]: any;
@@ -234,7 +224,7 @@ export default class LayoutManager extends EventEmitter implements ILayoutManage
         this.dropTargetIndicator = new DropTargetIndicator(this.container);
         this.transitionIndicator = new TransitionIndicator();
         this.updateSize();
-        this._create(this.config);
+        this._root = createRootItem(this.config, this._container, this);
         this._bindEvents(this._isFullPage);
         this._isInitialised = true;
 
@@ -450,53 +440,18 @@ export default class LayoutManager extends EventEmitter implements ILayoutManage
     * @returns {void}
     */
     _$reconcilePopoutWindows(): void {
-        let _openPopouts: BrowserPopout[] = [];
+        let openPopouts: BrowserPopout[] = [];
 
         for (const iterator of this._openPopouts) {
             if (iterator.getWindow().closed === false) {
-                _openPopouts.push(iterator);
+                openPopouts.push(iterator);
             } else {
                 this.emit('windowClosed', iterator);
             }
         }
-        if (this._openPopouts.length !== _openPopouts.length) {
+        if (this._openPopouts.length !== openPopouts.length) {
             this.emit('stateChanged');
-            this._openPopouts = _openPopouts;
-        }
-    }
-
-    /**
-     * Takes a contentItem or a configuration and optionally a parent
-     * item and returns an initialised instance of the contentItem.
-     * If the contentItem is a function, it is first called
-     * @package
-     * @param   {ContentItem|ItemConfigType|ItemCreationFunction} contentItemOrConfig
-     * @param   {ContentItem} parent Only necessary when passing in config
-     * @returns {ContentItem} New Content Item
-     */
-    _$normalizeContentItem(contentItemOrConfig: ItemConfigType | ContentItem | ItemCreationFunction, parent?: ContentItem): ContentItem {
-        if (!contentItemOrConfig) {
-            throw new Error('No content item defined');
-        }
-
-        if (isFunction(contentItemOrConfig)) {
-            contentItemOrConfig = (<ItemCreationFunction>contentItemOrConfig)();
-        }
-
-        if (contentItemOrConfig instanceof ContentItem) {
-            return contentItemOrConfig;
-        }
-
-        // if ($.isPlainObject(contentItemOrConfig)) {
-        const asConfig = (contentItemOrConfig as ItemConfigType);
-        if ($.isPlainObject(asConfig) && asConfig.type) {
-            //  && contentItemOrConfig.type
-
-            let newContentItem = this.createContentItem(asConfig, parent);
-            newContentItem.callDownwards('_$init');
-            return newContentItem;
-        } else {
-            throw new Error('Invalid contentItem');
+            this._openPopouts = openPopouts;
         }
     }
 
@@ -626,47 +581,8 @@ export default class LayoutManager extends EventEmitter implements ILayoutManage
          */
         // let x = document.body.offsetHeight; // jshint ignore:line
 
-        /*
-         * Expose this instance on the window object
-         * to allow the opening window to interact with
-         * it
-         */
+        // Expose this instance on the window object to allow the opening window to interact with it
         window.__glInstance = this;
-    }
-
-    /**
-     * Kicks of the initial, recursive creation chain
-     * @param   {LayoutConfig} config GoldenLayout Config
-     * @returns {void}
-     */
-    private _create(config: LayoutConfig): void {
-        let errorMsg: string;
-
-        if (!(config.content instanceof Array)) {
-            if (config.content === undefined) {
-                errorMsg = 'Missing setting \'content\' on top level of configuration';
-            } else {
-                errorMsg = 'Configuration parameter \'content\' must be an array';
-            }
-
-            throw new ConfigurationError(errorMsg, config);
-        }
-
-        if (config.content.length > 1) {
-            errorMsg = 'Top level content can\'t contain more then one element.';
-            throw new ConfigurationError(errorMsg, config);
-        }
-
-        this._root = new Root(this, {
-            type: 'root',
-            content: config.content
-        }, this._container);
-
-        this._root.callDownwards('_$init');
-
-        if (config.maximisedItemId === '__glMaximised') {
-            this._root.getItemsById(config.maximisedItemId)[0].toggleMaximise();
-        }
     }
 
     /**

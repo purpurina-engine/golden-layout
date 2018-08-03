@@ -10,20 +10,10 @@ import DragProxy from './DragProxy'
 import {
     isFunction
 } from '../utils/utils'
+import { normalizeContentItem } from '../utils/layoutFunctions';
 
-/**
- * Called initially and after every drag
- * @returns {void}
- */
-function _createDragListener(dragListener: DragListener): void {
-    if (this._dragListener !== null) {
-        this._dragListener.destroy();
-    }
 
-    this._dragListener = new DragListener(this._element);
-    this._dragListener.on('dragStart', this._onDragStart, this);
-    this._dragListener.on('dragStop', this._createDragListener, this);
-}
+
 
 /**
  * Allows for any DOM item to create a component on drag
@@ -50,7 +40,21 @@ export default class DragSource {
         this._layoutManager = layoutManager;
         this._dragListener = null;
 
-        this._createDragListener();
+        this.createDragListener();
+    }
+
+    /**
+     * Called initially and after every drag
+     * @returns {void}
+     */
+    private createDragListener(): void {
+        if (this._dragListener !== null) {
+            this._dragListener.destroy();
+        }
+
+        this._dragListener = new DragListener(this._element);
+        this._dragListener.on('dragStart', this.onDragStart, this);
+        this._dragListener.on('dragStop', this.createDragListener, this);
     }
 
     /**
@@ -59,14 +63,14 @@ export default class DragSource {
      * @param   {number} y the x position of the mouse on dragStart
      * @returns {void}
      */
-    private _onDragStart(x: number, y: number): void {
+    private onDragStart(x: number, y: number): void {
         let itemConfig: ContentItem;
 
         if (isFunction(this._itemConfig)) {
             itemConfig = (this._itemConfig as Callback)();
         }
 
-        const contentItem = this._layoutManager._$normalizeContentItem($.extend(true, {}, itemConfig));
+        const contentItem = normalizeContentItem(this._layoutManager, $.extend(true, {}, itemConfig));
         const dragProxy = new DragProxy(x, y, this._dragListener, this._layoutManager, contentItem, null);
 
         this._layoutManager.transitionIndicator.transitionElements(this._element, dragProxy.element);

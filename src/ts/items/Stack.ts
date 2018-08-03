@@ -15,6 +15,7 @@ import {
     copy,
     indexOf
 } from '../utils/utils'
+import { normalizeContentItem } from '../utils/layoutFunctions';
 
 
 
@@ -209,7 +210,7 @@ export default class Stack extends ContentItem {
              */
             index -= 1
         }
-        contentItem = this._layoutManager._$normalizeContentItem(contentItem, this);
+        contentItem = normalizeContentItem(this._layoutManager, contentItem, this);
         //AbstractContentItem.prototype.addChild.call(this, contentItem, index);
         super.addChild(contentItem, index);
         this.childElementContainer.append(contentItem.element);

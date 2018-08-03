@@ -24,7 +24,6 @@ export function extendItemNode(config: ItemConfigType | any): ItemConfigType {
     return config;
 }
 
-
 /**
  * Private method, creates all content items for this node at initialisation time
  * PLEASE NOTE, please see addChild for adding contentItems add runtime

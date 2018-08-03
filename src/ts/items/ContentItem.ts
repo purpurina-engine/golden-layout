@@ -1,6 +1,7 @@
 import IContentItem from "../interfaces/IContentItem";
 import ILayoutManager from "../interfaces/ILayoutManager";
 import IBrowserPopout from "../interfaces/IBrowserPopout";
+import ITab from "../interfaces/ITab";
 import { ContentItemType, ContentArea } from "../interfaces/Commons";
 import ItemConfigType from "../config/ItemConfigType";
 
@@ -10,6 +11,7 @@ import BubblingEvent from "../events/BubblingEvent";
 import LayoutManager from "../LayoutManager";
 
 import Root from "./Root";
+import Stack from "./Stack";
 import Component from "./Component";
 
 import {
@@ -18,9 +20,15 @@ import {
     indexOf
 } from "../utils/utils";
 
-import { extendItemNode, createContentItems, callOnActiveComponents } from "../utils/itemFunctions";
-import Stack from "./Stack";
-import ITab from "../interfaces/ITab";
+import { 
+    extendItemNode, 
+    createContentItems, 
+    callOnActiveComponents 
+} from "../utils/itemFunctions";
+
+import { 
+    normalizeContentItem 
+} from "../utils/layoutFunctions";
 
 
 type ContentItemEvent = 'stateChanged' | 'beforeItemDestroyed' | 'itemDestroyed' | 'itemCreated' | 'componentCreated' | 'rowCreated' | 'columnCreated' | 'stackCreated';
@@ -220,7 +228,7 @@ export default abstract class ContentItem extends EventEmitter implements IConte
     }
 
     replaceChild(oldChild: ContentItem, newChild: ContentItem | ItemConfigType, destroyOldChild?: boolean): void {
-        const newChildToPush = this._layoutManager._$normalizeContentItem(newChild);
+        const newChildToPush = normalizeContentItem(this._layoutManager, newChild);
         const index = this.contentItems.indexOf(oldChild);
         const parentNode = oldChild.element[0].parentNode;
 

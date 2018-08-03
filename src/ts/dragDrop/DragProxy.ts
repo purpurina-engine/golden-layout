@@ -97,8 +97,7 @@ export default class DragProxy extends EventEmitter {
 
 
     /**
-     * 
-     * 
+     * Constructor
      * @param x The initial x position
      * @param y The initial y position
      * @param dragListener 
