@@ -24,10 +24,6 @@ export default class RowOrColumn extends ContentItem {
     private _splitterMaxPosition: number;
     private __isColumn: boolean;
 
-    // isRow: boolean;
-    // isColumn: boolean;
-    // element: JQuery;
-
     constructor(isColumn: boolean, layoutManager: LayoutManager, config: ItemConfig, parent: ContentItem) {
 
         super(layoutManager, config, parent);

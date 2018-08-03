@@ -1,10 +1,11 @@
-import EventEmitter from '../utils/EventEmitter';
-import DragListener from '../utils/DragListener';
+import { ContentArea } from '../interfaces/Commons';
+import EventEmitter from '../events/EventEmitter';
+import DragListener from './DragListener';
 
 import LayoutManager from '../LayoutManager';
 import ContentItem from '../items/ContentItem';
 import Stack from '../items/Stack';
-import { ContentArea } from '../interfaces/Commons';
+
 
 import {
     stripTags,

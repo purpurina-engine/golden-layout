@@ -2,7 +2,7 @@
 // whatever is imported/exported here will be included in the build
 //
 // Layout
-export { default } from './OLDGoldenLayout';
+export { default } from './GoldenLayout';
 //
 export {
     LayoutConfig,
@@ -32,11 +32,11 @@ export { default as RowOrColumn } from './items/RowOrColumn';
 export { default as Stack } from './items/Stack';
 //
 // utils
-export { default as BubblingEvent } from './utils/BubblingEvent';
+export { default as BubblingEvent } from './events/BubblingEvent';
 export { default as ConfigMinifier } from './utils/ConfigMinifier';
-export { default as DragListener } from './utils/DragListener';
-export { default as EventEmitter } from './utils/EventEmitter';
-export { default as EventHub } from './utils/EventHub';
+export { default as DragListener } from './dragDrop/DragListener';
+export { default as EventEmitter } from './events/EventEmitter';
+export { default as EventHub } from './events/EventHub';
 export { default as ReactComponentHandler } from './utils/ReactComponentHandler';
 
 // if(env.ZEPTO && env.ES6){

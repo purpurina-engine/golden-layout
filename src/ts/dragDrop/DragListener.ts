@@ -1,9 +1,11 @@
-import EventEmitter from './EventEmitter';
+import EventEmitter from '../events/EventEmitter';
+import { Vector } from '../interfaces/Commons';
+
 import {
     fnBind,
     getTouchEvent
-} from './utils';
-import { Vector } from '../Commons';
+} from '../utils/utils';
+
 
 export default class DragListener extends EventEmitter {
 

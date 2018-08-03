@@ -5,17 +5,18 @@ import IContentItem from "./interfaces/IContentItem";
 
 import LayoutConfig from "./config/LayoutConfig";
 import defaultConfig from "./config/defaultConfig";
-import ItemConfigType, { ItemConfig, ComponentConfig } from "./config/ItemConfigType";
+import ItemConfigType from "./config/ItemConfigType";
 
-import DropTargetIndicator from "./controls/DropTargetIndicator";
+import DropTargetIndicator from "./dragDrop/DropTargetIndicator";
 import TransitionIndicator from "./controls/TransitionIndicator";
 import BrowserPopout from "./controls/BrowserPopout";
-import DragSource from "./controls/DragSource";
-import DragSourceControl from "./controls/DragSourceControl";
+import DragSource from "./dragDrop/DragSource";
+import DragSourceControl from "./dragDrop/DragSourceControl";
 
-import EventHub from "./utils/EventHub";
+import EventHub from "./events/EventHub";
+import EventEmitter from "./events/EventEmitter";
+
 import ConfigMinifier from "./utils/ConfigMinifier";
-import EventEmitter from "./utils/EventEmitter";
 import ReactComponentHandler from "./utils/ReactComponentHandler";
 
 import GoldenLayoutError from "./errors/GoldenLayoutError";

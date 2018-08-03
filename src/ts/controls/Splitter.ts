@@ -1,5 +1,5 @@
 import { Callback } from '../interfaces/Commons';
-import DragListener from '../utils/DragListener'
+import DragListener from '../dragDrop/DragListener'
 
 function createElement(isVertical: boolean, grabSize: number, size: number): JQuery<HTMLElement> {
     const dragHandle = $('<div class="lm_drag_handle"></div>');

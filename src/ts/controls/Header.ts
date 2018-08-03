@@ -1,7 +1,10 @@
+import IHeader from '../interfaces/IHeader';
+import ITab from '../interfaces/ITab';
+import ILayoutManager from '../interfaces/ILayoutManager';
 import { HeaderPosition } from '../interfaces/Commons';
 
 import LayoutManager from '../LayoutManager';
-import EventEmitter from '../utils/EventEmitter';
+import EventEmitter from '../events/EventEmitter';
 import Tab from './Tab'
 import HeaderButton from './HeaderButton';
 import ContentItem from '../items/ContentItem';
@@ -10,8 +13,6 @@ import Stack from '../items/Stack';
 import {
     fnBind
 } from '../utils/utils'
-
-
 
 const _template = [
     '<div class="lm_header">',
@@ -23,35 +24,36 @@ const _template = [
 
 /**
  * This class represents a header above a Stack ContentItem.
- *
- * @param {GoldenLayouts} layoutManager
- * @param {ContentItem} parent
  */
-export default class Header extends EventEmitter {
+export default class Header extends EventEmitter implements IHeader {
 
     private _lastVisibleTabIndex: number;
     private _tabControlOffset: number;
     private _canDestroy: boolean;
-    private layoutManager: LayoutManager;
-    private hideAdditionalTabsDropdown: any;
+    private _layoutManager: LayoutManager;
+    private _hideAdditionalTabsDropdown: any;
 
-    private tabsContainer: JQuery;
-    private tabDropdownContainer: JQuery;
+    private _tabsContainer: JQuery;
+    private _tabDropdownContainer: JQuery;
     private _controlsContainer: JQuery;
     private _tabs: Tab[];
 
-    private tabsMarkedForRemoval: Tab[];
+    private _tabsMarkedForRemoval: Tab[];
     private _activeContentItem: ContentItem = null;
 
-    private closeButton: HeaderButton = null;
-    private dockButton: HeaderButton = null;
-    private tabDropdownButton: HeaderButton = null;
+    private _closeButton: HeaderButton = null;
+    private _dockButton: HeaderButton = null;
+    private _tabDropdownButton: HeaderButton = null;
 
-    parent: Stack;
-    element: JQuery;
+    private _parent: Stack;
+    private _element: JQuery;
 
-    public get tabs(): Tab[] {
+    public get tabs(): ITab[] {
         return this._tabs;
+    }
+
+    public get tabsContainer(): JQuery {
+        return this._tabsContainer;
     }
 
     public get activeContentItem(): ContentItem {
@@ -66,34 +68,51 @@ export default class Header extends EventEmitter {
         return this._controlsContainer;
     }
 
+    public get layoutManager(): ILayoutManager {
+        return this._layoutManager;
+    }
 
+    public get element(): JQuery {
+        return this._element;
+    }
+
+    public get parent(): Stack {
+        return this._parent;
+    }
+
+    /**
+     * Constructor
+     * @param layoutManager Reference to Layout manager
+     * @param parent The Stack parent
+     */
     constructor(layoutManager: LayoutManager, parent: Stack) {
 
         super();
 
-        this.layoutManager = layoutManager;
-        this.element = $(_template);
+        this._layoutManager = layoutManager;
+        this._element = $(_template);
 
         if (this.layoutManager.config.settings.selectionEnabled === true) {
-            this.element.addClass('lm_selectable');
-            this.element.on('click touchstart', fnBind(this._onHeaderClick, this));
+            this._element.addClass('lm_selectable');
+            this._element.on('click touchstart', fnBind(this._onHeaderClick, this));
         }
 
-        this.tabsContainer = this.element.find('.lm_tabs');
-        this.tabDropdownContainer = this.element.find('.lm_tabdropdown_list');
-        this.tabDropdownContainer.hide();
-        this._controlsContainer = this.element.find('.lm_controls');
-        this.parent = parent;
-        this.parent.on('resize', this._updateTabSizes, this);
-        this._tabs = [];
-        this.tabsMarkedForRemoval = [];
-        this._activeContentItem = null;
-        this.closeButton = null;
-        this.dockButton = null;
-        this.tabDropdownButton = null;
-        this.hideAdditionalTabsDropdown = fnBind(this._hideAdditionalTabsDropdown, this);
+        this._tabsContainer = this._element.find('.lm_tabs');
+        this._tabDropdownContainer = this._element.find('.lm_tabdropdown_list');
+        this._tabDropdownContainer.hide();
 
-        $(document).mouseup(this.hideAdditionalTabsDropdown);
+        this._controlsContainer = this._element.find('.lm_controls');
+        this._parent = parent;
+        this._parent.on('resize', this._updateTabSizes, this);
+        this._tabs = [];
+        this._tabsMarkedForRemoval = [];
+        this._activeContentItem = null;
+        this._closeButton = null;
+        this._dockButton = null;
+        this._tabDropdownButton = null;
+        this._hideAdditionalTabsDropdown = fnBind(this._hideTabsDropdown, this);
+
+        $(document).mouseup(this._hideAdditionalTabsDropdown);
 
         this._lastVisibleTabIndex = -1;
         this._tabControlOffset = this.layoutManager.config.settings.tabControlOffset;
@@ -102,65 +121,61 @@ export default class Header extends EventEmitter {
 
     /**
      * Creates a new tab and associates it with a contentItem
-     *
      * @param    {ContentItem} contentItem
      * @param    {number} index The position of the tab
-     *
      * @returns {void}
      */
     createTab(contentItem: ContentItem, index?: number): void {
-        let tab;
+
 
         //If there's already a tab relating to the
         //content item, don't do anything
-        for (let i = 0; i < this.tabs.length; i++) {
-            if (this.tabs[i].contentItem === contentItem) {
+        for (let i = 0; i < this._tabs.length; i++) {
+            if (this._tabs[i].contentItem === contentItem) {
                 return;
             }
         }
 
-        tab = new Tab(this, contentItem);
+        let tab = new Tab(this, contentItem);
 
-        if (this.tabs.length === 0) {
-            this.tabs.push(tab);
+        if (this._tabs.length === 0) {
+            this._tabs.push(tab);
             this.tabsContainer.append(tab.element);
             return;
         }
 
         if (index === undefined) {
-            index = this.tabs.length;
+            index = this._tabs.length;
         }
 
         if (index > 0) {
-            this.tabs[index - 1].element.after(tab.element);
+            this._tabs[index - 1].element.after(tab.element);
         } else {
-            this.tabs[0].element.before(tab.element);
+            this._tabs[0].element.before(tab.element);
         }
 
-        this.tabs.splice(index, 0, tab);
+        this._tabs.splice(index, 0, tab);
         this._updateTabSizes();
     }
 
     /**
      * Finds a tab based on the contentItem its associated with and removes it.
-     *
      * @param    {ContentItem} contentItem
-     *
      * @returns {void}
      */
     removeTab(contentItem: ContentItem): void {
-        for (let i = 0; i < this.tabs.length; i++) {
-            if (this.tabs[i].contentItem === contentItem) {
-                this.tabs[i]._$destroy();
-                this.tabs.splice(i, 1);
+        for (let i = 0; i < this._tabs.length; i++) {
+            if (this._tabs[i].contentItem === contentItem) {
+                this._tabs[i]._$destroy();
+                this._tabs.splice(i, 1);
                 return;
             }
         }
 
-        for (let i = 0; i < this.tabsMarkedForRemoval.length; i++) {
-            if (this.tabsMarkedForRemoval[i].contentItem === contentItem) {
-                this.tabsMarkedForRemoval[i]._$destroy();
-                this.tabsMarkedForRemoval.splice(i, 1);
+        for (let i = 0; i < this._tabsMarkedForRemoval.length; i++) {
+            if (this._tabsMarkedForRemoval[i].contentItem === contentItem) {
+                this._tabsMarkedForRemoval[i]._$destroy();
+                this._tabsMarkedForRemoval.splice(i, 1);
                 return;
             }
         }
@@ -172,17 +187,15 @@ export default class Header extends EventEmitter {
     /**
      * Finds a tab based on the contentItem its associated with and marks it
      * for removal, hiding it too.
-     *
      * @param    {ContentItem} contentItem
-     *
      * @returns {void}
      */
     hideTab(contentItem: ContentItem): void {
-        for (let i = 0; i < this.tabs.length; i++) {
-            if (this.tabs[i].contentItem === contentItem) {
-                this.tabs[i].element.hide()
-                this.tabsMarkedForRemoval.push(this.tabs[i])
-                this.tabs.splice(i, 1);
+        for (let i = 0; i < this._tabs.length; i++) {
+            if (this._tabs[i].contentItem === contentItem) {
+                this._tabs[i].element.hide()
+                this._tabsMarkedForRemoval.push(this._tabs[i])
+                this._tabs.splice(i, 1);
                 return;
             }
         }
@@ -192,21 +205,19 @@ export default class Header extends EventEmitter {
 
     /**
      * The programmatical equivalent of clicking a Tab.
-     *
      * @param {ContentItem} contentItem
      */
     setActiveContentItem(contentItem: ContentItem) {
-        let isActive: boolean, activeTab: Tab;
 
         if (this.activeContentItem === contentItem)
             return;
 
-        for (let i = 0; i < this.tabs.length; i++) {
-            isActive = this.tabs[i].contentItem === contentItem;
-            this.tabs[i].setActive(isActive);
+        for (let i = 0; i < this._tabs.length; i++) {
+            const isActive = this._tabs[i].contentItem === contentItem;
+            this._tabs[i].setActive(isActive);
             if (isActive === true) {
                 this._activeContentItem = contentItem;
-                this.parent.config.activeItemIndex = i;
+                this._parent.config.activeItemIndex = i;
             }
         }
 
@@ -215,56 +226,52 @@ export default class Header extends EventEmitter {
              * If the tab selected was in the dropdown, move everything down one to make way for this one to be the first.
              * This will make sure the most used tabs stay visible.
              */
-            if (this._lastVisibleTabIndex !== -1 && this.parent.config.activeItemIndex > this._lastVisibleTabIndex) {
-                activeTab = this.tabs[this.parent.config.activeItemIndex];
-                for (let i = this.parent.config.activeItemIndex; i > 0; i--) {
-                    this.tabs[i] = this.tabs[i - 1];
+            if (this._lastVisibleTabIndex !== -1 && this._parent.config.activeItemIndex > this._lastVisibleTabIndex) {
+                const activeTab = this._tabs[this._parent.config.activeItemIndex];
+                for (let i = this._parent.config.activeItemIndex; i > 0; i--) {
+                    this._tabs[i] = this._tabs[i - 1];
                 }
-                this.tabs[0] = activeTab;
-                this.parent.config.activeItemIndex = 0;
+                this._tabs[0] = activeTab;
+                this._parent.config.activeItemIndex = 0;
             }
         }
 
         this._updateTabSizes();
-        this.parent.emitBubblingEvent('stateChanged');
+        this._parent.emitBubblingEvent('stateChanged');
     }
 
     /**
      * Programmatically operate with header position.
-     *
      * @param {string} position one of ('top','left','right','bottom') to set or empty to get it.
-     *
      * @returns {string} previous header position
      */
     position(position?: HeaderPosition): HeaderPosition {
         let previous: HeaderPosition;
-        let showing = this.parent.headerConfig.show;
-        if (this.parent.docker && this.parent.docker.docked) {
+        let showing = this._parent.headerConfig.show;
+        if (this._parent.docker && this._parent.docker.docked) {
             throw new Error('Can\'t change header position in docked stack');
         }
-        if (showing && !this.parent.side) {
+        if (showing && !this._parent.side) {
             previous = 'top';
         }
 
-        if (showing !== undefined && this.parent.headerConfig.oldPosition !== position) {
-            this.parent.headerConfig.oldPosition = position;
-            this.parent._setupHeaderPosition();
+        if (showing !== undefined && this._parent.headerConfig.oldPosition !== position) {
+            this._parent.headerConfig.oldPosition = position;
+            this._parent._setupHeaderPosition();
         }
         return previous;
     }
 
     /**
      * Programmatically set closability.
-     *
      * @package private
      * @param {boolean} isClosable Whether to enable/disable closability.
-     *
      * @returns {boolean} Whether the action was successful
      */
     setClosable(isClosable: boolean): boolean {
-        this._canDestroy = isClosable || this.tabs.length > 1;
-        if (this.closeButton && this.isClosable()) {
-            this.closeButton.element[isClosable ? "show" : "hide"]();
+        this._canDestroy = isClosable || this._tabs.length > 1;
+        if (this._closeButton && this.isClosable()) {
+            this._closeButton.element[isClosable ? "show" : "hide"]();
             return true;
         }
 
@@ -273,15 +280,13 @@ export default class Header extends EventEmitter {
 
     /**
      * Programmatically set ability to dock.
-     *
      * @package private
      * @param {boolean} isDockable Whether to enable/disable ability to dock.
-     *
      * @returns {boolean} Whether the action was successful
      */
     _setDockable(isDockable: boolean): boolean {
-        if (this.dockButton && this.parent.header && this.parent.headerConfig.dock) {
-            this.dockButton.element.toggle(!!isDockable);
+        if (this._dockButton && this._parent.header && this._parent.headerConfig.dock) {
+            this._dockButton.element.toggle(!!isDockable);
             return true;
         }
         return false;
@@ -289,29 +294,26 @@ export default class Header extends EventEmitter {
 
     /**
      * Destroys the entire header
-     *
      * @package private
-     *
      * @returns {void}
      */
     _$destroy(): void {
         this.emit('destroy', this);
 
-        for (let i = 0; i < this.tabs.length; i++) {
-            this.tabs[i]._$destroy();
+        for (let i = 0; i < this._tabs.length; i++) {
+            this._tabs[i]._$destroy();
         }
-        $(document).off('mouseup', this.hideAdditionalTabsDropdown);
-        this.element.remove();
+        $(document).off('mouseup', this._hideAdditionalTabsDropdown);
+        this._element.remove();
     }
 
     /**
-     * get settings from header
-     *
+     * Get settings from header
      * @returns {string} when exists
      */
     private _getHeaderSetting(name: string): string {
-        if (name in this.parent.headerConfig) {
-            let value = this.parent.headerConfig[name];
+        if (name in this._parent.headerConfig) {
+            let value = this._parent.headerConfig[name];
             if (typeof value === 'boolean') {
                 return (value) ? 'true' : 'false';
             } else {
@@ -323,7 +325,6 @@ export default class Header extends EventEmitter {
 
     /**
      * Creates the popout, maximise and close buttons in the header's top right corner
-     *
      * @returns {void}
      */
     private _createControls(): void {
@@ -338,13 +339,13 @@ export default class Header extends EventEmitter {
          */
         const showTabDropdown = fnBind(this._showAdditionalTabsDropdown, this);
         const tabDropdownLabel = this.layoutManager.config.labels.tabDropdown;
-        this.tabDropdownButton = new HeaderButton(this, tabDropdownLabel, 'lm_tabdropdown', showTabDropdown);
-        this.tabDropdownButton.element.hide();
+        this._tabDropdownButton = new HeaderButton(this, tabDropdownLabel, 'lm_tabdropdown', showTabDropdown);
+        this._tabDropdownButton.element.hide();
 
-        if (this.parent.headerConfig && this.parent.headerConfig.dock) {
-            let button = fnBind(this.parent.dock, this.parent);
+        if (this._parent.headerConfig && this._parent.headerConfig.dock) {
+            let button = fnBind(this._parent.dock, this._parent);
             label = this._getHeaderSetting('dock');
-            this.dockButton = new HeaderButton(this, label, 'lm_dock', button);
+            this._dockButton = new HeaderButton(this, label, 'lm_dock', button);
         }
 
         /**
@@ -360,16 +361,16 @@ export default class Header extends EventEmitter {
          * Maximise control - set the component to the full size of the layout
          */
         if (this._getHeaderSetting('maximise')) {
-            const maximise = fnBind(this.parent.toggleMaximise, this.parent);
+            const maximise = fnBind(this._parent.toggleMaximise, this._parent);
             maximiseLabel = this._getHeaderSetting('maximise');
             minimiseLabel = this._getHeaderSetting('minimise');
             maximiseButton = new HeaderButton(this, maximiseLabel, 'lm_maximise', maximise);
 
-            this.parent.on('maximised', function () {
+            this._parent.on('maximised', function () {
                 maximiseButton.element.attr('title', minimiseLabel);
             });
 
-            this.parent.on('minimised', function () {
+            this._parent.on('minimised', function () {
                 maximiseButton.element.attr('title', maximiseLabel);
             });
         }
@@ -378,43 +379,40 @@ export default class Header extends EventEmitter {
          * Close button
          */
         if (this.isClosable()) {
-            const closeStack = fnBind(this.parent.remove, this.parent);
+            const closeStack = fnBind(this._parent.remove, this._parent);
             label = this._getHeaderSetting('close');
-            this.closeButton = new HeaderButton(this, label, 'lm_close', closeStack);
+            this._closeButton = new HeaderButton(this, label, 'lm_close', closeStack);
         }
     }
 
     /**
      * Shows drop down for additional tabs when there are too many to display.
-     *
      * @returns {void}
      */
     private _showAdditionalTabsDropdown(): void {
-        this.tabDropdownContainer.show();
+        this._tabDropdownContainer.show();
     }
 
     /**
      * Hides drop down for additional tabs when there are too many to display.
-     *
      * @returns {void}
      */
-    private _hideAdditionalTabsDropdown(e?: any): void {
-        this.tabDropdownContainer.hide();
+    private _hideTabsDropdown(e?: any): void {
+        this._tabDropdownContainer.hide();
     }
 
     /**
      * Checks whether the header is closable based on the parent config and
      * the global config.
-     *
      * @returns {boolean} Whether the header is closable.
      */
     isClosable(): boolean {
-        return this.parent.config.isClosable && this.layoutManager.config.settings.showCloseIcon;
+        return this._parent.config.isClosable && this.layoutManager.config.settings.showCloseIcon;
     }
 
     private _onPopoutClick(): void {
         if (this.layoutManager.config.settings.popoutWholeStack === true) {
-            this.parent.popout();
+            this._parent.popout();
         } else {
             this.activeContentItem.popout();
         }
@@ -422,37 +420,34 @@ export default class Header extends EventEmitter {
 
     /**
      * Invoked when the header's background is clicked (not it's tabs or controls)
-     *
-     * @param    {jQuery DOM event} event
-     *
+     * @param    {JQuery.Event} event
      * @returns {void}
      */
     private _onHeaderClick(event?: JQuery.Event): void {
-        if (event.target === this.element[0]) {
-            this.parent.select();
+        if (event.target === this._element[0]) {
+            this._parent.select();
         }
     }
 
     /**
      * Pushes the tabs to the tab dropdown if the available space is not sufficient
-     *
      * @returns {void}
      */
     private _updateTabSizes(showTabMenu?: boolean): void {
-        if (this.tabs.length === 0) {
+        if (this._tabs.length === 0) {
             return;
         }
 
         //Show the menu based on function argument
-        this.tabDropdownButton.element.toggle(showTabMenu === true);
+        this._tabDropdownButton.element.toggle(showTabMenu === true);
 
         let size = function (val: boolean) {
             return val ? 'width' : 'height';
         };
 
-        this.element.css(size(!this.parent.isSided), '');
-        this.element[size(this.parent.isSided)](this.layoutManager.config.dimensions.headerHeight);
-        let availableWidth = this.element.outerWidth() - this.controlsContainer.outerWidth() - this._tabControlOffset,
+        this._element.css(size(!this._parent.isSided), '');
+        this._element[size(this._parent.isSided)](this.layoutManager.config.dimensions.headerHeight);
+        let availableWidth = this._element.outerWidth() - this.controlsContainer.outerWidth() - this._tabControlOffset,
             cumulativeTabWidth = 0,
             visibleTabWidth = 0,
             tabElement,
@@ -463,17 +458,17 @@ export default class Header extends EventEmitter {
             tabOverlapAllowance = this.layoutManager.config.settings.tabOverlapAllowance,
             tabOverlapAllowanceExceeded = false;
         
-        const activeIndex = (this.activeContentItem ? this.tabs.indexOf((this.activeContentItem as Stack).tab) : 0);
-        let activeTab = this.tabs[activeIndex];
+        const activeIndex = (this.activeContentItem ? this._tabs.indexOf((this.activeContentItem as Stack).tab) : 0);
+        let activeTab = this._tabs[activeIndex];
 
-        if (this.parent.isSided) {
-            availableWidth = this.element.outerHeight() - this.controlsContainer.outerHeight() - this._tabControlOffset;
+        if (this._parent.isSided) {
+            availableWidth = this._element.outerHeight() - this.controlsContainer.outerHeight() - this._tabControlOffset;
         }
 
         this._lastVisibleTabIndex = -1;
 
-        for (let i = 0; i < this.tabs.length; i++) {
-            tabElement = this.tabs[i].element;
+        for (let i = 0; i < this._tabs.length; i++) {
+            tabElement = this._tabs[i].element;
 
             //Put the tab in the tabContainer so its true width can be checked
             this.tabsContainer.append(tabElement);
@@ -507,7 +502,7 @@ export default class Header extends EventEmitter {
                     if (overlap < tabOverlapAllowance) {
                         for (j = 0; j <= i; j++) {
                             marginLeft = (j !== activeIndex && j !== 0) ? '-' + overlap + 'px' : '';
-                            this.tabs[j].element.css({
+                            this._tabs[j].element.css({
                                 'z-index': i - j,
                                 'margin-left': marginLeft
                             });
@@ -534,7 +529,7 @@ export default class Header extends EventEmitter {
                             'z-index': 'auto',
                             'margin-left': ''
                         });
-                        this.tabDropdownContainer.append(tabElement);
+                        this._tabDropdownContainer.append(tabElement);
                     } else {
                         //We now know the tab menu must be shown, so we have to recalculate everything.
                         this._updateTabSizes(true);

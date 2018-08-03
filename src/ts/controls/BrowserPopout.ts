@@ -1,7 +1,7 @@
 import IBrowserPopout, { BrowserPopoutConfig } from '../interfaces/IBrowserPopout';
 import { ElementDimensions } from '../interfaces/Commons';
 
-import EventEmitter from '../utils/EventEmitter';
+import EventEmitter from '../events/EventEmitter';
 
 import GoldenLayoutError from '../errors/GoldenLayoutError';
 import LayoutManager from '../LayoutManager';

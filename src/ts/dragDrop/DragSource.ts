@@ -1,16 +1,29 @@
 import { Callback } from '../interfaces/Commons';
 
-import DragListener from '../utils/DragListener'
-import DragProxy from './DragProxy'
-
 import LayoutManager from '../LayoutManager';
-
-import ContentItem from '../items/OLDContentItem';
+import ContentItem from '../items/ContentItem';
 import { ItemConfigType } from '../config';
+
+import DragListener from './DragListener'
+import DragProxy from './DragProxy'
 
 import {
     isFunction
 } from '../utils/utils'
+
+/**
+ * Called initially and after every drag
+ * @returns {void}
+ */
+function _createDragListener(dragListener: DragListener): void {
+    if (this._dragListener !== null) {
+        this._dragListener.destroy();
+    }
+
+    this._dragListener = new DragListener(this._element);
+    this._dragListener.on('dragStart', this._onDragStart, this);
+    this._dragListener.on('dragStop', this._createDragListener, this);
+}
 
 /**
  * Allows for any DOM item to create a component on drag
@@ -40,28 +53,10 @@ export default class DragSource {
         this._createDragListener();
     }
 
-
-    /**
-     * Called initially and after every drag
-     *
-     * @returns {void}
-     */
-    private _createDragListener(): void {
-        if (this._dragListener !== null) {
-            this._dragListener.destroy();
-        }
-
-        this._dragListener = new DragListener(this._element);
-        this._dragListener.on('dragStart', this._onDragStart, this);
-        this._dragListener.on('dragStop', this._createDragListener, this);
-    }
-
     /**
      * Callback for the DragListener's dragStart event
-     *
      * @param   {number} x the x position of the mouse on dragStart
      * @param   {number} y the x position of the mouse on dragStart
-     *
      * @returns {void}
      */
     private _onDragStart(x: number, y: number): void {

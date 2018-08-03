@@ -48,9 +48,6 @@ export default class Stack extends ContentItem {
         return this._contentAreaDimensions;
     }
 
-    // element: JQuery<HTMLElement>;
-    // childElementContainer: JQuery;
-
     get headerConfig(): HeaderConfig {
         return this._headerConfig;
     }
@@ -123,8 +120,9 @@ export default class Stack extends ContentItem {
     }
 
     setSize(): void {
-        if (this.element.css('display') === 'none')
+        if (this.element.css('display') === 'none') {
             return;
+        }
 
         let isDocked = this.docker && this.docker.docked;
         let content = {
@@ -155,7 +153,8 @@ export default class Stack extends ContentItem {
     _$init(): void {
         let initialItem;
 
-        if (this._isInitialised === true) return;
+        if (this._isInitialised === true) 
+        return;
 
         //AbstractContentItem.prototype._$init.call(this);
         super._$init();
@@ -636,12 +635,12 @@ export default class Stack extends ContentItem {
         this._layoutManager.tabDropPlaceholder.remove();
     }
 
-    toggleMaximise(e?: JQuery.Event) {
+    toggleMaximise(event?: JQuery.Event) {
         if (!this._isMaximised) {
             this.dock(false);
         }
         //AbstractContentItem.prototype.toggleMaximise.call(this, e);
-        super.toggleMaximise(e);
+        super.toggleMaximise(event);
     }
 
     _setupHeaderPosition(): void {
@@ -657,8 +656,9 @@ export default class Stack extends ContentItem {
         }
         //this._sided = ['right', 'left'].indexOf(this._side) >= 0;
         this.element.removeClass('lm_left lm_right lm_bottom');
-        if (this._side)
+        if (this._side) {
             this.element.addClass('lm_' + this._side);
+        }
 
         if (this.element.find('.lm_header').length && this._childElementContainer) {
             //let headerPosition = ['right', 'bottom'].indexOf(this._side) >= 0 ? 'before' : 'after';

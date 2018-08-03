@@ -28,7 +28,6 @@ interface TypeToItem {
     'component': typeof Component;
 };
 
-
 const typeToItem: TypeToItem = {
     'column': fnBind(RowOrColumn, undefined, true),
     'row': fnBind(RowOrColumn, undefined, false),

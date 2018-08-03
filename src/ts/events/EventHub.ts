@@ -1,5 +1,5 @@
 import EventEmitter from './EventEmitter';
-import GoldenLayout from '../GoldenLayout';
+import LayoutManager from '../LayoutManager';
 
 
 import {
@@ -8,7 +8,7 @@ import {
 
 import {
     fnBind
-} from './utils';
+} from '../utils/utils';
 
 /**
  * An EventEmitter singleton that propagates events
@@ -24,7 +24,7 @@ import {
  */
 export default class EventHub extends EventEmitter {
 
-    private _layoutManager: GoldenLayout;
+    private _layoutManager: LayoutManager;
     private _dontPropagateToParent: boolean = null;
     private _childEventSource: any = null;
     private _boundOnEventFromChild: any;
@@ -33,7 +33,7 @@ export default class EventHub extends EventEmitter {
      * Constructor
      * @param layoutManager The Golden Layout Manager
      */
-    constructor(layoutManager: GoldenLayout) {
+    constructor(layoutManager: LayoutManager) {
 
         super();
 
@@ -125,7 +125,7 @@ export default class EventHub extends EventEmitter {
      */
     private _propagateToChildren(...args: any[]) {
         for (const iterator of this._layoutManager.openPopouts) {
-            const childGl = iterator.getGlInstance() as GoldenLayout;
+            const childGl = iterator.getGlInstance() as LayoutManager;
             if (childGl && childGl !== this._childEventSource) {
                 childGl.eventHub._$onEventFromParent(args);
             }

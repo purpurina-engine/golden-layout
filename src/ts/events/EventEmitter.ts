@@ -3,7 +3,7 @@ import IEventEmitter from '../interfaces/IEventEmitter';
 import { Callback } from '../interfaces/Commons';
 import {
     isFunction
-} from './utils'
+} from '../utils/utils'
 
 
 

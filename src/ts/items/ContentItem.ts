@@ -4,9 +4,10 @@ import IBrowserPopout from "../interfaces/IBrowserPopout";
 import { ContentItemType, ContentArea } from "../interfaces/Commons";
 import ItemConfigType from "../config/ItemConfigType";
 
-import EventEmitter, { ALL_EVENT } from "../utils/EventEmitter";
-import BubblingEvent from "../utils/BubblingEvent";
-import GoldenLayout from "../LayoutManager";
+import EventEmitter, { ALL_EVENT } from "../events/EventEmitter";
+import BubblingEvent from "../events/BubblingEvent";
+
+import LayoutManager from "../LayoutManager";
 
 import Root from "./Root";
 import Component from "./Component";
@@ -19,6 +20,7 @@ import {
 
 import { extendItemNode, createContentItems, callOnActiveComponents } from "../utils/itemFunctions";
 import Stack from "./Stack";
+import ITab from "../interfaces/ITab";
 
 
 type ContentItemEvent = 'stateChanged' | 'beforeItemDestroyed' | 'itemDestroyed' | 'itemCreated' | 'componentCreated' | 'rowCreated' | 'columnCreated' | 'stackCreated';
@@ -29,7 +31,7 @@ export default abstract class ContentItem extends EventEmitter implements IConte
 
     protected _id: string;
     protected _type: ContentItemType;
-    protected _layoutManager: GoldenLayout;
+    protected _layoutManager: LayoutManager;
 
     protected _parent: ContentItem;
     protected _contentItems: ContentItem[];
@@ -47,6 +49,10 @@ export default abstract class ContentItem extends EventEmitter implements IConte
 
     private _pendingEventPropagations: { [indexer: string]: any };
     private _throttledEvents: ContentItemEvent[];
+
+    private _tab: ITab;
+    
+
 
     public get config(): ItemConfigType {
         return this._config;
@@ -108,7 +114,14 @@ export default abstract class ContentItem extends EventEmitter implements IConte
         return this._element;
     }
 
-    constructor(layoutManager: GoldenLayout, config: ItemConfigType, parent: ContentItem) {
+    public get tab(): ITab {
+        return this._tab;
+    }
+    public set tab(value: ITab) {
+        this._tab = value;
+    }
+
+    constructor(layoutManager: LayoutManager, config: ItemConfigType, parent: ContentItem) {
 
         super();
 

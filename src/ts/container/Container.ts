@@ -4,11 +4,11 @@ import { ComponentConfig, ReactComponentConfig } from '../config/ItemConfigType'
 import Tab from '../controls/Tab';
 
 import ContentItem from '../items/ContentItem';
-import EventEmitter from '../utils/EventEmitter';
+import EventEmitter from '../events/EventEmitter';
 import GoldenLayout from '../LayoutManager';
 
 
-export default class Container extends EventEmitter  {
+export default class Container extends EventEmitter {
 
     private _config: ComponentConfig | ReactComponentConfig;
     private _element: JQuery;
