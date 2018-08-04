@@ -5,19 +5,17 @@ import { mergeAreas } from "../utils/utils";
 export default class DragSourceControl {
 
     private _area: ContentArea;
+    private _header: ContentArea;
+    fullArea: ContentArea = {};
+    private _hasArea: boolean = false;
 
     public get area(): ContentArea {
         return this._area;
     }
-
-    private _header: ContentArea;
-
+    
     public get header(): ContentArea {
         return this._header;
     }
-
-    fullArea: ContentArea = {};
-    private _hasArea: boolean = false;
 
     get hasArea(): boolean {
         return this._hasArea;

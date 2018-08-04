@@ -1,130 +1,145 @@
-import IContentItem from "../interfaces/IContentItem";
+import { LayoutConfig } from "../config";
+import { ContentArea } from "../interfaces/Commons";
 import ContentItem from "../items/ContentItem";
 import Stack from "../items/Stack";
-import Component from "../items/Component";
-import RowOrColumn from "../items/RowOrColumn";
 
 import LayoutManager from "../LayoutManager";
-import Root from "../items/Root";
-import ConfigurationError from "../errors/ConfigurationError";
 
-import { ItemConfigType, ComponentConfig, ItemConfig, LayoutConfig } from "../config";
+//type ItemCreationFunction = () => IContentItem;
 
-import {
-    fnBind,
-    objectKeys,
-    isFunction
-} from "./utils";
-
-
-export type ItemCreationFunction = () => IContentItem;
 
 interface ContainerCreation {
     jqueryContainer: JQuery;
     isFullPage: boolean;
 };
 
-interface TypeToItem {
-    [key: string]: any | typeof Component | typeof Stack;
-    'column': any;
-    'row': any;
-    'stack': typeof Stack;
-    'component': typeof Component;
-};
+import {
+    fnBind,
+    stripTags,
+    copy,
+} from "./utils";
 
-const typeToItem: TypeToItem = {
-    'column': fnBind(RowOrColumn, undefined, true),
-    'row': fnBind(RowOrColumn, undefined, false),
-    'stack': Stack,
-    'component': Component
+/**
+ * Returns a flattened array of all content items,
+ * regardles of level or type
+ * @private
+ * @returns {ContentItem[]}
+ */
+export function getAllContentItems(rootItem: ContentItem): ContentItem[] {
+    let allContentItems: ContentItem[] = [];
+
+    let addChildren = function (contentItem: ContentItem) {
+        allContentItems.push(contentItem);
+
+        if (contentItem.contentItems instanceof Array) {
+            for (let i = 0; i < contentItem.contentItems.length; i++) {
+                addChildren(contentItem.contentItems[i]);
+            }
+        }
+    };
+
+    addChildren(rootItem);
+
+    return allContentItems;
+}
+
+export function createRootItemAreas(rootArea: ContentArea, itemAreas: ContentArea[]): void {
+    const areaSize = 50;
+    let sides: any = {
+        y2: 'y1',//0,
+        x2: 'x1',
+        y1: 'y2',
+        x1: 'x2'
+    };
+
+    for (let side in sides) {
+        let area = copy({},rootArea);
+        area.side = side;
+        if (sides[side][1] === '2') {
+            area[side] = area[sides[side]] - areaSize;
+        } else {
+            //area[side] = areaSize;
+            area[ side ] = area[ sides [ side ] ] + areaSize;
+        }
+        area.surface = (area.x2 - area.x1) * (area.y2 - area.y1);
+        itemAreas.push(area);
+    }
+}
+
+export function computeHeaderArea(area: ContentArea): ContentArea {
+    let header: ContentArea = {};
+    copy(header, area);
+    copy(header, (area.contentItem as Stack).contentAreaDimensions.header.highlightArea);
+    header.surface = (header.x2 - header.x1) * (header.y2 - header.y1);
+    return header;
+}
+
+export function intersectsArea(x: number, y: number, smallestSurface: number, area: ContentArea): boolean {
+    if (
+        x > area.x1 &&
+        x < area.x2 &&
+        y > area.y1 &&
+        y < area.y2 &&
+        smallestSurface > area.surface) {
+        return true;
+    }
+
+    return false;
 }
 
 /**
- * Kicks of the initial, recursive creation chain
- * @param   {LayoutConfig} config GoldenLayout Config
+ * This method is used to get around sandboxed iframe restrictions.
+ * If 'allow-top-navigation' is not specified in the iframe's 'sandbox' attribute
+ * (as is the case with codepens) the parent window is forbidden from calling certain
+ * methods on the child, such as window.close() or setting document.location.href.
+ *
+ * This prevented GoldenLayout popouts from popping in in codepens. The fix is to call
+ * _$closeWindow on the child window's gl instance which (after a timeout to disconnect
+ * the invoking method from the close call) closes itself.
+ * @package
  * @returns {void}
  */
-export function createRootItem(config: LayoutConfig, containerElement: JQuery, layoutManager: LayoutManager): Root {
-
-    if (!(config.content instanceof Array)) {
-        let errorMsg: string;
-        if (config.content === undefined) {
-            errorMsg = 'Missing setting \'content\' on top level of configuration';
-        } else {
-            errorMsg = 'Configuration parameter \'content\' must be an array';
-        }
-
-        throw new ConfigurationError(errorMsg, config);
-    }
-
-    if (config.content.length > 1) {
-        throw new ConfigurationError('Top level content can\'t contain more then one element.', config);
-    }
-
-    const root = new Root(layoutManager,
-        {
-            type: 'root',
-            content: config.content
-        },
-        containerElement);
-
-    root.callDownwards('_$init');
-
-    if (config.maximisedItemId === '__glMaximised') {
-        root.getItemsById(config.maximisedItemId)[0].toggleMaximise();
-    }
-
-    return root;
+export function closeWindow(): void {
+    window.setTimeout(function () {
+        window.close();
+    }, 1);
 }
 
 /**
- * 
- * @param this Layout Manager
- * @param itemConfiguration item configuration
- * @param parent optional parent
- */
-export function createContentItem(layoutManager: LayoutManager, itemConfiguration?: ItemConfigType, parent?: ContentItem): ContentItem {
-    if (typeof itemConfiguration.type !== 'string') {
-        throw new ConfigurationError('Missing parameter \'type\'', itemConfiguration);
-    }
-
-    if (itemConfiguration.type === 'react-component') {
-        itemConfiguration.type = 'component';
-        (itemConfiguration as ComponentConfig).componentName = 'lm-react-component';
-    }
-
-    if (!typeToItem[itemConfiguration.type]) {
-        const typeErrorMsg = 'Unknown type \'' + itemConfiguration.type + '\'. ' +
-            'Valid types are ' + objectKeys(typeToItem).join(',');
-
-        throw new ConfigurationError(typeErrorMsg);
-    }
-
-    /**
-     * We add an additional stack around every component that's not within a stack anyways.
+     * This is executed when GoldenLayout detects that it is run
+     * within a previously opened popout window.
+     * @private
+     * @returns {void}
      */
-    if (
-        // If this is a component
-        itemConfiguration.type === 'component' &&
-        // and it's not already within a stack
-        !(parent instanceof Stack) &&
-        // and we have a parent
-        !!parent &&
-        // and it's not the topmost item in a new window
-        !(layoutManager.isSubWindow === true && parent instanceof Root)
-    ) {
-        const itemConfig: ItemConfig = {
-            type: 'stack',
-            width: itemConfiguration.width,
-            height: itemConfiguration.height,
-            content: [itemConfiguration]
-        };
+export function adjustToWindowMode(layoutManager: LayoutManager, config: LayoutConfig): JQuery {
+    let popInButton = $('<div class="lm_popin" title="' + config.labels.popin + '">' +
+        '<div class="lm_icon"></div>' +
+        '<div class="lm_bg"></div>' +
+        '</div>');
 
-        itemConfiguration = itemConfig;
-    }
+    popInButton.click(fnBind(function (this: LayoutManager) {
+        this.emit('popIn');
+    }, layoutManager));
 
-    const itemConstructor = typeToItem[itemConfiguration.type];
-    return new itemConstructor(layoutManager, itemConfiguration, parent);
+    document.title = stripTags(config.content[0].title);
+
+    $('head').append($('body link, body style, template, .gl_keep'));
+
+    const container = $('body')
+        .html('')
+        .css('visibility', 'visible')
+        .append(popInButton);
+
+    /*
+     * This seems a bit pointless, but actually causes a reflow/re-evaluation getting around
+     * slickgrid's "Cannot find stylesheet." bug in chrome
+     */
+    // let x = document.body.offsetHeight; // jshint ignore:line
+
+    // Expose this instance on the window object to allow the opening window to interact with it
+    window.__glInstance = layoutManager;
+
+    return container;
 }
 
 /**
@@ -137,31 +152,33 @@ export function createContentItem(layoutManager: LayoutManager, itemConfiguratio
  * @param parent Only necessary when passing in config
  * @returns New Content Item
  */
-export function normalizeContentItem(layoutManager: LayoutManager, contentItemOrConfig: ItemConfigType | ContentItem | ItemCreationFunction, parent?: ContentItem): ContentItem {
-    if (!contentItemOrConfig) {
-        throw new Error('No content item defined');
-    }
+// export function normalizeContentItem(layoutManager: LayoutManager, contentItemOrConfig: ItemConfigType | ContentItem | ItemCreationFunction, parent?: ContentItem): ContentItem {
+//     if (!contentItemOrConfig) {
+//         throw new Error('No content item defined');
+//     }
 
-    if (isFunction(contentItemOrConfig)) {
-        contentItemOrConfig = (<ItemCreationFunction>contentItemOrConfig)();
-    }
+//     if (isFunction(contentItemOrConfig)) {
+//         contentItemOrConfig = (<ItemCreationFunction>contentItemOrConfig)();
+//     }
 
-    if (contentItemOrConfig instanceof ContentItem) {
-        return contentItemOrConfig;
-    }
+//     if (contentItemOrConfig instanceof ContentItem) {
+//         return contentItemOrConfig;
+//     }
 
-    // if ($.isPlainObject(contentItemOrConfig)) {
-    const asConfig = (contentItemOrConfig as ItemConfigType);
-    if ($.isPlainObject(asConfig) && asConfig.type) {
-        //  && contentItemOrConfig.type
+//     // if ($.isPlainObject(contentItemOrConfig)) {
+//     const asConfig = (contentItemOrConfig as ItemConfigType);
+//     if ($.isPlainObject(asConfig) && asConfig.type) {
+//         //  && contentItemOrConfig.type
 
-        let newContentItem = createContentItem(layoutManager, asConfig, parent);
-        newContentItem.callDownwards('_$init');
-        return newContentItem;
-    } else {
-        throw new Error('Invalid contentItem');
-    }
-}
+//         let newContentItem = createContentItem(layoutManager, asConfig, parent);
+//         newContentItem.callDownwards('_$init');
+//         return newContentItem;
+//     } else {
+//         throw new Error('Invalid contentItem');
+//     }
+// }
+
+
 
 /**
  * Determines what element the layout will be created in
@@ -173,7 +190,8 @@ export function setLayoutContainer(container: any): ContainerCreation {
     let isFullPage: boolean = false;
 
     if (container !== undefined) {
-        if (container instanceof HTMLElement) {
+        const can = typeof container === 'string' || (container instanceof HTMLElement);
+        if (can) {
             jqueryContainer = $(container);
         } else {
             jqueryContainer = container;

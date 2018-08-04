@@ -1,6 +1,8 @@
+
+
 // helper file for webpack build system
 // whatever is imported/exported here will be included in the build
-//
+export { default as Stack } from './items/Stack';
 // Layout
 export { default } from './LayoutManager';
 //
@@ -16,6 +18,7 @@ export {
 } from './config';
 
 
+export { default as ContentItem} from './items/ContentItem';
 // container
 export { default as Container } from './container/Container';
 //
@@ -26,10 +29,10 @@ export { default as HeaderButton } from './controls/HeaderButton';
 export { default as Tab } from './controls/Tab';
 //
 // items
-export { default as Component } from './items/Component';
-export { default as Root } from './items/Root';
-export { default as RowOrColumn } from './items/RowOrColumn';
-export { default as Stack } from './items/Stack';
+// export { default as Component } from './items/Component';
+// export { default as Root } from './items/Root';
+// export { default as RowOrColumn } from './items/RowOrColumn';
+// 
 //
 // utils
 export { default as BubblingEvent } from './events/BubblingEvent';

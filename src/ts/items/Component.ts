@@ -1,10 +1,7 @@
-
-import { ComponentConfig } from '../config/ItemConfigType';
-import Container from '../container/Container';
+import ILayoutManagerInternal from '../interfaces/ILayoutManagerInternal';
 import ContentItem from './ContentItem';
-import LayoutManager from '../LayoutManager';
-import IContentItem from '../interfaces/IContentItem';
-
+import Container from '../container/Container';
+import { ComponentConfig } from '../config';
 
 export default class Component extends ContentItem {
 
@@ -30,12 +27,12 @@ export default class Component extends ContentItem {
         this._container = value;
     }
 
-    constructor(layoutManager: LayoutManager, config: ComponentConfig, parent: ContentItem) {
+    constructor(layoutManager: ILayoutManagerInternal, config: ComponentConfig, parent: ContentItem) {
 
         super(layoutManager, config, parent);
 
-        const ComponentConstructor = layoutManager.getComponent(config.componentName),
-            componentConfig = $.extend(true, {}, config.componentState || {});
+        const ComponentConstructor = layoutManager.getComponent(config.componentName);
+        const componentConfig = $.extend(true, {}, config.componentState || {});
 
         componentConfig.componentName = config.componentName;
         this._componentName = config.componentName;
@@ -45,63 +42,62 @@ export default class Component extends ContentItem {
         }
 
         this._isComponent = true;
-        this._container = new Container(config, this, layoutManager);
+        this._container = new Container(layoutManager, config, this);
         this._instance = new ComponentConstructor(this.container, componentConfig);
         this._element = this.container.element;
     }
 
     close(): void {
-        this.parent.removeChild(this);
+        this._parent.removeChild(this);
     }
 
     setSize(): void {
-        if (this.element.css('display') !== 'none') {
+        if (this._element.css('display') !== 'none') {
             // Do not update size of hidden components to prevent unwanted reflows
-            this.container._$setSize(this.element.width(), this.element.height());
+            this._container._$setSize(this.element.width(), this.element.height());
         }
     }
 
     _$init() : void {
         //AbstractContentItem.prototype._$init.call(this);
         super._$init();
-        this.container.emit('open');
-        
+        this._container.emit('open');
+
     }
 
     _$hide(): void {
-        this.container.hide();
+        this._container.hide();
         super._$hide();
         //AbstractContentItem.prototype._$hide.call(this);
     }
 
     _$show(): void {
-        this.container.show();
-        
+        this._container.show();
+
         //AbstractContentItem.prototype._$show.call(this);
         super._$show();
     }
 
-    _$shown(): void {
-        // TODO
-        // this.container.shown();
-        // AbstractContentItem.prototype._$shown.call(this);
-    }
+    // _$shown(): void {
+    //     // TODO
+    //     // this.container.shown();
+    //     // AbstractContentItem.prototype._$shown.call(this);
+    // }
 
     _$destroy(): void {
-        this.container.emit('destroy', this);
+        this._container.emit('destroy', this);
         //AbstractContentItem.prototype._$destroy.call(this);
         super._$destroy();
     }
 
     /**
      * Dragging onto a component directly is not an option
-     *
      * @returns null
      */
-    _$getArea(): null {
+    getArea(): null {
         return null;
     }
 
-    setActiveContentItem(_contentItem: IContentItem): void {}
-    getActiveContentItem():IContentItem {return undefined;}
+    setActiveContentItem(_contentItem: ContentItem): void {}
+    getActiveContentItem():ContentItem {return null;}
 }

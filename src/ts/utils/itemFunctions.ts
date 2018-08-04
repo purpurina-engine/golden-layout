@@ -1,12 +1,17 @@
-import ItemConfigType, { ItemConfig } from "../config/ItemConfigType";
+import IContentItem from "../interfaces/IContentItem";
+import ILayoutManagerInternal from "../interfaces/ILayoutManagerInternal";
+import IStack from "../interfaces/IStack";
+import ItemConfigType from "../config/ItemConfigType";
 import itemDefaultConfig from "../config/itemDefaultConfig";
 import ConfigurationError from "../errors/ConfigurationError";
-import IContentItem from "../interfaces/IContentItem";
-import LayoutManager from "../LayoutManager";
+
 import Component from "../items/Component";
-import Stack from "../items/Stack";
-import { getUniqueId } from "./utils";
+
 import ConfigMinifier from "./ConfigMinifier";
+import { getUniqueId } from "./utils";
+import ContentItem from "../items/ContentItem";
+import IRowOrColumn from "../interfaces/IRowOrColumn";
+
 
 
 /**
@@ -31,22 +36,24 @@ export function extendItemNode(config: ItemConfigType | any): ItemConfigType {
  * @param   {ItemConfigType} config
  * @returns {void}
  */
-export function createContentItems(config: ItemConfigType, layoutManager: LayoutManager): IContentItem[] {
+export function createContentItems(config: ItemConfigType, parent: ContentItem, layoutManager: ILayoutManagerInternal): ContentItem[] {
     if (!(config.content instanceof Array)) {
         throw new ConfigurationError('content must be an Array', config);
     }
 
-    let items: IContentItem[] = [];
+    let items: ContentItem[] = [];
 
-    for (let i = 0; i < config.content.length; i++) {
-        const contentItem = layoutManager.createContentItem(config.content[i], layoutManager);
+    for (const iterator of config.content) {
+        const contentItem = layoutManager.createContentItem(iterator, parent) as ContentItem;
         items.push(contentItem);
     }
+
+
 
     return items;
 }
 
-export function callOnActiveComponents(methodName: 'show' | 'hide', stacks: Stack[]): void {
+export function callOnActiveComponents(methodName: 'show' | 'hide', stacks: ContentItem[]): void {
     //let stacks = this.getItemsByType('stack') as Stack[];
     for (let i = 0; i < stacks.length; i++) {
         const activeContentItem = stacks[i].getActiveContentItem();
@@ -90,20 +97,10 @@ export function createUrl(itemConfig: ItemConfigType): string {
     }
 }
 
-/**
- * This method is used to get around sandboxed iframe restrictions.
- * If 'allow-top-navigation' is not specified in the iframe's 'sandbox' attribute
- * (as is the case with codepens) the parent window is forbidden from calling certain
- * methods on the child, such as window.close() or setting document.location.href.
- *
- * This prevented GoldenLayout popouts from popping in in codepens. The fix is to call
- * _$closeWindow on the child window's gl instance which (after a timeout to disconnect
- * the invoking method from the close call) closes itself.
- * @package
- * @returns {void}
- */
-export function closeWindow(): void {
-    window.setTimeout(function () {
-        window.close();
-    }, 1);
+export function isStack(item: IContentItem | IStack): item is IStack {
+    return (item.type === 'stack' || item.isStack);
+}
+
+export function isRowOrColumn(item: IContentItem | IRowOrColumn): item is IRowOrColumn {
+    return (item.type === 'row' || item.type === 'column' || item.isColumn || item.isRow);
 }

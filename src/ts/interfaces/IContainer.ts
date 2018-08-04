@@ -1,7 +1,7 @@
 import IEventEmitter from "./IEventEmitter";
-import GoldenLayout from "../GoldenLayout";
 import IContentItem from "./IContentItem";
 import ITab from "./ITab";
+import ILayoutManager from "./ILayoutManager";
 
 export default interface IContainer extends IEventEmitter {
     /**
@@ -33,7 +33,7 @@ export default interface IContainer extends IEventEmitter {
     /*
      * A reference to the GoldenLayout instance this container belongs to
      */
-    readonly layoutManager: GoldenLayout;
+    readonly layoutManager: ILayoutManager;
 
     /**
      * True if the item is currently hidden

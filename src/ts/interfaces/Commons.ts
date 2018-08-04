@@ -1,4 +1,4 @@
-import IContentItem from "./IContentItem";
+import ContentItem from "../items/ContentItem";
 
 export type Dimension = 'height' | 'width';
 export type HeaderPosition = 'top' | 'bottom' | 'left' | 'right';
@@ -24,9 +24,9 @@ export interface Area {
 }
 
 export interface ContentArea extends Area {
-    [key: string]: number | IContentItem | string;
+    [key: string]: number | ContentItem | string;
     surface?: number;
-    contentItem?: IContentItem;
+    contentItem?: ContentItem;
     side?: string;
 }
 

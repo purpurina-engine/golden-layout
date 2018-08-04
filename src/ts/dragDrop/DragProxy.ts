@@ -1,8 +1,7 @@
+import ILayoutManagerInternal from '../interfaces/ILayoutManagerInternal';
 import { ContentArea } from '../interfaces/Commons';
 import EventEmitter from '../events/EventEmitter';
 import DragListener from './DragListener';
-
-import LayoutManager from '../LayoutManager';
 import ContentItem from '../items/ContentItem';
 import Stack from '../items/Stack';
 
@@ -11,6 +10,8 @@ import {
     stripTags,
     getTouchEvent
 } from '../utils/utils';
+
+
 
 // const _template = '<div class="lm_dragProxy">' +
 //     '<div class="lm_header">' +
@@ -60,12 +61,11 @@ function buildTemplate(_showPreview: boolean = true): string {
  *
  * @class
  * @private
- *
  */
 export default class DragProxy extends EventEmitter {
 
     private _dragListener: DragListener;
-    private _layoutManager: LayoutManager;
+    private _layoutManager: ILayoutManagerInternal;
     private _contentItem: ContentItem;
     private _originalParent: ContentItem;
 
@@ -80,12 +80,17 @@ export default class DragProxy extends EventEmitter {
     private _width: number;
 
     private _height: number;
-
-
     private showPreview: boolean;
+    private _element: JQuery;
+    private _childElementContainer: JQuery;
 
-    element: JQuery;
-    childElementContainer: JQuery;
+    public get element(): JQuery {
+        return this._element;
+    }
+
+    public get childElementContainer(): JQuery {
+        return this._childElementContainer;
+    }
 
     public get width(): number {
         return this._width;
@@ -105,7 +110,7 @@ export default class DragProxy extends EventEmitter {
      * @param contentItem 
      * @param originalParent 
      */
-    constructor(x: number, y: number, dragListener: DragListener, layoutManager: LayoutManager, contentItem: ContentItem, originalParent: ContentItem) {
+    constructor(x: number, y: number, dragListener: DragListener, layoutManager: ILayoutManagerInternal, contentItem: ContentItem, originalParent: ContentItem) {
 
         super();
 
@@ -124,31 +129,31 @@ export default class DragProxy extends EventEmitter {
         this._dragListener.on('drag', this._onDrag, this);
         this._dragListener.on('dragStop', this._onDrop, this);
 
-        this.element = $(buildTemplate(this.showPreview));
+        this._element = $(buildTemplate(this.showPreview));
 
         if (originalParent) {
             const stack = originalParent as Stack;
             if (stack.side) {
                 this._sided = stack.isSided;
-                this.element.addClass('lm_' + stack.side);
+                this._element.addClass('lm_' + stack.side);
                 if (['right', 'bottom'].indexOf(stack.side) >= 0)
-                    this.element.find('.lm_content').after(this.element.find('.lm_header'));
+                    this._element.find('.lm_content').after(this._element.find('.lm_header'));
             }
         }
-        this.element.css({
+        this._element.css({
             left: x,
             top: y
         });
-        this.element.find('.lm_tab').attr('title', stripTags(this._contentItem.config.title));
-        this.element.find('.lm_title').html(this._contentItem.config.title);
+        this._element.find('.lm_tab').attr('title', stripTags(this._contentItem.config.title));
+        this._element.find('.lm_title').html(this._contentItem.config.title);
 
-        this.childElementContainer = this.element.find('.lm_content');
+        this._childElementContainer = this._element.find('.lm_content');
 
         /**
          * Should show preview? Attach to drag proxy preview.
          */
         if (showPreview) {
-            this.childElementContainer.append(contentItem.element);
+            this._childElementContainer.append(contentItem.element);
         }
 
         /**
@@ -160,7 +165,7 @@ export default class DragProxy extends EventEmitter {
 
         this._setDimensions();
 
-        $(document.body).append(this.element);
+        $(document.body).append(this._element);
 
         const offset = this._layoutManager.container.offset();
 
@@ -168,8 +173,8 @@ export default class DragProxy extends EventEmitter {
         this._minY = offset.top;
         this._maxX = this._layoutManager.container.width() + this._minX;
         this._maxY = this._layoutManager.container.height() + this._minY;
-        this._width = this.element.width();
-        this._height = this.element.height();
+        this._width = this._element.width();
+        this._height = this._element.height();
 
         this._setDropPosition(x, y);
     }
@@ -190,9 +195,9 @@ export default class DragProxy extends EventEmitter {
     private _onDrag(_offsetX: number, _offsetY: number, event: JQuery.Event): void {
         const vec = getTouchEvent(event)
 
-        const x = vec.x,
-            y = vec.y,
-            isWithinContainer = x > this._minX && x < this._maxX && y > this._minY && y < this._maxY;
+        const x = vec.x;
+        const y = vec.y;
+        const isWithinContainer = x > this._minX && x < this._maxX && y > this._minY && y < this._maxY;
 
         if (!isWithinContainer && this._layoutManager.config.settings.constrainDragToContainer === true) {
             return;
@@ -212,11 +217,11 @@ export default class DragProxy extends EventEmitter {
      * @returns {void}
      */
     private _setDropPosition(x: number, y: number): void {
-        this.element.css({
+        this._element.css({
             left: x,
             top: y
         });
-        this._area = this._layoutManager._$getArea(x, y);
+        this._area = this._layoutManager.getAreaAt(x, y);
 
         if (this._area !== null) {
             this._lastValidArea = this._area;
@@ -265,7 +270,7 @@ export default class DragProxy extends EventEmitter {
             this._contentItem._$destroy();
         }
 
-        this.element.remove();
+        this._element.remove();
 
         this._layoutManager.emit('itemDropped', this._contentItem);
     }
@@ -279,8 +284,9 @@ export default class DragProxy extends EventEmitter {
      */
     private _undisplayTree(detach: boolean): void {
 
-        if (detach === false)
+        if (detach === false) {
             return;
+        }
         /**
          * parent is null if the drag had been initiated by a external drag source
          */
@@ -306,7 +312,7 @@ export default class DragProxy extends EventEmitter {
         }
 
         // REVIEW
-        this._contentItem._$setParent(this);
+        //this._contentItem._$setParent(this);
     }
 
     /**
@@ -321,14 +327,12 @@ export default class DragProxy extends EventEmitter {
         let width = dimensions.dragProxyWidth;
         let height = dimensions.dragProxyHeight;
 
-        
-
-        this.element.width(width);
-        this.element.height(height);
-        //width -= (this._sided ? dimensions.headerHeight : 0);
-        //height -= (!this._sided ? dimensions.headerHeight : 0);
-        this.childElementContainer.width(width);
-        this.childElementContainer.height(height);
+        this._element.width(width);
+        this._element.height(height);
+        width -= (this._sided ? dimensions.headerHeight : 0);
+        height -= (!this._sided ? dimensions.headerHeight : 0);
+        this._childElementContainer.width(width);
+        this._childElementContainer.height(height);
         this._contentItem.element.width(width);
         this._contentItem.element.height(height);
         this._contentItem.callDownwards('_$show');

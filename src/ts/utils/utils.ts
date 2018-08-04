@@ -1,10 +1,4 @@
 import { ContentArea, Callback, BoundFunction, Vector } from '../interfaces/Commons';
-import ItemConfigType from '../config/ItemConfigType';
-import ContentItem from '../items/OLDContentItem';
-
-export function NOOP(): void {
-    
-}
 
 export function getTouchEvent(event: JQuery.Event): Vector {
     // if($.zepto)
@@ -103,7 +97,7 @@ export function copy(target: any, source: any): any {
  *
  * @returns {void}
  */
-export function animFrame(fn: Callback) {
+export function animFrame(fn: Callback): void {
     return (window.requestAnimationFrame ||
         window.webkitRequestAnimationFrame ||
         function (callback) {
@@ -138,7 +132,7 @@ export function isFunction(obj: any | Callback): boolean {
     }
 
 }
-
+//type t = ReturnType<typeof isFunction>;
 // export let isFunction = (typeof /./ != 'function' && typeof Int8Array != 'object') ?
 //     function isFunction(obj) {
 //         return typeof obj == 'function' || false;
@@ -146,12 +140,77 @@ export function isFunction(obj: any | Callback): boolean {
 //         return toString.call(obj) === '[object Function]';
 //     }
 
+// type FunctionType<T extends Callback> = T;
 
 
-export function fnBind(fn: Callback | any, context?: object, ...boundArgs: any[]): BoundFunction | any {
+//type FirstArgument<T extends Callback> = T extends (arg1: infer U, ...args: any[]) => any ? U : any;
+//type SecondArgument<T> = T extends (arg1: any, arg2: infer U, ...args: any[]) => any ? U : any;
+
+//type TypeName<T> = T extends any ? T : any;
+
+
+//type FunctionArguments<T extends Callback> = T extends (arg1: infer U, ...args: any[]) => any ? TypeName<U> : TypeName<any[]>;
+// type FunctionArguments<T> = 
+
+// T extends (arg1?: infer U) => any ? U extends any ? U : any :
+// T extends (arg1: infer U) => any ? U :
+// T extends (arg1: infer U,arg2: infer V) => any ? [U,V] :
+// T extends (arg1: infer U,arg2: infer V, arg3: infer Y) => any ? [U,V,Y] :
+// T extends (arg1: infer U,arg2: infer V, arg3?: infer Y) => any ? [U,V,Y] :
+// T extends (arg1: infer U,arg2?: infer V, arg3?: infer Y) => any ? [U]|[U,V]|[U,V,Y] :
+
+// T extends (arg1: infer U,arg2: infer V, arg3: infer Y) => any ? [U,V,Y] :
+
+
+
+// function bindFunction<
+//     T extends Callback,
+//     C extends object,
+//     >
+//     (fn: FunctionType<T>, context?: C): FunctionBindedType<T> {
+//     return fn.bind.apply(context);
+// }
+
+// function twoParams(a: number, b: number) {
+//     return a + b;
+// }
+
+// class Test {
+//     test() {
+//         const t = bindFunction(this.test2, this);
+       
+        
+//     }
+
+//     test2(): boolean {
+//         return true;
+//     }
+// }
+
+
+//type FirstArgument<T> = T extends (arg1: infer U, ...args: any[]) => any ? U : any;
+//type FunctionPropertyNames<T> = { [K in keyof T]: T[K] extends Function ? K : never }[keyof T];
+// type ClassConstructor<T> = {
+//     //new(): T;
+//     new(...args:any[]):T;
+// }
+
+// interface BindedConstructor<T> extends Function {
+//     //(...args: any[]): ReturnType<T>;
+//     new(...args:any[]):T;
+//     //bind: (this: T, thisArg: any, ...argArray: any[]) => FunctionBindedType<T>;
+// }
+
+// export function bindConstructor<T>(classConstructor:ClassConstructor<T>, ...boundArgs: any[]):BindedConstructor<T> {
+//     return classConstructor.bind.apply(classConstructor, boundArgs);
+// }
+
+
+
+export function fnBind(fn: Callback|any, context?: object, ...boundArgs: any[]): BoundFunction | any {
 
     if (Function.prototype.bind !== undefined) {
-        //return fn.bind(context, boundArgs);
+        //return fn.bind.apply(context, boundArgs);
         return Function.prototype.bind.apply(fn, [context].concat(boundArgs));
     }
 
@@ -263,6 +322,6 @@ export function isHTMLElement(element: Element | HTMLElement | JQuery): element 
     return (element.scroll !== undefined);
 }
 
-export function isContentItemConfig(component: ContentItem | ItemConfigType): component is ItemConfigType {
-    return ((<ItemConfigType>component).type !== undefined)
-}
+// export function isContentItemConfig(component: ContentItem | ItemConfigType): component is ItemConfigType {
+//     return ((<ItemConfigType>component).type !== undefined)
+// }

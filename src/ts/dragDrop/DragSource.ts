@@ -1,6 +1,5 @@
+import ILayoutManagerInternal from '../interfaces/ILayoutManagerInternal';
 import { Callback } from '../interfaces/Commons';
-
-import LayoutManager from '../LayoutManager';
 import ContentItem from '../items/ContentItem';
 import { ItemConfigType } from '../config';
 
@@ -10,10 +9,6 @@ import DragProxy from './DragProxy'
 import {
     isFunction
 } from '../utils/utils'
-import { normalizeContentItem } from '../utils/layoutFunctions';
-
-
-
 
 /**
  * Allows for any DOM item to create a component on drag
@@ -25,7 +20,7 @@ export default class DragSource {
 
     private _element: JQuery;
     private _itemConfig: ItemConfigType | Callback;
-    private _layoutManager: LayoutManager;
+    private _layoutManager: ILayoutManagerInternal;
     private _dragListener: DragListener;
 
     /**
@@ -34,7 +29,7 @@ export default class DragSource {
      * @param itemConfig The configuration for the contentItem that will be created
      * @param layoutManager The layout manager
      */
-    constructor(element: JQuery, itemConfig: ItemConfigType | Callback, layoutManager: LayoutManager) {
+    constructor(element: JQuery, itemConfig: ItemConfigType | Callback, layoutManager: ILayoutManagerInternal) {
         this._element = element;
         this._itemConfig = itemConfig;
         this._layoutManager = layoutManager;
@@ -66,12 +61,12 @@ export default class DragSource {
     private onDragStart(x: number, y: number): void {
         let itemConfig: ContentItem;
 
-        if (isFunction(this._itemConfig)) {
-            itemConfig = (this._itemConfig as Callback)();
-        }
+        // if (isFunction(this._itemConfig)) {
+        //     itemConfig = (this._itemConfig as Callback)();
+        // }
 
-        const contentItem = normalizeContentItem(this._layoutManager, $.extend(true, {}, itemConfig));
-        const dragProxy = new DragProxy(x, y, this._dragListener, this._layoutManager, contentItem, null);
+        const contentItem = this._layoutManager._$normalizeContentItem($.extend(true, {}, itemConfig));
+        const dragProxy = new DragProxy(x, y, this._dragListener, this._layoutManager, contentItem as ContentItem, null);
 
         this._layoutManager.transitionIndicator.transitionElements(this._element, dragProxy.element);
     }

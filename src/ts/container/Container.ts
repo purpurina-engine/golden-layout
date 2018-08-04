@@ -1,3 +1,5 @@
+import IContainer from '../interfaces/IContainer';
+import ILayoutManager from '../interfaces/ILayoutManager';
 import { Dimension } from '../interfaces/Commons';
 
 import { ComponentConfig, ReactComponentConfig } from '../config/ItemConfigType';
@@ -5,20 +7,20 @@ import Tab from '../controls/Tab';
 
 import ContentItem from '../items/ContentItem';
 import EventEmitter from '../events/EventEmitter';
-import GoldenLayout from '../LayoutManager';
 
 
-export default class Container extends EventEmitter {
+
+
+export default class Container extends EventEmitter implements IContainer {
 
     private _config: ComponentConfig | ReactComponentConfig;
     private _element: JQuery;
     private _contentElement: JQuery<HTMLElement>;
-    private _layoutManager: GoldenLayout;
+    private _layoutManager: ILayoutManager;
     private _isHidden: boolean;
     private _height: number;
     private _width: number;
     private _parent: ContentItem;
-
 
     /**
      * A reference to the tab that controls this container. Will initially be null
@@ -42,7 +44,7 @@ export default class Container extends EventEmitter {
         return this._element;
     }
 
-    get layoutManager(): GoldenLayout {
+    get layoutManager(): ILayoutManager {
         return this._layoutManager;
     }
 
@@ -71,7 +73,7 @@ export default class Container extends EventEmitter {
         return this._isHidden;
     }
 
-    constructor(config: ComponentConfig, parent: ContentItem, layoutManager: GoldenLayout) {
+    constructor(layoutManager: ILayoutManager, config: ComponentConfig, parent: ContentItem) {
 
         super();
 

@@ -12,7 +12,7 @@ import Peteca from './images/peteca.png';
 console.log(__dirname);
 
 const GoldenLayout = function trick_preprocessor_and_webpack_hmr (a) {
-    return require('../ts/GoldenLayout.ts').default;
+    return require('../ts/LayoutManager.ts').default;
   // if(env.ES6){
   //   return require('js/LayoutManager').default // if ES6 exists 'js/' is alias for 'js_es6/'
   // } else {
@@ -101,6 +101,7 @@ window.addEventListener('load', () => {
 
     gl.init();
 
+    console.log(gl)
 
     function createMiniConfig(){
         return {

@@ -1,11 +1,11 @@
-import ILayoutManager from "./interfaces/ILayoutManager";
+import ILayoutManagerInternal from "./interfaces/ILayoutManagerInternal";
 import ContentItem from "./items/ContentItem";
 import { ContentArea, BoundFunction, ElementDimensions } from "./interfaces/Commons";
-import IContentItem from "./interfaces/IContentItem";
+
 
 import LayoutConfig from "./config/LayoutConfig";
 import defaultConfig from "./config/defaultConfig";
-import ItemConfigType from "./config/ItemConfigType";
+import ItemConfigType, { ComponentConfig, ItemConfig } from "./config/ItemConfigType";
 
 import DropTargetIndicator from "./dragDrop/DropTargetIndicator";
 import TransitionIndicator from "./controls/TransitionIndicator";
@@ -24,21 +24,31 @@ import GoldenLayoutError from "./errors/GoldenLayoutError";
 import {
     fnBind,
     getQueryStringParam,
-    stripTags,
     copy,
+    objectKeys,
 } from "./utils/utils";
 
 import {
     findAllStackContainers,
     addChildContentItemsToContainer,
     setLayoutContainer,
-    createContentItem,
-    createRootItem
+    adjustToWindowMode,
+    getAllContentItems,
+    createRootItemAreas,
+    computeHeaderArea,
+    intersectsArea
 } from "./utils/layoutFunctions";
+import { createRootItem, typeToItem } from "./utils/itemCreation";
+import Stack from "./items/Stack";
+import Root from "./items/Root";
+import ConfigurationError from "./errors/ConfigurationError";
+
+
 
 interface ComponentMap {
     [key: string]: any;
 }
+
 
 /**
  * The main class that will be exposed as GoldenLayout.
@@ -46,7 +56,7 @@ interface ComponentMap {
  * @public
  * @class
  */
-export default class LayoutManager extends EventEmitter implements ILayoutManager {
+export default class LayoutManager extends EventEmitter implements ILayoutManagerInternal {
 
     private _config: LayoutConfig;
     private _width: number;
@@ -211,17 +221,17 @@ export default class LayoutManager extends EventEmitter implements ILayoutManage
         }
 
         if (this._isSubWindow === true) {
-            this._adjustToWindowMode();
+            this._container = adjustToWindowMode(this, this._config);
         }
 
         /**
          * Create or binds jquery container to layout.
          */
-        const creation = setLayoutContainer(this.container);
+        const creation = setLayoutContainer(this._container);
         this._container = creation.jqueryContainer;
         this._isFullPage = creation.isFullPage;
 
-        this.dropTargetIndicator = new DropTargetIndicator(this.container);
+        this.dropTargetIndicator = new DropTargetIndicator(this._container);
         this.transitionIndicator = new TransitionIndicator();
         this.updateSize();
         this._root = createRootItem(this.config, this._container, this);
@@ -288,9 +298,56 @@ export default class LayoutManager extends EventEmitter implements ILayoutManage
         this.emit('selectionChanged', contentItem);
     }
 
-    createContentItem = createContentItem.bind(this);
+    /**
+     * 
+     * @param itemConfiguration item configuration
+     * @param parent optional parent
+     */
+    createContentItem(itemConfiguration?: ItemConfigType, parent?: ContentItem): ContentItem {
+        if (typeof itemConfiguration.type !== 'string') {
+            throw new ConfigurationError('Missing parameter \'type\'', itemConfiguration);
+        }
 
-    createPopout(configOrContentItem: ItemConfigType | IContentItem,
+        if (itemConfiguration.type === 'react-component') {
+            itemConfiguration.type = 'component';
+            (itemConfiguration as ComponentConfig).componentName = 'lm-react-component';
+        }
+
+        if (!typeToItem[itemConfiguration.type]) {
+            const typeErrorMsg = 'Unknown type \'' + itemConfiguration.type + '\'. ' +
+                'Valid types are ' + objectKeys(typeToItem).join(',');
+
+            throw new ConfigurationError(typeErrorMsg);
+        }
+
+        /**
+         * We add an additional stack around every component that's not within a stack anyways.
+         */
+        if (
+            // If this is a component
+            itemConfiguration.type === 'component' &&
+            // and it's not already within a stack
+            !(parent instanceof Stack) &&
+            // and we have a parent
+            !!parent &&
+            // and it's not the topmost item in a new window
+            !(this._isSubWindow === true && parent instanceof Root)
+        ) {
+            const itemConfig: ItemConfig = {
+                type: 'stack',
+                width: itemConfiguration.width,
+                height: itemConfiguration.height,
+                content: [itemConfiguration]
+            };
+
+            itemConfiguration = itemConfig;
+        }
+
+        const itemConstructor = typeToItem[itemConfiguration.type];
+        return new itemConstructor(this, itemConfiguration, parent);
+    }
+
+    createPopout(configOrContentItem: ItemConfigType | ContentItem,
         dimensions: ElementDimensions, parentId?: string,
         indexInParent?: number): void {
         throw new Error("Method not implemented.");
@@ -394,6 +451,31 @@ export default class LayoutManager extends EventEmitter implements ILayoutManage
         this._dragSources = [];
     }
 
+    /**
+     * Get the minimal area of the given position
+     * @param x X position
+     * @param y Y position
+     */
+    getAreaAt(x: number, y: number): ContentArea {
+        let smallestSurface = Infinity,
+            matchingArea = null;
+
+        if (this._dragSourceArea.hasArea === true) {
+            if (intersectsArea(x, y, smallestSurface, this._dragSourceArea.fullArea)) {
+                smallestSurface = this._dragSourceArea.fullArea.surface;
+                return this._dragSourceArea.fullArea;
+            }
+        }
+
+        for (const area of this._itemAreas) {
+            if (intersectsArea(x, y, smallestSurface, area)) {
+                smallestSurface = area.surface;
+                matchingArea = area;
+            }
+        }
+        return matchingArea;
+    }
+
     /* **************************
      * PRIVATE and PROTECTED
      ************************** */
@@ -452,6 +534,96 @@ export default class LayoutManager extends EventEmitter implements ILayoutManage
         if (this._openPopouts.length !== openPopouts.length) {
             this.emit('stateChanged');
             this._openPopouts = openPopouts;
+        }
+    }
+
+    _$calculateItemAreas(ignoreContentItem: ContentItem = null): void {
+
+        const allContentItems = getAllContentItems(this._root);
+        let areas: ContentArea[] = [];
+        //this._itemAreas = [];
+
+        /**
+         * If the last item is dragged out, highlight the entire container size to
+         * allow to re-drop it. allContentItems[ 0 ] === this.root at this point
+         *
+         * Don't include root into the possible drop areas though otherwise since it
+         * will used for every gap in the layout, e.g. splitters
+         */
+        const rootArea = this.root.getArea();
+
+        if (allContentItems.length === 1) {
+            areas.push(rootArea);
+            this._itemAreas = areas;
+            return;
+        }
+
+        createRootItemAreas(rootArea, areas);
+
+        // let countAreas = 0;
+        // let myArea = null,
+        //     myHeader = null;
+
+        for (const current of allContentItems) {
+            if (!(current.isStack)) {
+                continue;
+            }
+
+            const area = current.getArea();
+
+            if (area === null) {
+                continue;
+            }
+
+            //countAreas++;
+
+            // if (ignoreContentItem === current) {
+            //     myArea = area;
+            //     myHeader = this._$computeHeaderArea(area);
+            // } else {
+            if (area instanceof Array) {
+                areas = areas.concat(area);
+            } else {
+                areas.push(area);
+                areas.push(computeHeaderArea(area));
+            }
+
+        }
+        this._dragSourceArea.clear();
+
+        // if (countAreas === 1 && ignoreContentItem !== null) {
+        //     areas.push(myArea);
+        //     areas.push(this._$computeHeaderArea(myHeader));
+        // } else {
+        //     this._dragSourceArea.set(myArea, myHeader, ignoreContentItem);
+        // }
+
+        this._itemAreas = areas;
+    }
+
+    _$normalizeContentItem(contentItemOrConfig: ItemConfigType | ContentItem, parent?: ContentItem): ContentItem {
+        if (!contentItemOrConfig) {
+            throw new Error('No content item defined');
+        }
+
+        // if (isFunction(contentItemOrConfig)) {
+        //     contentItemOrConfig = (<Callback>contentItemOrConfig)();
+        // }
+
+        if (contentItemOrConfig instanceof ContentItem) {
+            return contentItemOrConfig;
+        }
+
+        // if ($.isPlainObject(contentItemOrConfig)) {
+        const asConfig = (contentItemOrConfig as ItemConfigType);
+        if ($.isPlainObject(asConfig) && asConfig.type) {
+            //  && contentItemOrConfig.type
+
+            let newContentItem = this.createContentItem(asConfig, parent);
+            newContentItem.callDownwards('_$init');
+            return newContentItem;
+        } else {
+            throw new Error('Invalid contentItem');
         }
     }
 
@@ -548,41 +720,6 @@ export default class LayoutManager extends EventEmitter implements ILayoutManage
                 popout.indexInParent
             );
         }
-    }
-
-    /**
-     * This is executed when GoldenLayout detects that it is run
-     * within a previously opened popout window.
-     * @private
-     * @returns {void}
-     */
-    private _adjustToWindowMode(): void {
-        let popInButton = $('<div class="lm_popin" title="' + this.config.labels.popin + '">' +
-            '<div class="lm_icon"></div>' +
-            '<div class="lm_bg"></div>' +
-            '</div>');
-
-        popInButton.click(fnBind(function (this: LayoutManager) {
-            this.emit('popIn');
-        }, this));
-
-        document.title = stripTags(this.config.content[0].title);
-
-        $('head').append($('body link, body style, template, .gl_keep'));
-
-        this._container = $('body')
-            .html('')
-            .css('visibility', 'visible')
-            .append(popInButton);
-
-        /*
-         * This seems a bit pointless, but actually causes a reflow/re-evaluation getting around
-         * slickgrid's "Cannot find stylesheet." bug in chrome
-         */
-        // let x = document.body.offsetHeight; // jshint ignore:line
-
-        // Expose this instance on the window object to allow the opening window to interact with it
-        window.__glInstance = this;
     }
 
     /**

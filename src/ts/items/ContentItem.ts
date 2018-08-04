@@ -1,18 +1,15 @@
 import IContentItem from "../interfaces/IContentItem";
-import ILayoutManager from "../interfaces/ILayoutManager";
 import IBrowserPopout from "../interfaces/IBrowserPopout";
 import ITab from "../interfaces/ITab";
+import ILayoutManagerInternal from "../interfaces/ILayoutManagerInternal";
 import { ContentItemType, ContentArea } from "../interfaces/Commons";
 import ItemConfigType from "../config/ItemConfigType";
 
 import EventEmitter, { ALL_EVENT } from "../events/EventEmitter";
 import BubblingEvent from "../events/BubblingEvent";
 
-import LayoutManager from "../LayoutManager";
-
-import Root from "./Root";
-import Stack from "./Stack";
-import Component from "./Component";
+//import Root from "./Root";
+//import Component from "./Component";
 
 import {
     animFrame,
@@ -26,9 +23,6 @@ import {
     callOnActiveComponents 
 } from "../utils/itemFunctions";
 
-import { 
-    normalizeContentItem 
-} from "../utils/layoutFunctions";
 
 
 type ContentItemEvent = 'stateChanged' | 'beforeItemDestroyed' | 'itemDestroyed' | 'itemCreated' | 'componentCreated' | 'rowCreated' | 'columnCreated' | 'stackCreated';
@@ -39,7 +33,7 @@ export default abstract class ContentItem extends EventEmitter implements IConte
 
     protected _id: string;
     protected _type: ContentItemType;
-    protected _layoutManager: LayoutManager;
+    protected _layoutManager: ILayoutManagerInternal;
 
     protected _parent: ContentItem;
     protected _contentItems: ContentItem[];
@@ -110,7 +104,7 @@ export default abstract class ContentItem extends EventEmitter implements IConte
         return this._isComponent;
     }
 
-    get layoutManager(): ILayoutManager {
+    get layoutManager(): ILayoutManagerInternal {
         return this._layoutManager;
     }
 
@@ -129,10 +123,11 @@ export default abstract class ContentItem extends EventEmitter implements IConte
         this._tab = value;
     }
 
-    constructor(layoutManager: LayoutManager, config: ItemConfigType, parent: ContentItem) {
+    constructor(layoutManager: ILayoutManagerInternal, config: ItemConfigType, parent: ContentItem) {
 
         super();
 
+        
         this._config = extendItemNode(config);
         this._type = config.type;
         this._contentItems = [];
@@ -153,7 +148,7 @@ export default abstract class ContentItem extends EventEmitter implements IConte
         this.on(ALL_EVENT, this._propagateEvent, this);
 
         if (config.content) {
-            createContentItems(config, layoutManager);
+            this._contentItems = createContentItems(config, this, layoutManager);
         }
     }
 
@@ -161,19 +156,19 @@ export default abstract class ContentItem extends EventEmitter implements IConte
 
     addChild(itemOrItemConfig: ContentItem | ItemConfigType, index?: number): void {
         if (index === undefined) {
-            index = this.contentItems.length;
+            index = this._contentItems.length;
         }
 
         if (itemOrItemConfig instanceof ContentItem) {
-            this.contentItems.splice(index, 0, itemOrItemConfig);
+            this._contentItems.splice(index, 0, itemOrItemConfig);
         }
 
-        if (this.config.content === undefined) {
-            this.config.content = [];
+        if (this._config.content === undefined) {
+            this._config.content = [];
         }
 
         if (itemOrItemConfig instanceof ContentItem) {
-            this.config.content.splice(index, 0, itemOrItemConfig.config);
+            this._config.content.splice(index, 0, itemOrItemConfig.config);
 
             itemOrItemConfig._parent = this;
 
@@ -187,7 +182,7 @@ export default abstract class ContentItem extends EventEmitter implements IConte
         /*
          * Get the position of the item that's to be removed within all content items this node contains
          */
-        const index = this.contentItems.indexOf(contentItem);
+        const index = this._contentItems.indexOf(contentItem);
 
         /*
          * Make sure the content item to be removed is actually a child of this item
@@ -200,36 +195,36 @@ export default abstract class ContentItem extends EventEmitter implements IConte
          * Call ._$destroy on the content item. This also calls ._$destroy on all its children
          */
         if (keepChild !== true) {
-            (this.contentItems[index] as ContentItem)._$destroy();
+            (this._contentItems[index] as ContentItem)._$destroy();
         }
 
         /**
          * Remove the content item from this nodes array of children
          */
-        this.contentItems.splice(index, 1);
+        this._contentItems.splice(index, 1);
 
         /**
          * Remove the item from the configuration
          */
-        this.config.content.splice(index, 1);
+        this._config.content.splice(index, 1);
 
         /**
          * If this node still contains other content items, adjust their size
          */
-        if (this.contentItems.length > 0) {
+        if (this._contentItems.length > 0) {
             this.callDownwards('setSize');
 
             /**
              * If this was the last content item, remove this node as well
              */
-        } else if (!(this instanceof Root) && this.config.isClosable === true) {
-            this.parent.removeChild(this);
+        } else if (this.type !== 'root' && this._config.isClosable === true) { // !(this instanceof Root)
+            this._parent.removeChild(this);
         }
     }
 
     replaceChild(oldChild: ContentItem, newChild: ContentItem | ItemConfigType, destroyOldChild?: boolean): void {
-        const newChildToPush = normalizeContentItem(this._layoutManager, newChild);
-        const index = this.contentItems.indexOf(oldChild);
+        const newChildToPush = this._layoutManager._$normalizeContentItem(newChild) as ContentItem;
+        const index = this._contentItems.indexOf(oldChild);
         const parentNode = oldChild.element[0].parentNode;
 
         if (index === -1) {
@@ -249,7 +244,7 @@ export default abstract class ContentItem extends EventEmitter implements IConte
         /*
          * Wire the new contentItem into the tree
          */
-        this.contentItems[index] = newChildToPush;
+        this._contentItems[index] = newChildToPush;
         newChildToPush._parent = this;
 
         /*
@@ -336,19 +331,19 @@ export default abstract class ContentItem extends EventEmitter implements IConte
     select(): void {
         if (this._layoutManager.selectedItem !== this) {
             this._layoutManager.selectItem(this, true);
-            this.element.addClass('lm_selected');
+            this._element.addClass('lm_selected');
         }
     }
 
     deselect(): void {
         if (this._layoutManager.selectedItem === this) {
             this._layoutManager.selectedItem = null;
-            this.element.removeClass('lm_selected');
+            this._element.removeClass('lm_selected');
         }
     }
 
-    abstract setActiveContentItem(contentItem: IContentItem): void;
-    abstract getActiveContentItem(): IContentItem;
+    abstract setActiveContentItem(contentItem: ContentItem): void;
+    abstract getActiveContentItem(): ContentItem;
 
     /* ***************************************
      * SELECTOR
@@ -379,7 +374,7 @@ export default abstract class ContentItem extends EventEmitter implements IConte
     }
 
     getComponentsByName(componentName: string): IContentItem[] {
-        let components: Component[] = this._$getItemsByProperty('componentName', componentName) as Component[];
+        let components: any[] = this._$getItemsByProperty('componentName', componentName) as any[];
         const instances = [];
 
         for (let i = 0; i < components.length; i++) {
@@ -389,7 +384,7 @@ export default abstract class ContentItem extends EventEmitter implements IConte
         return instances;
     }
 
-    getItemsByType(type: ContentItemType): IContentItem[] {
+    getItemsByType(type: ContentItemType): ContentItem[] {
         return this._$getItemsByProperty('type', type);
     }
 
@@ -398,13 +393,12 @@ export default abstract class ContentItem extends EventEmitter implements IConte
             (this as any)[functionName].apply(this, Array.isArray(functionArguments) ? functionArguments : [functionArguments]);
         }
         for (let i = 0; i < this.contentItems.length; i++) {
-            this.contentItems[i].callDownwards(functionName, functionArguments, bottomUp);
+            this._contentItems[i].callDownwards(functionName, functionArguments, bottomUp);
         }
         if (bottomUp === true && skipSelf !== true) {
             (this as any).apply(this, functionArguments || []);
         }
     }
-
 
     /**
      * Emit an event that bubbles up the item tree.
@@ -420,11 +414,8 @@ export default abstract class ContentItem extends EventEmitter implements IConte
         this._contentItems = [];
     }
 
-    /* ***************************************
-     * PACKAGE PRIVATE or PROTECTED
-     *************************************** */
-    _$getArea(element?: JQuery): ContentArea {
-        element = element || this.element;
+    getArea(element?: JQuery): ContentArea {
+        element = element || this._element;
 
         let offset = element.offset(),
             width = element.width(),
@@ -440,26 +431,28 @@ export default abstract class ContentItem extends EventEmitter implements IConte
         };
     }
 
+    /* ***************************************
+     * PACKAGE PRIVATE or PROTECTED
+     *************************************** */
+
     _$hide(): void {
-        callOnActiveComponents('hide', this.getItemsByType('stack') as Stack[]);
+        callOnActiveComponents('hide', this.getItemsByType('stack'));
         this.element.hide();
         this.layoutManager.updateSize();
     }
 
     _$show(): void {
-        callOnActiveComponents('show', this.getItemsByType('stack') as Stack[]);
+        callOnActiveComponents('show', this.getItemsByType('stack'));
         this.element.show();
         this.layoutManager.updateSize();
     }
 
-    protected _$highlightDropZone(_x: number, _y: number, area?: ContentArea): void {
+    _$highlightDropZone(_x: number, _y: number, area?: ContentArea): void {
         this._layoutManager.dropTargetIndicator.highlightArea(area);
     }
 
-    private _$getItemsByProperty(key: string, value: string) {
-        return this.getItemsByFilter(function (item: ContentItem | any) {
-            return item[key] === value;
-        });
+    _$onDrop(contentItem: IContentItem, _area?: ContentArea): void {
+        this.addChild(contentItem);
     }
 
     /**
@@ -471,7 +464,7 @@ export default abstract class ContentItem extends EventEmitter implements IConte
         /*
          * Get the position of the item that's to be removed within all content items this node contains
          */
-        let index = indexOf(contentItem, this.contentItems);
+        let index = indexOf(contentItem, this._contentItems);
 
         /*
          * Make sure the content item to be removed is actually a child of this item
@@ -480,9 +473,15 @@ export default abstract class ContentItem extends EventEmitter implements IConte
             throw new Error('Can\'t remove child item. Unknown content item');
         }
 
-        if (!(this instanceof Root) && this.config.isClosable === true) {
-            this.parent.undisplayChild(this);
+        if (!(this.type === 'root') && this._config.isClosable === true) { // !(this instanceof Root) 
+            this._parent.undisplayChild(this);
         }
+    }
+
+    private _$getItemsByProperty(key: string, value: string) {
+        return this.getItemsByFilter(function (item: ContentItem | any) {
+            return item[key] === value;
+        });
     }
 
     /**
@@ -495,7 +494,7 @@ export default abstract class ContentItem extends EventEmitter implements IConte
      * @package private
      * @returns {void}
      */
-    protected _$init(): void {
+    _$init(): void {
         this.setSize();
 
         for (const iterator of this._contentItems) {

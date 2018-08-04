@@ -12,7 +12,8 @@ import {
     fnBind,
 } from '../utils/utils'
 
-import { createUrl, closeWindow } from '../utils/itemFunctions';
+import { createUrl } from '../utils/itemFunctions';
+import { closeWindow } from '../utils/layoutFunctions';
 
 
 /**

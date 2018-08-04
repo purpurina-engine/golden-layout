@@ -1,9 +1,8 @@
+import ILayoutManagerInternal from '../interfaces/ILayoutManagerInternal';
 import IHeader from '../interfaces/IHeader';
 import ITab from '../interfaces/ITab';
-import ILayoutManager from '../interfaces/ILayoutManager';
 import { HeaderPosition } from '../interfaces/Commons';
 
-import LayoutManager from '../LayoutManager';
 import EventEmitter from '../events/EventEmitter';
 import Tab from './Tab'
 import HeaderButton from './HeaderButton';
@@ -30,7 +29,7 @@ export default class Header extends EventEmitter implements IHeader {
     private _lastVisibleTabIndex: number;
     private _tabControlOffset: number;
     private _canDestroy: boolean;
-    private _layoutManager: LayoutManager;
+    private _layoutManager: ILayoutManagerInternal;
     private _hideAdditionalTabsDropdown: any;
 
     private _tabsContainer: JQuery;
@@ -68,7 +67,7 @@ export default class Header extends EventEmitter implements IHeader {
         return this._controlsContainer;
     }
 
-    public get layoutManager(): ILayoutManager {
+    public get layoutManager(): ILayoutManagerInternal {
         return this._layoutManager;
     }
 
@@ -85,7 +84,7 @@ export default class Header extends EventEmitter implements IHeader {
      * @param layoutManager Reference to Layout manager
      * @param parent The Stack parent
      */
-    constructor(layoutManager: LayoutManager, parent: Stack) {
+    constructor(layoutManager: ILayoutManagerInternal, parent: Stack) {
 
         super();
 
@@ -397,7 +396,7 @@ export default class Header extends EventEmitter implements IHeader {
      * Hides drop down for additional tabs when there are too many to display.
      * @returns {void}
      */
-    private _hideTabsDropdown(e?: any): void {
+    private _hideTabsDropdown(_e?: any): void {
         this._tabDropdownContainer.hide();
     }
 
@@ -447,16 +446,9 @@ export default class Header extends EventEmitter implements IHeader {
 
         this._element.css(size(!this._parent.isSided), '');
         this._element[size(this._parent.isSided)](this.layoutManager.config.dimensions.headerHeight);
-        let availableWidth = this._element.outerWidth() - this.controlsContainer.outerWidth() - this._tabControlOffset,
-            cumulativeTabWidth = 0,
-            visibleTabWidth = 0,
-            tabElement,
-            j,
-            marginLeft,
-            overlap = 0,
-            tabWidth,
-            tabOverlapAllowance = this.layoutManager.config.settings.tabOverlapAllowance,
-            tabOverlapAllowanceExceeded = false;
+        let availableWidth = this._element.outerWidth() - this.controlsContainer.outerWidth() - this._tabControlOffset;
+        let tabOverlapAllowance = this.layoutManager.config.settings.tabOverlapAllowance;
+        let tabOverlapAllowanceExceeded = false;
         
         const activeIndex = (this.activeContentItem ? this._tabs.indexOf((this.activeContentItem as Stack).tab) : 0);
         let activeTab = this._tabs[activeIndex];
@@ -466,13 +458,16 @@ export default class Header extends EventEmitter implements IHeader {
         }
 
         this._lastVisibleTabIndex = -1;
+        let cumulativeTabWidth = 0;
+        let visibleTabWidth = 0;
+        let overlap = 0;
 
         for (let i = 0; i < this._tabs.length; i++) {
-            tabElement = this._tabs[i].element;
+            const tabElement = this._tabs[i].element;
 
             //Put the tab in the tabContainer so its true width can be checked
             this.tabsContainer.append(tabElement);
-            tabWidth = tabElement.outerWidth() + parseInt(tabElement.css('margin-right'), 10);
+            const tabWidth = tabElement.outerWidth() + parseInt(tabElement.css('margin-right'), 10);
 
             cumulativeTabWidth += tabWidth;
 
@@ -500,8 +495,8 @@ export default class Header extends EventEmitter implements IHeader {
 
                     //Check overlap against allowance.
                     if (overlap < tabOverlapAllowance) {
-                        for (j = 0; j <= i; j++) {
-                            marginLeft = (j !== activeIndex && j !== 0) ? '-' + overlap + 'px' : '';
+                        for (let j = 0; j <= i; j++) {
+                            const marginLeft = (j !== activeIndex && j !== 0) ? '-' + overlap + 'px' : '';
                             this._tabs[j].element.css({
                                 'z-index': i - j,
                                 'margin-left': marginLeft
@@ -517,7 +512,7 @@ export default class Header extends EventEmitter implements IHeader {
                     //Active tab should show even if allowance exceeded. (We left room.)
                     tabElement.css({
                         'z-index': 'auto',
-                        'margin-left': ''
+                        'margin-left': '0'
                     });
                     this.tabsContainer.append(tabElement);
                 }

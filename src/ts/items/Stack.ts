@@ -1,10 +1,12 @@
+import ILayoutManagerInternal from '../interfaces/ILayoutManagerInternal';
+import IStack from '../interfaces/IStack';
 import { HightlightAreas, ContentItemType, HeaderConfig, ContentArea } from '../interfaces/Commons';
 import ItemConfigType, { ItemConfig } from '../config/ItemConfigType';
 
-import GoldenLayout from '../LayoutManager';
+
 import ContentItem from './ContentItem';
 import RowOrColumn from './RowOrColumn';
-import Docker from './Docker';
+import Docker from '../interfaces/Docker';
 
 import Header from '../controls/Header';
 import Tab from '../controls/Tab';
@@ -15,7 +17,6 @@ import {
     copy,
     indexOf
 } from '../utils/utils'
-import { normalizeContentItem } from '../utils/layoutFunctions';
 
 
 
@@ -26,7 +27,7 @@ interface StackConfig extends ItemConfig {
 type DropSegment = 'top' | 'bottom' | 'left' | 'right' | 'header' | 'body';
 
 
-export default class Stack extends ContentItem {
+export default class Stack extends ContentItem implements IStack {
 
     private _activeContentItem: ContentItem;
     //private _dropZones: Object;
@@ -43,7 +44,7 @@ export default class Stack extends ContentItem {
 
     header: Header;
 
-    config: StackConfig;
+    protected _config: StackConfig;
 
     public get contentAreaDimensions(): HightlightAreas {
         return this._contentAreaDimensions;
@@ -62,7 +63,7 @@ export default class Stack extends ContentItem {
     }
 
 
-    constructor(layoutManager: GoldenLayout, config: ItemConfigType, parent: ContentItem) {
+    constructor(layoutManager: ILayoutManagerInternal, config: ItemConfigType, parent: ContentItem) {
         super(layoutManager, config, parent)
 
         this._element = $('<div class="lm_item lm_stack"></div>');
@@ -97,38 +98,38 @@ export default class Stack extends ContentItem {
         this._childElementContainer = $('<div class="lm_items"></div>');
         this.header = new Header(layoutManager, this);
 
-        this.element.on('mouseleave mouseenter', fnBind(
+        this._element.on('mouseleave mouseenter', fnBind(
             function (this: Stack, event: JQuery.Event) {
                 if (this.docker && this.docker.docked) {
-                    const fn = this.childElementContainer[this.docker.dimension];
+                    const fn = this._childElementContainer[this.docker.dimension];
                     fn(event.type === 'mouseenter' ? this.docker.realSize : 0);
                 }
             }, this)
         );
 
-        this.element.append(this._childElementContainer);
-        this.element.append(this.header.element);
+        this._element.append(this._childElementContainer);
+        this._element.append(this.header.element);
         this._setupHeaderPosition();
         this._$validateClosability();
     }
 
     dock(mode: boolean): void {
         if (this._headerConfig.dock) {
-            if (this.parent instanceof RowOrColumn) {
-                this.parent.dock(this, mode);
+            if (this._parent instanceof RowOrColumn) {
+                this._parent.dock(this, mode);
             }
         }
     }
 
     setSize(): void {
-        if (this.element.css('display') === 'none') {
+        if (this._element.css('display') === 'none') {
             return;
         }
 
         let isDocked = this.docker && this.docker.docked;
         let content = {
-            width: this.element.width(),
-            height: this.element.height()
+            width: this._element.width(),
+            height: this._element.height()
         };
 
         if (this._headerConfig.show)
@@ -138,35 +139,33 @@ export default class Stack extends ContentItem {
             content[this.docker.dimension] = this.docker.realSize;
 
         if (!isDocked || this.docker.dimension == 'height')
-            this.childElementContainer.width(content.width);
+            this._childElementContainer.width(content.width);
 
         if (!isDocked || this.docker.dimension == 'width')
-            this.childElementContainer.height(content.height);
+            this._childElementContainer.height(content.height);
 
-        for (let i = 0; i < this.contentItems.length; i++) {
-            this.contentItems[i].element.width(content.width);
-            this.contentItems[i].element.height(content.height);
+        for (let i = 0; i < this._contentItems.length; i++) {
+            this._contentItems[i].element.width(content.width);
+            this._contentItems[i].element.height(content.height);
         }
         this.emit('resize');
         this.emitBubblingEvent('stateChanged');
     }
 
     _$init(): void {
-        let initialItem;
-
         if (this._isInitialised === true) 
-        return;
+            return;
 
         //AbstractContentItem.prototype._$init.call(this);
         super._$init();
 
-        for (let i = 0; i < this.contentItems.length; i++) {
-            this.header.createTab(this.contentItems[i]);
-            this.contentItems[i]._$hide();
+        for (let i = 0; i < this._contentItems.length; i++) {
+            this.header.createTab(this._contentItems[i]);
+            this._contentItems[i]._$hide();
         }
 
-        if (this.contentItems.length > 0) {
-            initialItem = this.contentItems[this.config.activeItemIndex || 0];
+        if (this._contentItems.length > 0) {
+            const initialItem = this._contentItems[this.config.activeItemIndex || 0];
 
             if (!initialItem) {
                 throw new Error('Configured activeItemIndex out of bounds');
@@ -179,7 +178,7 @@ export default class Stack extends ContentItem {
     setActiveContentItem(contentItem: ContentItem): void {
         if (this._activeContentItem === contentItem) return;
 
-        if (indexOf(contentItem, this.contentItems) === -1) {
+        if (indexOf(contentItem, this._contentItems) === -1) {
             throw new Error('contentItem is not a child of this stack');
         }
 
@@ -200,7 +199,7 @@ export default class Stack extends ContentItem {
     }
 
     addChild(contentItem: ContentItem, index?: number) {
-        if (index > this.contentItems.length) {
+        if (index > this._contentItems.length) {
             /* 
              * UGLY PATCH: PR #428, commit a4e84ec5 fixed a bug appearing on touchscreens during the drag of a panel. 
              * The bug was caused by the physical removal of the element on drag: partial documentation is at issue #425. 
@@ -210,51 +209,51 @@ export default class Stack extends ContentItem {
              */
             index -= 1
         }
-        contentItem = normalizeContentItem(this._layoutManager, contentItem, this);
+        contentItem = this._layoutManager._$normalizeContentItem( contentItem, this) as ContentItem;
         //AbstractContentItem.prototype.addChild.call(this, contentItem, index);
         super.addChild(contentItem, index);
-        this.childElementContainer.append(contentItem.element);
+        this._childElementContainer.append(contentItem.element);
         this.header.createTab(contentItem, index);
         this.setActiveContentItem(contentItem);
         this.callDownwards('setSize');
         this._$validateClosability();
         
-        if (this.parent instanceof RowOrColumn)
-            this.parent._validateDocking();
+        if (this._parent instanceof RowOrColumn)
+            this._parent._validateDocking();
         this.emitBubblingEvent('stateChanged');
     }
 
     removeChild(contentItem: ContentItem, keepChild?: boolean): void {
-        let index = indexOf(contentItem, this.contentItems);
+        let index = indexOf(contentItem, this._contentItems);
         //AbstractContentItem.prototype.removeChild.call(this, contentItem, keepChild);
         super.removeChild(contentItem, keepChild);
         this.header.removeTab(contentItem);
         if (this.header.activeContentItem === contentItem) {
-            if (this.contentItems.length > 0) {
-                this.setActiveContentItem(this.contentItems[Math.max(index - 1, 0)]);
+            if (this._contentItems.length > 0) {
+                this.setActiveContentItem(this._contentItems[Math.max(index - 1, 0)]);
             } else {
                 this._activeContentItem = null;
             }
         }
 
         this._$validateClosability();
-        if (this.parent instanceof RowOrColumn)
-            this.parent._validateDocking();
+        if (this._parent instanceof RowOrColumn)
+            this._parent._validateDocking();
         this.emitBubblingEvent('stateChanged');
     }
 
     undisplayChild(contentItem: ContentItem): void {
-        if (this.contentItems.length > 1) {
-            let index = indexOf(contentItem, this.contentItems)
+        if (this._contentItems.length > 1) {
+            let index = indexOf(contentItem, this._contentItems)
             contentItem._$hide && contentItem._$hide()
-            this.setActiveContentItem(this.contentItems[index === 0 ? index + 1 : index - 1])
+            this.setActiveContentItem(this._contentItems[index === 0 ? index + 1 : index - 1])
         } else {
             this.header.hideTab(contentItem);
             contentItem._$hide && contentItem._$hide()
             //AbstractContentItem.prototype.undisplayChild.call(this, contentItem);
             super.undisplayChild(contentItem);
-            if (this.parent instanceof RowOrColumn)
-                this.parent._validateDocking();
+            if (this._parent instanceof RowOrColumn)
+                this._parent._validateDocking();
         }
         this.emitBubblingEvent('stateChanged');
     }
@@ -267,7 +266,7 @@ export default class Stack extends ContentItem {
      * @returns {void}
      */
     private _$validateClosability(): void {
-        const len = this.contentItems.length;
+        const len = this._contentItems.length;
         let isClosable = this.header.isClosable();
 
         for (let i = 0; i < len; i++) {
@@ -275,7 +274,7 @@ export default class Stack extends ContentItem {
                 break;
             }
 
-            isClosable = this.contentItems[i].config.isClosable;
+            isClosable = this._contentItems[i].config.isClosable;
         }
 
         this.header.setClosable(isClosable);
@@ -285,7 +284,7 @@ export default class Stack extends ContentItem {
         //AbstractContentItem.prototype._$destroy.call(this);
         super._$destroy();
         this.header._$destroy();
-        this.element.off('mouseenter mouseleave');
+        this._element.off('mouseenter mouseleave');
     }
 
     /**
@@ -396,8 +395,8 @@ export default class Stack extends ContentItem {
             rowOrColumn.callDownwards('setSize');
         }
 
-        if (this.parent instanceof RowOrColumn) {
-            this.parent._validateDocking();
+        if (this._parent instanceof RowOrColumn) {
+            this._parent._validateDocking();
         }
     }
 
@@ -429,14 +428,14 @@ export default class Stack extends ContentItem {
         }
     }
 
-    _$getArea(): ContentArea {
-        if (this.element.css('display') === 'none') {
+    getArea(): ContentArea {
+        if (this._element.css('display') === 'none') {
             return null;
         }
 
-        const getArea = super._$getArea;//AbstractContentItem.prototype._$getArea,
+        const getArea = super.getArea;//AbstractContentItem.prototype._$getArea,
         const headerArea = getArea.call(this, this.header.element);
-        const contentArea = getArea.call(this, this.childElementContainer);
+        const contentArea = getArea.call(this, this._childElementContainer);
         const contentWidth = contentArea.x2 - contentArea.x1;
         const contentHeight = contentArea.y2 - contentArea.y1;
 
@@ -468,7 +467,7 @@ export default class Stack extends ContentItem {
         /**
          * Highlight the entire body if the stack is empty
          */
-        if (this.contentItems.length === 0) {
+        if (this._contentItems.length === 0) {
 
             this._contentAreaDimensions.body = {
                 hoverArea: {
@@ -485,7 +484,7 @@ export default class Stack extends ContentItem {
                 }
             };
 
-            return getArea.call(this, this.element);
+            return getArea.call(this, this._element);
         }
 
         this._contentAreaDimensions.left = {
@@ -548,7 +547,7 @@ export default class Stack extends ContentItem {
             }
         };
 
-        return getArea.call(this, this.element);
+        return getArea.call(this, this._element);
     }
 
     private _highlightHeaderDropZone(x: number) {
@@ -656,12 +655,12 @@ export default class Stack extends ContentItem {
             this._sided = false;
         }
         //this._sided = ['right', 'left'].indexOf(this._side) >= 0;
-        this.element.removeClass('lm_left lm_right lm_bottom');
+        this._element.removeClass('lm_left lm_right lm_bottom');
         if (this._side) {
-            this.element.addClass('lm_' + this._side);
+            this._element.addClass('lm_' + this._side);
         }
 
-        if (this.element.find('.lm_header').length && this._childElementContainer) {
+        if (this._element.find('.lm_header').length && this._childElementContainer) {
             //let headerPosition = ['right', 'bottom'].indexOf(this._side) >= 0 ? 'before' : 'after';
             let headerPosition: 'before' | 'after' = 'before';
             headerPosition = ['right', 'bottom'].indexOf(this.side) >= 0 ? 'before' : 'after';

@@ -4,7 +4,7 @@ import LayoutConfig from "../config/LayoutConfig";
 import ItemConfigType from "../config/ItemConfigType";
 import IBrowserPopout from "./IBrowserPopout";
 import { ElementDimensions } from "./Commons";
-import DragSource from "../controls/DragSource";
+import DragSource from "../dragDrop/DragSource";
 
 export default interface ILayoutManager extends IEventEmitter {
     /**
@@ -34,7 +34,7 @@ export default interface ILayoutManager extends IEventEmitter {
      * The currently selected item or null if no item is selected. Only relevant if settings.selectionEnabled is set
      * to true.
      */
-    readonly selectedItem: IContentItem;
+    selectedItem: IContentItem;
 
     /**
      * The current outer width of the layout in pixels.
