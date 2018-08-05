@@ -37,8 +37,8 @@ export default class Component extends ContentItem {
         componentConfig.componentName = config.componentName;
         this._componentName = config.componentName;
 
-        if (this.config.title === '') {
-            this.config.title = config.componentName;
+        if (this._config.title === '') {
+            this._config.title = config.componentName;
         }
 
         this._isComponent = true;

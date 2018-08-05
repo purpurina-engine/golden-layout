@@ -241,7 +241,7 @@ export default class RowOrColumn extends ContentItem implements IRowOrColumn {
      * @param   {boolean} collapsed after docking
      * @returns {void}
      */
-    dock(contentItem: any, mode: boolean, collapsed?: boolean): void {
+    dock(contentItem: ContentItem, mode: boolean, collapsed?: boolean): void {
         if (this._contentItems.length === 1)
             throw new Error('Can\'t dock child when it single');
 
@@ -253,6 +253,7 @@ export default class RowOrColumn extends ContentItem implements IRowOrColumn {
         if (index === -1) {
             throw new Error('Can\'t dock child. ContentItem is not child of this Row or Column');
         }
+
         let isDocked = contentItem.docker && contentItem.docker.docked;
         if (typeof mode !== 'undefined')
             if (mode == isDocked)
@@ -450,9 +451,9 @@ export default class RowOrColumn extends ContentItem implements IRowOrColumn {
      */
     private _calculateRelativeSizes(): void {
 
-        let total = 0,
-            itemsWithoutSetDimension: ContentItem[] = [],
-            dimension = this.__isColumn ? 'height' : 'width';
+        let total = 0;
+        const itemsWithoutSetDimension: ContentItem[] = [];
+        const dimension = this.__isColumn ? 'height' : 'width';
 
         for (let i = 0; i < this._contentItems.length; i++) {
             if (this._contentItems[i].config[dimension] !== undefined) {

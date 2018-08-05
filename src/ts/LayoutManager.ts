@@ -1,6 +1,6 @@
 import ILayoutManagerInternal from "./interfaces/ILayoutManagerInternal";
 import ContentItem from "./items/ContentItem";
-import { ContentArea, BoundFunction, ElementDimensions } from "./interfaces/Commons";
+import { ContentArea, BoundFunction, ElementDimensions, ComponentConstructorFunction } from "./interfaces/Commons";
 
 
 import LayoutConfig from "./config/LayoutConfig";
@@ -46,7 +46,7 @@ import ConfigurationError from "./errors/ConfigurationError";
 
 
 interface ComponentMap {
-    [key: string]: any;
+    [key: string]: ComponentConstructorFunction | any;
 }
 
 
@@ -69,13 +69,13 @@ export default class LayoutManager extends EventEmitter implements ILayoutManage
         'lm-react-component': ReactComponentHandler
     };
 
-    private _isInitialised: boolean = false;
-    private _isSubWindow: boolean = false;
+    private _isInitialised: boolean;
+    private _isSubWindow: boolean;
     private _openPopouts: BrowserPopout[];
     private _eventHub: EventHub;
 
-    private _isFullPage: boolean = false;
-    private _resizeTimeoutId: any = null;
+    private _isFullPage: boolean;
+    private _resizeTimeoutId: any;
 
     private _resizeFunction: BoundFunction;
     private _unloadFunction: BoundFunction;
@@ -157,6 +157,16 @@ export default class LayoutManager extends EventEmitter implements ILayoutManage
             errorMsg += 'your paths when using RequireJS/AMD';
             throw new Error(errorMsg);
         }
+
+
+        this._components = {
+            'lm-react-component': ReactComponentHandler
+        };
+
+        this._isInitialised = false;
+        this._isSubWindow = false;
+        this._isFullPage = false;
+        this._resizeTimeoutId = null;
 
         this._resizeFunction = fnBind(this._onResize, this);
         this._unloadFunction = fnBind(this._onUnload, this);
@@ -242,7 +252,7 @@ export default class LayoutManager extends EventEmitter implements ILayoutManage
         this.emit('initialised');
     }
 
-    registerComponent(name: string, component: any): void {
+    registerComponent(name: string, component: ComponentConstructorFunction): void {
         if (typeof component !== 'function') {
             throw new GoldenLayoutError('Please register a constructor function');
         }
@@ -264,16 +274,16 @@ export default class LayoutManager extends EventEmitter implements ILayoutManage
             this._width = width;
             this._height = height;
         } else {
-            this._width = this.container.width();
-            this._height = this.container.height();
+            this._width = this._container.width();
+            this._height = this._container.height();
         }
 
         if (this.isInitialised === true) {
             this.root.callDownwards('setSize', [this._width, this._height]);
 
             if (this._maximisedItem) {
-                this._maximisedItem.element.width(this.container.width());
-                this._maximisedItem.element.height(this.container.height());
+                this._maximisedItem.element.width(this._container.width());
+                this._maximisedItem.element.height(this._container.height());
                 this._maximisedItem.callDownwards('setSize');
             }
 
@@ -491,8 +501,8 @@ export default class LayoutManager extends EventEmitter implements ILayoutManage
         contentItem.element.after(this._maximisePlaceholder);
         this.root.element.prepend(contentItem.element);
 
-        contentItem.element.width(this.container.width());
-        contentItem.element.height(this.container.height());
+        contentItem.element.width(this._container.width());
+        contentItem.element.height(this._container.height());
 
         contentItem.callDownwards('setSize');
         this._maximisedItem.emit('maximised');

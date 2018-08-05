@@ -40,7 +40,7 @@ export interface ItemConfig {
      */
     title?: string;
 
-    header?: HeaderConfig;
+    //header?: HeaderConfig;
 
     reorderEnabled?: boolean;
 }

@@ -159,9 +159,9 @@ export default class Stack extends ContentItem implements IStack {
         //AbstractContentItem.prototype._$init.call(this);
         super._$init();
 
-        for (let i = 0; i < this._contentItems.length; i++) {
-            this.header.createTab(this._contentItems[i]);
-            this._contentItems[i]._$hide();
+        for (const iterator of this._contentItems) {
+            this.header.createTab(iterator);
+            iterator._$hide();
         }
 
         if (this._contentItems.length > 0) {
@@ -429,7 +429,7 @@ export default class Stack extends ContentItem implements IStack {
     }
 
     getArea(): ContentArea {
-        if (this._element.css('display') === 'none') {
+        if (this._element.css('display') === 'none' || this._element.is( ':visible' ) === false) {
             return null;
         }
 
@@ -551,17 +551,9 @@ export default class Stack extends ContentItem implements IStack {
     }
 
     private _highlightHeaderDropZone(x: number) {
-        let i;
-        let tabElement: JQuery;
+
         const tabsLength = this.header.tabs.length;
-        let isAboveTab = false;
-        let tabTop: number;
-        let tabLeft: number;
-        let offset: JQuery.Coordinates;
-        let placeHolderLeft: number;
         let headerOffset: JQuery.Coordinates;
-        let tabWidth: number;
-        let halfX: number;
 
         // Empty stack
         if (tabsLength === 0) {
@@ -576,6 +568,16 @@ export default class Stack extends ContentItem implements IStack {
 
             return;
         }
+        
+        let i;
+        let tabElement: JQuery;
+        let tabWidth: number;
+        let halfX: number;
+        let isAboveTab = false;
+        let tabTop: number;
+        let tabLeft: number;
+        let offset: JQuery.Coordinates;
+        let placeHolderLeft: number;
 
         for (i = 0; i < tabsLength; i++) {
             tabElement = this.header.tabs[i].element;
@@ -663,7 +665,7 @@ export default class Stack extends ContentItem implements IStack {
         if (this._element.find('.lm_header').length && this._childElementContainer) {
             //let headerPosition = ['right', 'bottom'].indexOf(this._side) >= 0 ? 'before' : 'after';
             let headerPosition: 'before' | 'after' = 'before';
-            headerPosition = ['right', 'bottom'].indexOf(this.side) >= 0 ? 'before' : 'after';
+            headerPosition = ['right', 'bottom'].indexOf(this._side) >= 0 ? 'before' : 'after';
             // if (this._side >= 1) {
             //     headerPosition = 'before';
             // } else {

@@ -4,6 +4,8 @@ import IEventEmitter from "./IEventEmitter";
 import ILayoutManager from "./ILayoutManager";
 import IBrowserPopout from "./IBrowserPopout";
 
+
+
 export default interface IContentItem extends IEventEmitter {
     /**
      * This items configuration in its current state

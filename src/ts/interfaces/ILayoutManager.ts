@@ -3,7 +3,7 @@ import IContentItem from "./IContentItem";
 import LayoutConfig from "../config/LayoutConfig";
 import ItemConfigType from "../config/ItemConfigType";
 import IBrowserPopout from "./IBrowserPopout";
-import { ElementDimensions } from "./Commons";
+import { ElementDimensions, ComponentConstructorFunction } from "./Commons";
 import DragSource from "../dragDrop/DragSource";
 
 export default interface ILayoutManager extends IEventEmitter {
@@ -67,7 +67,7 @@ export default interface ILayoutManager extends IEventEmitter {
      * @param component 	A constructor or factory function. Will be invoked with new and two arguments, a
      *                      containerobject and a component state
      */
-    registerComponent(name: string, component: any): void;
+    registerComponent(name: string, component: ComponentConstructorFunction): void;
 
     /**
      * Renders the layout into the container. If init() is called before the document is ready it attaches itself as

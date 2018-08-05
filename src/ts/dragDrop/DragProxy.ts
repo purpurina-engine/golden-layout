@@ -38,17 +38,6 @@ function buildTemplate(_showPreview: boolean = true): string {
         _template += '<div class="lm_content"></div>';
     }
 
-    // const _template = '<div class="lm_dragProxy">' +
-    // '<div class="lm_header">' +
-    // '<ul class="lm_tabs">' +
-    // '<li class="lm_tab lm_active"><i class="lm_left"></i>' +
-    // '<span class="lm_title"></span>' +
-    // '<i class="lm_right"></i></li>' +
-    // '</ul>' +
-    // '</div>' +
-    // '<div class="lm_content"></div>' +
-    // '</div>'
-
     _template += '</div>';
 
     return _template;
@@ -159,6 +148,7 @@ export default class DragProxy extends EventEmitter {
         /**
         * Should detach child element from tree?
          */
+        this._updateTree();
         this._undisplayTree(detach);
 
         this._layoutManager._$calculateItemAreas();

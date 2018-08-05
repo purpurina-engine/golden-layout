@@ -4,10 +4,13 @@ export type Dimension = 'height' | 'width';
 export type HeaderPosition = 'top' | 'bottom' | 'left' | 'right';
 export type ContentItemType = 'row' | 'column' | 'stack' | 'component' | 'root' | 'react-component';
 
+export type ComponentConstructorFunction = (container: JQuery | HTMLElement, state: any) => void;
+
+
 export type Callback = (...args: any[]) => any;
 export interface BoundFunction extends Function {
     (...args: any[]): any;
-} 
+}
 //export type ContentItemConfigFunction = () => ComponentConfig;
 
 export interface Vector {

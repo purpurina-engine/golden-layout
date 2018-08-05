@@ -1,7 +1,8 @@
-import IContentItem from "../interfaces/IContentItem";
+import IContentItem  from "../interfaces/IContentItem";
 import IBrowserPopout from "../interfaces/IBrowserPopout";
 import ITab from "../interfaces/ITab";
 import ILayoutManagerInternal from "../interfaces/ILayoutManagerInternal";
+import { ContentItemEvent } from "../events/Events";
 import { ContentItemType, ContentArea } from "../interfaces/Commons";
 import ItemConfigType from "../config/ItemConfigType";
 
@@ -25,7 +26,7 @@ import {
 
 
 
-type ContentItemEvent = 'stateChanged' | 'beforeItemDestroyed' | 'itemDestroyed' | 'itemCreated' | 'componentCreated' | 'rowCreated' | 'columnCreated' | 'stackCreated';
+
 
 export default abstract class ContentItem extends EventEmitter implements IContentItem {
 

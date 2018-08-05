@@ -2,9 +2,10 @@ import Settings from './Settings'
 import DimensionsSettings from './DimensionsSettings';
 import Labels from './Labels';
 import DragDropSettings from './DragDropSettings';
+import ItemConfigType from './ItemConfigType';
 
 class DefaultLayoutConfig {
-    openPopouts: Array<any>;
+    openPopouts: ItemConfigType[];
     
     settings: Settings = {
         hasHeaders: true,

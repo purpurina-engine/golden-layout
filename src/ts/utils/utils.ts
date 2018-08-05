@@ -25,20 +25,6 @@ export function getTouchEvent(event: JQuery.Event): Vector {
     // }
 }
 
-// export function extend(subClass: any, superClass: any) {
-//     subClass.prototype = createObject(superClass.prototype);
-//     subClass.prototype.constructor = subClass;
-// }
-
-// export function createObject(prototype: any) {
-//     if (typeof Object.create === 'function') {
-//         return Object.create(prototype);
-//     } else {
-//         F.prototype = prototype;
-//         return new F();
-//     }
-// }
-
 export function objectKeys(object: Object): string[] {
     let keys;
 
