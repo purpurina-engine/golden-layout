@@ -439,6 +439,19 @@ export default class LayoutManager extends EventEmitter implements ILayoutManage
         return (new ConfigMinifier()).unminifyConfig(minifiedConfig);
     }
 
+    /**
+	 * Clear dragSources on this layout instance
+	 * @public
+	 * @returns {void}
+	 */
+    clearDragSources(): void {
+        for (const iterator of this._dragSources) {
+            iterator.destroy();
+        }
+
+        this._dragSources = [];
+    }
+
     destroy(): void {
         if (this.isInitialised === false) {
             return;
@@ -452,12 +465,8 @@ export default class LayoutManager extends EventEmitter implements ILayoutManage
         this.dropTargetIndicator.destroy();
         this.transitionIndicator.destroy();
         this._eventHub.destroy();
-
-        for (const iterator of this._dragSources) {
-            iterator.destroy();
-        }
-
-        this._dragSources = [];
+        this.clearDragSources();
+       
     }
 
     /**

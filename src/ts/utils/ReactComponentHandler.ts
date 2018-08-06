@@ -35,24 +35,28 @@ export default class ReactComponentHandler {
     /**
      * Creates the react class and component and hydrates it with
      * the initial state - if one is present
-     *
      * By default, react's getInitialState will be used
-     *
      * @private
      * @returns {void}
      */
     private _render(): void {
         this._reactComponent = ReactDOM.render(this._getReactComponent(), this._container.getElement()[0]);
-        this._originalComponentWillUpdate = this._reactComponent.componentWillUpdate || function () { };
-        this._reactComponent.componentWillUpdate = this._onUpdate.bind(this);
-        if (this._container.getState()) {
-            this._reactComponent.setState(this._container.getState());
+
+        if (this._reactComponent) {
+            /* Stateful React component */
+            this._originalComponentWillUpdate = this._reactComponent.componentWillUpdate || function () { };
+            this._reactComponent.componentWillUpdate = this._onUpdate.bind(this);
+
+            if (this._container.getState()) {
+                this._reactComponent.setState(this._container.getState());
+            }
         }
+        /* Stateless React component, nothing to do */
+
     }
 
     /**
      * Removes the component from the DOM and thus invokes React's unmount lifecycle
-     *
      * @private
      * @returns {void}
      */
@@ -65,18 +69,19 @@ export default class ReactComponentHandler {
     /**
      * Hooks into React's state management and applies the componentstate
      * to GoldenLayout
-     *
      * @private
      * @returns {void}
      */
     private _onUpdate(nextProps: object, nextState: object): void {
         this._container.setState(nextState);
-        this._originalComponentWillUpdate.call(this._reactComponent, nextProps, nextState);
+        if (this._originalComponentWillUpdate) {
+            this._originalComponentWillUpdate.call(this._reactComponent, nextProps, nextState);
+        }
+       
     }
 
     /**
      * Retrieves the react class from GoldenLayout's registry
-     *
      * @private
      * @returns {React.Class}
      */
@@ -100,7 +105,6 @@ export default class ReactComponentHandler {
 
     /**
      * Copies and extends the properties array and returns the React element
-     *
      * @private
      * @returns {React.Element}
      */
