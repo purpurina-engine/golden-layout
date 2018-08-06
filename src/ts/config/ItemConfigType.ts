@@ -1,4 +1,4 @@
-import { ContentItemType, HeaderConfig } from "../interfaces/Commons";
+import { ContentItemType } from "../interfaces/Commons";
 
 export interface ItemConfig {
     [indexer: string]: any;

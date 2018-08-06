@@ -1,6 +1,5 @@
 import IContentItem from "./IContentItem";
 import IHeader from "./IHeader";
-import ITab from "./ITab";
 import { Dimension } from "./Commons";
 
 

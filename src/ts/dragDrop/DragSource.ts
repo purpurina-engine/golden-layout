@@ -16,7 +16,7 @@ import DragProxy from './DragProxy'
 export default class DragSource {
 
     private _element: JQuery;
-    private _itemConfig: ItemConfigType | Callback;
+    //private _itemConfig: ItemConfigType | Callback;
     private _layoutManager: ILayoutManagerInternal;
     private _dragListener: DragListener;
 
@@ -28,7 +28,7 @@ export default class DragSource {
      */
     constructor(element: JQuery, itemConfig: ItemConfigType | Callback, layoutManager: ILayoutManagerInternal) {
         this._element = element;
-        this._itemConfig = itemConfig;
+        //this._itemConfig = itemConfig;
         this._layoutManager = layoutManager;
         this._dragListener = null;
 
@@ -71,7 +71,7 @@ export default class DragSource {
     destroy() {
         this._dragListener.destroy();
         this._element = null;
-        this._itemConfig = null;
+        //this._itemConfig = null;
         this._dragListener = null;
     }
 }
