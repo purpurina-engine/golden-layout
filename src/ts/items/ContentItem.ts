@@ -53,7 +53,7 @@ export default abstract class ContentItem extends EventEmitter implements IConte
     private _pendingEventPropagations: { [indexer: string]: any };
     private _throttledEvents: ContentItemEvent[];
 
-    private _tab: ITab;
+    protected _tab: ITab;
     
 
 
@@ -454,6 +454,10 @@ export default abstract class ContentItem extends EventEmitter implements IConte
 
     _$onDrop(contentItem: IContentItem, _area?: ContentArea): void {
         this.addChild(contentItem);
+    }
+
+    _$setParent(parent: ContentItem | any) {
+        this._parent = parent;
     }
 
     /**

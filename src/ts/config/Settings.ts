@@ -68,8 +68,9 @@
 
     /**
      * Can be onload, always, or none.
+     * Default: 'onload'
      */
-    responsiveMode?: string; 
+    responsiveMode?: 'always' | 'none' | 'onload'; 
 
     /**
      * Maximum pixel overlap per tab

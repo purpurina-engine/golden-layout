@@ -44,7 +44,6 @@ import Root from "./items/Root";
 import ConfigurationError from "./errors/ConfigurationError";
 
 
-
 interface ComponentMap {
     [key: string]: ComponentConstructorFunction | any;
 }

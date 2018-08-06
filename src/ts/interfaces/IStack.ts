@@ -1,6 +1,17 @@
 import IContentItem from "./IContentItem";
-import Header from "../controls/Header";
+import IHeader from "./IHeader";
+import ITab from "./ITab";
+import { Dimension } from "./Commons";
+
+
+export interface Docker {
+    dimension?:Dimension,
+    size?: number;
+    realSize?: number;
+    docked?: boolean;
+}
 
 export default interface IStack extends IContentItem {
-    readonly header: Header;
+    readonly header: IHeader;
+    docker: Docker;
 }

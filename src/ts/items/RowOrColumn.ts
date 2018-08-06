@@ -13,6 +13,8 @@ import {
     indexOf
 } from '../utils/utils';
 import { isStack } from '../utils/itemFunctions';
+import IStack from '../interfaces/IStack';
+import Header from '../controls/Header';
 
 
 export default class RowOrColumn extends ContentItem implements IRowOrColumn {
@@ -50,7 +52,7 @@ export default class RowOrColumn extends ContentItem implements IRowOrColumn {
 
         let newItemSize, itemSize, splitterElement;
 
-        contentItem = this._layoutManager._$normalizeContentItem( contentItem, this) as ContentItem;
+        contentItem = this._layoutManager._$normalizeContentItem(contentItem, this) as ContentItem;
 
         if (index === undefined) {
             index = this._contentItems.length;
@@ -241,9 +243,10 @@ export default class RowOrColumn extends ContentItem implements IRowOrColumn {
      * @param   {boolean} collapsed after docking
      * @returns {void}
      */
-    dock(contentItem: ContentItem, mode: boolean, collapsed?: boolean): void {
-        if (this._contentItems.length === 1)
+    dock(contentItem: IStack|IContentItem, mode: boolean, collapsed?: boolean): void {
+        if (this._contentItems.length === 1) {
             throw new Error('Can\'t dock child when it single');
+        }
 
         let removedItemSize = contentItem.config[this._dimension],
             headerSize = this.layoutManager.config.dimensions.headerHeight,
@@ -254,26 +257,30 @@ export default class RowOrColumn extends ContentItem implements IRowOrColumn {
             throw new Error('Can\'t dock child. ContentItem is not child of this Row or Column');
         }
 
-        let isDocked = contentItem.docker && contentItem.docker.docked;
-        if (typeof mode !== 'undefined')
-            if (mode == isDocked)
+        const stack = contentItem as IStack;
+        const isDocked = stack.docker && stack.docker.docked;
+
+        if (typeof mode !== 'undefined') {
+            if (mode == isDocked) {
                 return;
+            }
+        }
 
         if (isDocked) { // undock it
             this._splitter[splitterIndex].element.show();
             let itemSize: number;
-
-            for (let i = 0; i < this._contentItems.length; i++) {
-                let newItemSize = contentItem.docker.size;
-                if (this._contentItems[i] === contentItem) {
+            const newItemSize = stack.docker.size;
+            for (const item of this._contentItems) {
+                
+                if (item === contentItem) {
                     contentItem.config[this._dimension] = newItemSize;
                 } else {
-                    itemSize = this._contentItems[i].config[this._dimension] *= (100 - newItemSize) / 100;
-                    this._contentItems[i].config[this._dimension] = itemSize;
+                    itemSize = item.config[this._dimension] *= (100 - newItemSize) / 100;
+                    item.config[this._dimension] = itemSize;
                 }
             }
 
-            contentItem.docker = {
+            (contentItem as IStack).docker = {
                 docked: false
             };
         } else { // dock
@@ -289,9 +296,9 @@ export default class RowOrColumn extends ContentItem implements IRowOrColumn {
                     last: 'right'
                 }
             };
-            let required = autoside[this._config.type][index ? 'last' : 'first'];
-            if (contentItem.header.position() != required) {
-                contentItem.header.position(required);
+            const required = autoside[this._config.type][index ? 'last' : 'first'];
+            if (stack.header.position() != required) {
+                stack.header.position(required);
             }
 
             if (this._splitter[splitterIndex]) {
@@ -307,7 +314,7 @@ export default class RowOrColumn extends ContentItem implements IRowOrColumn {
                     this._contentItems[i].config[this._dimension] = 0;
             }
 
-            contentItem.docker = {
+            stack.docker = {
                 dimension: this._dimension,
                 size: removedItemSize,
                 realSize: contentItem.element[this._dimension]() - headerSize,
@@ -317,7 +324,7 @@ export default class RowOrColumn extends ContentItem implements IRowOrColumn {
                 contentItem.childElementContainer[this._dimension](0);
             }
         }
-        contentItem.element.toggleClass('lm_docked', contentItem.docker.docked);
+        contentItem.element.toggleClass('lm_docked', stack.docker.docked);
         this.callDownwards('setSize');
         this.emitBubblingEvent('stateChanged');
         this._validateDocking();
@@ -344,10 +351,10 @@ export default class RowOrColumn extends ContentItem implements IRowOrColumn {
 
         for (const iterator of this._contentItems) {
 
-            const headerConfig = iterator as any['headerConfig'];
+            const headerConfig = (iterator as any)['headerConfig'];
 
             if (headerConfig && headerConfig.docked) {
-                this.dock(iterator as any, true, true);
+                this.dock(iterator, true, true);
             }
         }
 
@@ -659,12 +666,12 @@ export default class RowOrColumn extends ContentItem implements IRowOrColumn {
 
             if (isStack(item)) {
                 const itemIsDocked = ((<RowOrColumn>that)._isDocked(i) >= 1) ? true : false;
-                item.header._setDockable(itemIsDocked || can);
-                item.header.setClosable(can);
-            }  
-        }        
+                (item.header as Header)._setDockable(itemIsDocked || can);
+                (item.header as Header).setClosable(can);
+            }
+        }
 
-  
+
     }
 
     /**
@@ -751,6 +758,6 @@ export default class RowOrColumn extends ContentItem implements IRowOrColumn {
         animFrame(fnBind(this.callDownwards, this, 'setSize'));
     }
 
-    setActiveContentItem(_contentItem: ContentItem): void {}
-    getActiveContentItem():ContentItem {return null;}
+    setActiveContentItem(_contentItem: ContentItem): void { }
+    getActiveContentItem(): ContentItem { return null; }
 }

@@ -1,6 +1,7 @@
 import ITab from "./ITab";
 import IContentItem from "./IContentItem";
 import ILayoutManager from "./ILayoutManager";
+import { HeaderPosition } from "./Commons";
 
  export default interface IHeader {
     /**
@@ -56,4 +57,11 @@ import ILayoutManager from "./ILayoutManager";
      * @param contentItem The content item the tab is associated with
      */
     removeTab(contentItem: IContentItem): void;
+
+    /**
+     * Programmatically operate with header position.
+     * @param position one of ('top','left','right','bottom') to set or empty to get it.
+     * @returns {HeaderPosition} previous header position
+     */
+    position(position?: HeaderPosition): HeaderPosition;
 }

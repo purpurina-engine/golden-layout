@@ -450,7 +450,7 @@ export default class Header extends EventEmitter implements IHeader {
         let tabOverlapAllowance = this.layoutManager.config.settings.tabOverlapAllowance;
         let tabOverlapAllowanceExceeded = false;
         
-        const activeIndex = (this.activeContentItem ? this._tabs.indexOf((this.activeContentItem as Stack).tab) : 0);
+        const activeIndex = (this.activeContentItem ? this._tabs.indexOf(this.activeContentItem.tab as Tab) : 0);
         let activeTab = this._tabs[activeIndex];
 
         if (this._parent.isSided) {

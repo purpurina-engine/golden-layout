@@ -45,7 +45,7 @@ class DefaultLayoutConfig {
 
     dragDrop: DragDropSettings = {
         detachDragSource: true,
-        showDragPreview: true,
+        showDragPreview: false,
         allowDropItself: false,
     }
 }

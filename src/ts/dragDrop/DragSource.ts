@@ -6,9 +6,6 @@ import { ItemConfigType } from '../config';
 import DragListener from './DragListener'
 import DragProxy from './DragProxy'
 
-import {
-    isFunction
-} from '../utils/utils'
 
 /**
  * Allows for any DOM item to create a component on drag

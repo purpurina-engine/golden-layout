@@ -109,8 +109,8 @@ export default class DragProxy extends EventEmitter {
         this._originalParent = originalParent;
 
         // Setup settings
-        const showPreview = layoutManager.config.dragDrop.showDragPreview || true;
-        const detach = layoutManager.config.dragDrop.detachDragSource || true;
+        const showPreview = layoutManager.config.dragDrop.showDragPreview;
+        const detach = layoutManager.config.dragDrop.detachDragSource;
 
         this._area = null;
         this._lastValidArea = null;
@@ -118,7 +118,7 @@ export default class DragProxy extends EventEmitter {
         this._dragListener.on('drag', this._onDrag, this);
         this._dragListener.on('dragStop', this._onDrop, this);
 
-        this._element = $(buildTemplate(this.showPreview));
+        this._element = $(buildTemplate(showPreview));
 
         if (originalParent) {
             const stack = originalParent as Stack;
@@ -141,14 +141,14 @@ export default class DragProxy extends EventEmitter {
         /**
          * Should show preview? Attach to drag proxy preview.
          */
-        if (showPreview) {
+        if (showPreview === true) {
             this._childElementContainer.append(contentItem.element);
         }
 
         /**
         * Should detach child element from tree?
          */
-        this._updateTree();
+        //this._updateTree();
         this._undisplayTree(detach);
 
         this._layoutManager._$calculateItemAreas();
@@ -302,7 +302,7 @@ export default class DragProxy extends EventEmitter {
         }
 
         // REVIEW
-        //this._contentItem._$setParent(this);
+        this._contentItem._$setParent(this);
     }
 
     /**
@@ -325,6 +325,7 @@ export default class DragProxy extends EventEmitter {
         this._childElementContainer.height(height);
         this._contentItem.element.width(width);
         this._contentItem.element.height(height);
+        this._contentItem.element.css('overflow:hidden')
         this._contentItem.callDownwards('_$show');
         this._contentItem.callDownwards('setSize');
     }

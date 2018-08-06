@@ -1,23 +1,18 @@
 import ILayoutManagerInternal from '../interfaces/ILayoutManagerInternal';
-import IStack from '../interfaces/IStack';
+import IStack, { Docker } from '../interfaces/IStack';
 import { HightlightAreas, ContentItemType, HeaderConfig, ContentArea } from '../interfaces/Commons';
 import ItemConfigType, { ItemConfig } from '../config/ItemConfigType';
 
-
 import ContentItem from './ContentItem';
 import RowOrColumn from './RowOrColumn';
-import Docker from '../interfaces/Docker';
 
 import Header from '../controls/Header';
-import Tab from '../controls/Tab';
-
 
 import {
     fnBind,
     copy,
     indexOf
 } from '../utils/utils'
-
 
 
 interface StackConfig extends ItemConfig {
@@ -38,15 +33,12 @@ export default class Stack extends ContentItem implements IStack {
     private _sided: boolean;
     private _side: number;
 
-    docker: Docker;
+    private _docker: Docker;
 
-    tab: Tab;
-
-    header: Header;
-
+    protected _header: Header;
     protected _config: StackConfig;
 
-    public get contentAreaDimensions(): HightlightAreas {
+    get contentAreaDimensions(): HightlightAreas {
         return this._contentAreaDimensions;
     }
 
@@ -60,6 +52,14 @@ export default class Stack extends ContentItem implements IStack {
 
     get side(): any {
         return this._side;
+    }
+
+    get header(): Header {
+        return this._header;
+    }
+
+    get docker(): Docker {
+        return this._docker;
     }
 
 
@@ -96,7 +96,7 @@ export default class Stack extends ContentItem implements IStack {
         this._isStack = true;
 
         this._childElementContainer = $('<div class="lm_items"></div>');
-        this.header = new Header(layoutManager, this);
+        this._header = new Header(layoutManager, this);
 
         this._element.on('mouseleave mouseenter', fnBind(
             function (this: Stack, event: JQuery.Event) {
@@ -108,7 +108,7 @@ export default class Stack extends ContentItem implements IStack {
         );
 
         this._element.append(this._childElementContainer);
-        this._element.append(this.header.element);
+        this._element.append(this._header.element);
         this._setupHeaderPosition();
         this._$validateClosability();
     }
@@ -144,10 +144,11 @@ export default class Stack extends ContentItem implements IStack {
         if (!isDocked || this.docker.dimension == 'width')
             this._childElementContainer.height(content.height);
 
-        for (let i = 0; i < this._contentItems.length; i++) {
-            this._contentItems[i].element.width(content.width);
-            this._contentItems[i].element.height(content.height);
+        for (const contentItem of this._contentItems) {
+            contentItem.element.width(content.width);
+            contentItem.element.height(content.height);
         }
+
         this.emit('resize');
         this.emitBubblingEvent('stateChanged');
     }
@@ -160,7 +161,7 @@ export default class Stack extends ContentItem implements IStack {
         super._$init();
 
         for (const iterator of this._contentItems) {
-            this.header.createTab(iterator);
+            this._header.createTab(iterator);
             iterator._$hide();
         }
 
@@ -187,15 +188,15 @@ export default class Stack extends ContentItem implements IStack {
         }
 
         this._activeContentItem = contentItem;
-        this.header.setActiveContentItem(contentItem);
+        this._header.setActiveContentItem(contentItem);
         contentItem._$show();
         this.emit('activeContentItemChanged', contentItem);
-        this.layoutManager.emit('activeContentItemChanged', contentItem);
+        this._layoutManager.emit('activeContentItemChanged', contentItem);
         this.emitBubblingEvent('stateChanged');
     }
 
     getActiveContentItem(): ContentItem {
-        return this.header.activeContentItem;
+        return this._header.activeContentItem;
     }
 
     addChild(contentItem: ContentItem, index?: number) {
@@ -213,7 +214,7 @@ export default class Stack extends ContentItem implements IStack {
         //AbstractContentItem.prototype.addChild.call(this, contentItem, index);
         super.addChild(contentItem, index);
         this._childElementContainer.append(contentItem.element);
-        this.header.createTab(contentItem, index);
+        this._header.createTab(contentItem, index);
         this.setActiveContentItem(contentItem);
         this.callDownwards('setSize');
         this._$validateClosability();
@@ -227,8 +228,8 @@ export default class Stack extends ContentItem implements IStack {
         let index = indexOf(contentItem, this._contentItems);
         //AbstractContentItem.prototype.removeChild.call(this, contentItem, keepChild);
         super.removeChild(contentItem, keepChild);
-        this.header.removeTab(contentItem);
-        if (this.header.activeContentItem === contentItem) {
+        this._header.removeTab(contentItem);
+        if (this._header.activeContentItem === contentItem) {
             if (this._contentItems.length > 0) {
                 this.setActiveContentItem(this._contentItems[Math.max(index - 1, 0)]);
             } else {
@@ -244,11 +245,14 @@ export default class Stack extends ContentItem implements IStack {
 
     undisplayChild(contentItem: ContentItem): void {
         if (this._contentItems.length > 1) {
+
             let index = indexOf(contentItem, this._contentItems)
             contentItem._$hide && contentItem._$hide()
             this.setActiveContentItem(this._contentItems[index === 0 ? index + 1 : index - 1])
+
         } else {
-            this.header.hideTab(contentItem);
+
+            this._header.hideTab(contentItem);
             contentItem._$hide && contentItem._$hide()
             //AbstractContentItem.prototype.undisplayChild.call(this, contentItem);
             super.undisplayChild(contentItem);
@@ -267,7 +271,7 @@ export default class Stack extends ContentItem implements IStack {
      */
     private _$validateClosability(): void {
         const len = this._contentItems.length;
-        let isClosable = this.header.isClosable();
+        let isClosable = this._header.isClosable();
 
         for (let i = 0; i < len; i++) {
             if (!isClosable) {
@@ -277,13 +281,13 @@ export default class Stack extends ContentItem implements IStack {
             isClosable = this._contentItems[i].config.isClosable;
         }
 
-        this.header.setClosable(isClosable);
+        this._header.setClosable(isClosable);
     }
 
     _$destroy(): void {
         //AbstractContentItem.prototype._$destroy.call(this);
         super._$destroy();
-        this.header._$destroy();
+        this._header._$destroy();
         this._element.off('mouseenter mouseleave');
     }
 
@@ -434,7 +438,7 @@ export default class Stack extends ContentItem implements IStack {
         }
 
         const getArea = super.getArea;//AbstractContentItem.prototype._$getArea,
-        const headerArea = getArea.call(this, this.header.element);
+        const headerArea = getArea.call(this, this._header.element);
         const contentArea = getArea.call(this, this._childElementContainer);
         const contentWidth = contentArea.x2 - contentArea.x1;
         const contentHeight = contentArea.y2 - contentArea.y1;
@@ -552,18 +556,18 @@ export default class Stack extends ContentItem implements IStack {
 
     private _highlightHeaderDropZone(x: number) {
 
-        const tabsLength = this.header.tabs.length;
+        const tabsLength = this._header.tabs.length;
         let headerOffset: JQuery.Coordinates;
 
         // Empty stack
         if (tabsLength === 0) {
-            headerOffset = this.header.element.offset();
+            headerOffset = this._header.element.offset();
 
             this._layoutManager.dropTargetIndicator.highlightArea({
                 x1: headerOffset.left,
                 x2: headerOffset.left + 100,
-                y1: headerOffset.top + this.header.element.height() - 20,
-                y2: headerOffset.top + this.header.element.height()
+                y1: headerOffset.top + this._header.element.height() - 20,
+                y2: headerOffset.top + this._header.element.height()
             });
 
             return;
@@ -580,7 +584,7 @@ export default class Stack extends ContentItem implements IStack {
         let placeHolderLeft: number;
 
         for (i = 0; i < tabsLength; i++) {
-            tabElement = this.header.tabs[i].element;
+            tabElement = this._header.tabs[i].element;
             offset = tabElement.offset();
             if (this._sided) {
                 tabLeft = offset.top;
@@ -648,7 +652,7 @@ export default class Stack extends ContentItem implements IStack {
     _setupHeaderPosition(): void {
         const side: boolean = ['right', 'left', 'bottom'].indexOf(this._headerConfig.oldPosition) >= 0 && this._headerConfig.show;
 
-        this.header.element.toggle(!!this._headerConfig.show);
+        this._header.element.toggle(!!this._headerConfig.show);
         this._side = (side) ? 1 : 0;
 
         if (this._side === 1) {
@@ -665,14 +669,14 @@ export default class Stack extends ContentItem implements IStack {
         if (this._element.find('.lm_header').length && this._childElementContainer) {
             //let headerPosition = ['right', 'bottom'].indexOf(this._side) >= 0 ? 'before' : 'after';
             let headerPosition: 'before' | 'after' = 'before';
-            headerPosition = ['right', 'bottom'].indexOf(this._side) >= 0 ? 'before' : 'after';
+            headerPosition = ['right', 'bottom'].indexOf(this.side) >= 0 ? 'before' : 'after';
             // if (this._side >= 1) {
             //     headerPosition = 'before';
             // } else {
             //     headerPosition = 'after';
             // }
 
-           this.header.element[headerPosition](this._childElementContainer);
+           this._header.element[headerPosition](this._childElementContainer);
   
             this.callDownwards('setSize');
         }
